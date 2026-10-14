@@ -3,29 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Argentina arde: focos de calor 2012–2026</title>
-<meta name="description" content="Recorrido interactivo por los focos de calor detectados desde el espacio en Argentina entre 2012 y 2026, y por seis grandes incendios con sus cifras y fuentes.">
-<meta name="theme-color" content="#0d0907">
+<title>Foco Cero: focos de calor en Argentina, 2012–2026</title>
+<meta name="description" content="Foco Cero: seis incendios argentinos contados con sus fuentes y los focos de calor detectados por satélite entre 2012 y 2026, con un mapa para explorar los datos.">
+<meta name="theme-color" content="#0a0a0a">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Argentina arde: focos de calor 2012–2026">
-<meta property="og:description" content="Exploración interactiva de los focos de calor detectados por satélite en Argentina y seis grandes incendios contados con sus fuentes.">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23140d0a'/%3E%3Cpath d='M16 4c2 6 9 9 9 16a9 9 0 0 1-18 0c0-5 4-7 5-12 1 2 2 3 4-4z' fill='%23ff6a1a'/%3E%3Cpath d='M16 15c1 3 4 4 4 7a4 4 0 0 1-8 0c0-2 2-3 2-5 1 1 1 1 2-2z' fill='%23ffd873'/%3E%3C/svg%3E">
+<meta property="og:title" content="Foco Cero: focos de calor en Argentina, 2012–2026">
+<meta property="og:description" content="Seis incendios contados con sus fuentes y los focos de calor detectados por satélite, 2012–2026.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0a0a'/%3E%3Cpath d='M16 4c2 6 9 9 9 16a9 9 0 0 1-18 0c0-5 4-7 5-12 1 2 2 3 4-4z' fill='%23ff6a1a'/%3E%3Ccircle cx='16' cy='21' r='3.2' fill='%23ffd873'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="app">
-  <aside id="side" tabindex="-1" aria-label="Texto de la pantalla"></aside>
-  <main id="stage">
-    <div id="mapwrap"><canvas id="map" role="img" aria-label="Mapa de Argentina con focos de calor por celda. Para analizar una provincia con teclado, usá el ranking."></canvas><div id="yearbadge"></div><div id="tip" role="tooltip" hidden></div></div>
-    <section id="scenewrap"></section>
-    <nav id="nav" aria-label="Navegación">
-      <button id="prev" aria-label="Anterior">←</button>
-      <div id="dots" role="group" aria-label="Pantallas"></div>
-      <button id="next" aria-label="Siguiente">→</button>
-    </nav>
-  </main>
-  <div id="cue" aria-hidden="true" hidden><span>Seguí bajando: el fuego avanza</span><i></i></div>
+<div id="loading" aria-hidden="true"><b>Foco Cero</b><span>Cargando datos…</span></div>
+<div id="stage">
+  <canvas id="map" role="img" aria-label="Mapa de Argentina con los focos de calor. Para analizar una provincia con teclado, usá el ranking del capítulo Explorar."></canvas>
+  <div id="scenewrap"></div>
+  <div id="tip" role="tooltip" hidden></div>
 </div>
+<div id="progress" aria-hidden="true"><i></i></div>
+<div id="legend" class="glass"></div>
+<button id="pause" class="glass pill" aria-pressed="false">Pausar animación</button>
+<main id="cards" aria-label="Relato"></main>
+<div id="ctrl" class="glass"></div>
+<nav id="rail" aria-label="Capítulos"><ol id="railList"></ol></nav>
+<nav id="mnav" aria-label="Capítulos"><button id="prev" aria-label="Capítulo anterior">←</button><span id="mname"></span><button id="next" aria-label="Capítulo siguiente">→</button></nav>
+<div id="cue" aria-hidden="true" hidden><span></span><i></i></div>
+<div id="spacer" aria-hidden="true"></div>
 <p id="announce" class="sr-only" aria-live="polite"></p>
 <script src="data/data.js"></script>
 <script src="scene.js"></script>

@@ -12,6 +12,10 @@ Uso:
 Requiere: pandas, numpy, shapely>=2.
 Filtro: archivo type==0 (fuego de vegetación); se descartan puntos de confianza baja ('l').
 Salida: data.js (window.DATA = {prov, pm, grid, meta}) y meta.json.
+
+Si existe scripts/events.json, también genera ev/<id>.js por incendio: focos de sus provincias
+en su rango de meses, agrupados en celdas de 0,05° por semana, para mostrarlos acumulándose
+(se cargan de forma perezosa, uno por incendio).
 """
 import sys, glob, json, os
 import numpy as np, pandas as pd, shapely
@@ -61,3 +65,27 @@ json.dump(meta, open(os.path.join(out, "meta.json"), "w", encoding="utf-8"), ens
 data = {"prov": prov_geo, "pm": pm, "grid": {"step": STEP, "anios": grid}, "meta": meta}
 open(os.path.join(out, "data.js"), "w", encoding="utf-8").write("window.DATA=" + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";")
 print("OK", len(ins), "focos ->", out)
+
+# ---- per-fire weekly foci (optional) ----
+ev_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "events.json")
+if os.path.exists(ev_path):
+    ESTEP = 0.05
+    ev_out = os.path.join(out, "ev")
+    os.makedirs(ev_out, exist_ok=True)
+    dates = pd.to_datetime(ins.acq_date)
+    for ev in json.load(open(ev_path, encoding="utf-8")):
+        idx = [names.index(n) for n in ev["provs"]]
+        start = pd.Timestamp(year=ev["year"], month=ev["from"], day=1)
+        end = pd.Timestamp(year=ev["year"] + (ev["to"] == 12), month=ev["to"] % 12 + 1, day=1)
+        sel = ins[ins.prov.isin(idx) & (dates >= start) & (dates < end)].copy()
+        sel["week"] = ((pd.to_datetime(sel.acq_date) - start).dt.days // 7).astype(int)
+        sel["ex"] = (np.floor(sel.longitude / ESTEP) * ESTEP + ESTEP / 2).round(3)
+        sel["ey"] = (np.floor(sel.latitude / ESTEP) * ESTEP + ESTEP / 2).round(3)
+        c = sel.groupby(["week", "ex", "ey"]).size().reset_index(name="n")
+        weeks = int((end - start).days // 7) + 1
+        last = str(sel.acq_date.max()) if len(sel) else None
+        payload = {"step": ESTEP, "start": str(start.date()), "weeks": weeks, "last": last, "total": int(len(sel)),
+                   "cells": [[float(r.ex), float(r.ey), int(r.week), int(r.n)] for r in c.itertuples()]}
+        js = "window.EV_FOCI=window.EV_FOCI||{};window.EV_FOCI[" + json.dumps(ev["id"]) + "]=" + json.dumps(payload, separators=(",", ":")) + ";"
+        open(os.path.join(ev_out, ev["id"] + ".js"), "w", encoding="utf-8").write(js)
+        print("  ev", ev["id"], len(sel), "focos,", len(c), "celdas-semana")

@@ -1,0 +1,58 @@
+[
+ {
+  "id": "cordoba",
+  "provs": [
+   "Córdoba"
+  ],
+  "year": 2020,
+  "from": 5,
+  "to": 11
+ },
+ {
+  "id": "delta",
+  "provs": [
+   "Santa Fe",
+   "Entre Ríos",
+   "Buenos Aires"
+  ],
+  "year": 2020,
+  "from": 1,
+  "to": 12
+ },
+ {
+  "id": "misiones",
+  "provs": [
+   "Misiones"
+  ],
+  "year": 2020,
+  "from": 5,
+  "to": 12
+ },
+ {
+  "id": "corrientes",
+  "provs": [
+   "Corrientes"
+  ],
+  "year": 2022,
+  "from": 1,
+  "to": 12
+ },
+ {
+  "id": "mendoza",
+  "provs": [
+   "Mendoza"
+  ],
+  "year": 2023,
+  "from": 1,
+  "to": 12
+ },
+ {
+  "id": "chubut",
+  "provs": [
+   "Chubut"
+  ],
+  "year": 2026,
+  "from": 1,
+  "to": 10
+ }
+]

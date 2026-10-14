@@ -178,9 +178,9 @@
     for (c = 0; c < nCrew; c++) s += crewSVG(c);
     if (means.plane) s += '<path id="sg-ppath" d="' + PLANE_PATH + '" stroke="rgba(255,240,220,.28)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + PLANE;
     if (means.heli) s += '<path id="sg-hpath" d="M' + HELI_KEYS.map(function (k) { return k[1] + ' ' + k[2]; }).join('L') + '" stroke="rgba(255,240,220,.22)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + HELI;
-    s += '<g id="sg-label" opacity="0"><rect x="138" y="58" width="168" height="31" rx="6" fill="rgba(12,8,6,.74)"/>' +
-      '<text id="sg-count" x="146" y="72" font-size="9.6" fill="#f4eae3" font-weight="700">0 ' + (o.unit || 'ha') + ' · según la fuente</text>' +
-      '<text x="146" y="83" font-size="7" fill="#c8b6aa">Mancha oscura: tamaño esquemático (escala log.)</text></g>';
+    s += '<g id="sg-label" opacity="0"><rect x="186" y="74" width="168" height="31" rx="6" fill="rgba(10,10,10,.82)"/>' +
+      '<text id="sg-count" x="194" y="88" font-size="9.6" fill="#f4eae3" font-weight="700">0 ' + (o.unit || 'ha') + ' · según la fuente</text>' +
+      '<text x="194" y="99" font-size="7" fill="#c8b6aa">Mancha oscura: tamaño esquemático (escala log.)</text></g>';
     s += '</svg>';
 
     var R = null;
