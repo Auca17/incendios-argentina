@@ -14,6 +14,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
 #map{position:absolute;inset:0;width:100%;height:100%}
 #yearbadge{position:absolute;left:18px;bottom:78px;font-weight:800;font-size:64px;line-height:1;
   letter-spacing:-2px;color:rgba(255,200,120,.16);pointer-events:none;font-variant-numeric:tabular-nums}
+#yearbadge.cmp{font-size:40px;letter-spacing:-1px}
 #yearbadge small{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--muted);opacity:.9;margin-top:4px}
 #scenewrap{padding:26px 28px 90px 12px;display:flex;flex-direction:column;justify-content:safe center;gap:14px;min-width:0;overflow-y:auto}
 
@@ -107,6 +108,32 @@ ol.rank .rl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 ol.rank .rb{height:7px;background:#21150f;border-radius:4px;overflow:hidden} ol.rank .rb i{display:block;height:100%;background:var(--fire);border-radius:4px}
 ol.rank .rv{text-align:right;font-variant-numeric:tabular-nums}
 ol.rank button:focus-visible,.x:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+
+/* two-year comparison */
+.tabs{display:flex;gap:4px;padding:3px;margin-bottom:12px;border:1px solid var(--line);border-radius:22px;background:#100a07}
+.tabs button{flex:1;border:0;border-radius:18px;padding:7px 10px;background:transparent;color:var(--muted);font:inherit;font-size:13px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--fire);color:#1b0c04;font-weight:700}
+.cmpsel{display:flex;gap:12px;flex-wrap:wrap}
+.cmpsel label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.cmpsel select{background:#2a170e;color:var(--text);border:1px solid #6a3a24;border-radius:8px;padding:5px 8px;font:inherit;font-size:14px}
+.seg{display:flex;margin-top:10px;border:1px solid #6a3a24;border-radius:10px;overflow:hidden}
+.seg button{flex:1;border:0;padding:7px 8px;background:#1a110d;color:#e4d6cc;font:inherit;font-size:13px;cursor:pointer}
+.seg button+button{border-left:1px solid #6a3a24}
+.seg button[aria-pressed="true"]{background:#3a2012;color:var(--text);font-weight:700;box-shadow:inset 0 -2px 0 var(--gold)}
+.legend .divbar{background:linear-gradient(90deg,rgb(150,210,255),rgb(40,110,190) 48%,#2a1d17 50%,rgb(200,90,20) 52%,rgb(255,196,120))}
+.small{font-size:12.5px;color:var(--muted);margin:.5em 0 0;line-height:1.45}
+.warn{font-size:12.5px;color:#ffd9a0;margin:.5em 0 0;line-height:1.45}
+.warn:empty{display:none}
+table.cmpt{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;font-variant-numeric:tabular-nums}
+table.cmpt th,table.cmpt td{padding:4px 6px;text-align:right;border-bottom:1px solid #21150f}
+table.cmpt thead th{color:var(--muted);font-weight:600}
+table.cmpt th[scope=row],table.cmpt thead th:first-child{text-align:left}
+table.cmpt th button{border:0;background:none;color:#e4d6cc;font:inherit;padding:0;cursor:pointer;text-align:left}
+table.cmpt th button:hover{color:var(--gold)}
+table.cmpt tr.on{background:#3a2012}
+table.cmpt td small{display:block;font-size:11px;opacity:.85}
+table.cmpt .up{color:rgb(255,170,90)} table.cmpt .down{color:rgb(130,190,250)}
+.seg button:focus-visible,.tabs button:focus-visible,.cmpsel select:focus-visible,table.cmpt button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 
 /* scroll-driven event column */
 .stages{position:sticky;top:-30px;z-index:3;display:flex;flex-wrap:wrap;align-items:center;gap:6px;

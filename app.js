@@ -163,6 +163,8 @@
     var parts = decodeURIComponent((location.hash || '').slice(1)).split('&'), o = { slide: parseInt(parts[0], 10) };
     parts.slice(1).forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) o[kv.slice(0, i)] = kv.slice(i + 1); });
     o.y = YEARS.indexOf(+o.y) >= 0 ? +o.y : null; o.p = PROVS.indexOf(o.p) >= 0 ? o.p : null;
+    var c = (o.c || '').split('-');
+    o.c = YEARS.indexOf(+c[0]) >= 0 && YEARS.indexOf(+c[1]) >= 0 ? { a: +c[0], b: +c[1], view: /^[abd]$/.test(c[2]) ? c[2] : 'd' } : null;
     return o;
   })();
   function monthSeries(provs, year) {
@@ -175,11 +177,44 @@
     return out;
   }
 
+  /* ---------- comparación de dos años ---------- */
+  var DIFF_MIN = 3;
+  function yearCells(y) { return D.grid.anios[String(y)] || []; }
+  function maxOf(cs) { var m = 1; cs.forEach(function (c) { if (c[2] > m) m = c[2]; }); return m; }
+  function diffCells(a, b) {
+    var m = {};
+    yearCells(a).forEach(function (c) { m[c[0] + ',' + c[1]] = [c[0], c[1], -c[2]]; });
+    yearCells(b).forEach(function (c) { var k = c[0] + ',' + c[1]; if (m[k]) m[k][2] += c[2]; else m[k] = [c[0], c[1], c[2]]; });
+    return Object.keys(m).map(function (k) { return m[k]; });
+  }
+  /* colorblind-safe diverging scale: blue = fewer heat spots in B, orange = more; symmetric, log magnitude */
+  function divColor(d, mx) {
+    var t = Math.min(1, Math.log(1 + Math.abs(d)) / Math.log(1 + mx)), a = (0.4 + 0.6 * t).toFixed(2);
+    var c = d > 0 ? [200 + 55 * t, 90 + 106 * t, 20 + 100 * t] : [40 + 110 * t, 110 + 100 * t, 190 + 65 * t];
+    return 'rgba(' + c.map(Math.round).join(',') + ',' + a + ')';
+  }
+  function commonMonths(a, b) {
+    var f = 1, t = 12;
+    [a, b].forEach(function (y) { if (y === 2012) f = 2; if (y === 2026) t = 9; });
+    return [f, t];
+  }
+  function provRange(p, y, f, t) { var o = D.pm[p] || {}, s = 0; for (var m = f; m <= t; m++) s += o[mkey(y, m)] || 0; return s; }
+  function partialNote(a, b) {
+    var L = [];
+    if (a === 2026 || b === 2026) L.push('2026 incluye datos solo hasta el 14/10');
+    if (a === 2012 || b === 2012) L.push('2012 empieza el 20/01');
+    if (!L.length || a === b) return '';
+    var cm = commonMonths(a, b);
+    return 'Atención: ' + L.join(' y ') + '. El mapa compara años completos, así que la diferencia está sesgada; el ranking usa solo los meses completos en común (' + MESES[cm[0] - 1] + '–' + MESES[cm[1] - 1] + ').';
+  }
+  function cmpActive() { return cur === 0 && state.cmp; }
+
   /* ---------- mapa ---------- */
   var LON0 = -73.8, LON1 = -53.4, LAT0 = -55.3, LAT1 = -21.6, K = Math.cos(38 * Math.PI / 180);
   var cv = $('#map'), ctx = cv.getContext('2d');
   var base = document.createElement('canvas'), bctx = base.getContext('2d');
-  var state = { year: URLP.y || 2020, all: false, hi: [], marker: null, prov: URLP.p, hover: null };
+  var state = { year: URLP.y || 2020, all: false, hi: [], marker: null, prov: URLP.p, hover: null, cmp: URLP.c };
+  if (state.cmp) state.year = state.cmp.b;
   var cellIdx = {};
   var geo = D.prov.features, paths = [], F = null, dpr = 1;
 
@@ -202,9 +237,25 @@
     if (!F) return;
     bctx.setTransform(dpr, 0, 0, dpr, 0, 0); bctx.clearRect(0, 0, F.w, F.h);
     paths.forEach(function (o) { bctx.fillStyle = state.hi.indexOf(o.name) >= 0 ? '#2b1a12' : '#1a120e'; bctx.fill(o.p); });
-    var cw = STEP * K * F.s + 0.7, ch = STEP * F.s + 0.7, mx = state.all ? maxAll : maxN;
-    cellIdx = {}; cells().forEach(function (c) { cellIdx[Math.floor(c[0] / STEP) + ',' + Math.floor(c[1] / STEP)] = c[2]; });
-    cells().forEach(function (c) { var q = project(c[0], c[1]); bctx.fillStyle = colorFor(c[2], mx); bctx.fillRect(q[0] - cw / 2, q[1] - ch / 2, cw, ch); });
+    var cw = STEP * K * F.s + 0.7, ch = STEP * F.s + 0.7, mx = state.all ? maxAll : maxN, C = cmpActive(), cs, col;
+    cellIdx = {};
+    function ix(c) { return Math.floor(c[0] / STEP) + ',' + Math.floor(c[1] / STEP); }
+    if (C) {
+      yearCells(C.a).forEach(function (c) { cellIdx[ix(c)] = { a: c[2], b: 0 }; });
+      yearCells(C.b).forEach(function (c) { var k = ix(c); if (cellIdx[k]) cellIdx[k].b = c[2]; else cellIdx[k] = { a: 0, b: c[2] }; });
+      if (C.view === 'd') {
+        cs = diffCells(C.a, C.b).filter(function (c) { return Math.abs(c[2]) >= DIFF_MIN; });
+        var md = 1; cs.forEach(function (c) { if (Math.abs(c[2]) > md) md = Math.abs(c[2]); });
+        col = function (c) { return divColor(c[2], md); };
+      } else {
+        var mm = Math.max(maxOf(yearCells(C.a)), maxOf(yearCells(C.b)));
+        cs = yearCells(C.view === 'a' ? C.a : C.b); col = function (c) { return colorFor(c[2], mm); };
+      }
+    } else {
+      cs = cells(); col = function (c) { return colorFor(c[2], mx); };
+      cs.forEach(function (c) { cellIdx[ix(c)] = c[2]; });
+    }
+    cs.forEach(function (c) { var q = project(c[0], c[1]); bctx.fillStyle = col(c); bctx.fillRect(q[0] - cw / 2, q[1] - ch / 2, cw, ch); });
     bctx.lineJoin = 'round';
     paths.forEach(function (o) { if (state.hi.indexOf(o.name) < 0) { bctx.strokeStyle = 'rgba(120,84,66,.55)'; bctx.lineWidth = 0.7; bctx.stroke(o.p); } });
     paths.forEach(function (o) { if (state.hi.indexOf(o.name) >= 0) { bctx.strokeStyle = '#ff9a3c'; bctx.lineWidth = 2; bctx.shadowColor = 'rgba(255,140,40,.8)'; bctx.shadowBlur = 10; bctx.stroke(o.p); bctx.shadowBlur = 0; } });
@@ -227,8 +278,10 @@
   function startLoop() { cancelAnimationFrame(raf); if (state.marker && !REDUCED) raf = requestAnimationFrame(loop); else paint(0); }
   function setMap(o) { for (var k in o) state[k] = o[k]; drawBase(); startLoop(); badge(); }
   function badge() {
-    var el = $('#yearbadge');
+    var el = $('#yearbadge'); el.classList.toggle('cmp', !!cmpActive());
     if (state.all) { el.innerHTML = '2012–2026<small>focos acumulados</small>'; return; }
+    var C = cmpActive();
+    if (C) { el.innerHTML = C.a + '→' + C.b + '<small>' + ({ a: 'mostrando ' + C.a, b: 'mostrando ' + C.b, d: 'diferencia de focos, ' + C.b + ' − ' + C.a })[C.view] + '</small>'; return; }
     el.innerHTML = state.year + '<small>' + fmt(totalYear(state.year)) + ' focos de calor' + (state.year === 2026 ? ' (hasta el 14/10)' : '') + (state.year === 2012 ? ' (desde el 20/01)' : '') + '</small>';
   }
 
@@ -246,8 +299,16 @@
   function periodLabel() { return state.all ? '2012–2026' : String(state.year); }
   function showTip(h, x, y) {
     if (!h.prov && !h.n) { tip.hidden = true; return; }
-    var t = h.prov ? '<b>' + h.prov.name + '</b>' + (state.all ? '' : '<span>' + fmt(provYear(h.prov.name, state.year)) + ' focos en ' + state.year + '</span>') : '<b>Fuera del territorio argentino</b>';
-    t += '<span class="cell">Celda de 0,25° (unos 25 km) en ' + deg(h.clat, 'N', 'S') + ', ' + deg(h.clon, 'E', 'O') + ': <b>' + fmt(h.n) + '</b> ' + (h.n === 1 ? 'foco' : 'focos') + ' (' + periodLabel() + ')</span>';
+    var C = cmpActive(), where = 'Celda de 0,25° (unos 25 km) en ' + deg(h.clat, 'N', 'S') + ', ' + deg(h.clon, 'E', 'O');
+    var t = h.prov ? '<b>' + h.prov.name + '</b>' : '<b>Fuera del territorio argentino</b>';
+    if (C) {
+      var v = h.n || { a: 0, b: 0 }, d = v.b - v.a;
+      if (h.prov) t += '<span>' + fmt(provYear(h.prov.name, C.a)) + ' focos en ' + C.a + ' · ' + fmt(provYear(h.prov.name, C.b)) + ' en ' + C.b + '</span>';
+      t += '<span class="cell">' + where + ': <b>' + fmt(v.a) + '</b> en ' + C.a + ', <b>' + fmt(v.b) + '</b> en ' + C.b + ' (' + (d > 0 ? '+' : d < 0 ? '−' : '') + fmt(Math.abs(d)) + ')</span>';
+    } else {
+      if (h.prov && !state.all) t += '<span>' + fmt(provYear(h.prov.name, state.year)) + ' focos en ' + state.year + '</span>';
+      t += '<span class="cell">' + where + ': <b>' + fmt(h.n) + '</b> ' + (h.n === 1 ? 'foco' : 'focos') + ' (' + periodLabel() + ')</span>';
+    }
     if (h.prov) t += '<span class="hint">Click para analizar la provincia</span>';
     tip.innerHTML = t; tip.hidden = false;
     var W = cv.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
@@ -271,7 +332,7 @@
   }
   function syncURL() {
     var h = '#' + cur;
-    if (cur === 0) { h += '&y=' + state.year; if (state.prov) h += '&p=' + encodeURIComponent(state.prov); }
+    if (cur === 0) { h += '&y=' + state.year; if (state.prov) h += '&p=' + encodeURIComponent(state.prov); if (state.cmp) h += '&c=' + state.cmp.a + '-' + state.cmp.b + '-' + state.cmp.view; }
     try { history.replaceState(null, '', h); } catch (e) { }
   }
 
@@ -325,6 +386,36 @@
     return '<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Estacionalidad mensual en ' + p + '">' + out + '</svg>' +
       '<div class="legend2"><span><i style="background:#8a6a58"></i>promedio ' + FULL[0] + '–' + FULL[FULL.length - 1] + '</span><span><i style="background:#ff6a1a"></i>' + y + (y === 2026 ? ' (hasta el 14/10)' : '') + '</span></div>';
   }
+  function renderCompareUI() {
+    var C = state.cmp; if (!C || !$('#mode2')) return;
+    Array.prototype.forEach.call(document.querySelectorAll('.seg button'), function (b) {
+      var v = b.getAttribute('data-v'); b.textContent = v === 'd' ? 'Diferencia' : (v === 'a' ? C.a : C.b);
+      b.setAttribute('aria-pressed', String(v === C.view));
+    });
+    $('#cleg').innerHTML = C.view === 'd'
+      ? '<span>menos en ' + C.b + '</span><div class="bar divbar"></div><span>más en ' + C.b + '</span>'
+      : '<span>pocos focos</span><div class="bar"></div><span>muchos</span>';
+    $('#cnote').textContent = C.view === 'd'
+      ? 'Cada celda muestra los focos de ' + C.b + ' menos los de ' + C.a + '. Escala simétrica y logarítmica; no se pintan las celdas con menos de ' + DIFF_MIN + ' focos de diferencia.'
+      : 'Los dos años usan la misma escala de color, para que se puedan comparar.';
+    $('#cwarn').textContent = partialNote(C.a, C.b);
+  }
+  function setCompare(c) {
+    stopPlay(); state.cmp = c;
+    if (c) state.year = c.b;
+    var on = !!c;
+    $('#mode1').hidden = on; $('#mode2').hidden = !on;
+    $('#tab1').setAttribute('aria-selected', String(!on)); $('#tab2').setAttribute('aria-selected', String(on));
+    drawBase(); badge(); renderCompareUI(); renderExplore(); syncURL();
+    var yr = $('#yr'); if (yr) yr.value = state.year; var yb = $('#yb'); if (yb) yb.innerHTML = yearBars();
+  }
+  function bindCompare(C0) {
+    $('#tab1').onclick = function () { setCompare(null); };
+    $('#tab2').onclick = function () { setCompare({ a: +$('#ca').value, b: +$('#cb').value, view: (state.cmp || C0).view }); };
+    $('#ca').onchange = $('#cb').onchange = function () { setCompare({ a: +$('#ca').value, b: +$('#cb').value, view: state.cmp ? state.cmp.view : 'd' }); };
+    $('.seg').onclick = function (e) { var b = e.target.closest && e.target.closest('button[data-v]'); if (b && state.cmp) setCompare({ a: state.cmp.a, b: state.cmp.b, view: b.getAttribute('data-v') }); };
+    renderCompareUI();
+  }
   function renderExplore() {
     var el = $('#explore'); if (!el) return;
     var y = state.year, rk = ranking(y), tot = totalYear(y), out = '';
@@ -335,6 +426,20 @@
         '<p class="pkpi"><b>' + fmt(v) + '</b> focos en ' + y + (y === 2026 ? ' (hasta el 14/10)' : '') + ' · puesto <b>' + pos + '</b> de ' + PROVS.length + ' · ' + (tot ? (v / tot * 100).toFixed(1).replace('.', ',') : '0') + ' % del país</p>' +
         '<h4>Serie anual (click en un año para verlo en el mapa)</h4><div class="pyrs" id="pyrs">' + provYearsSVG(p) + '</div>' +
         '<h4>Estacionalidad: focos por mes</h4>' + provSeasonSVG(p, y) + '</div>';
+    }
+    if (state.cmp) {
+      var A = state.cmp.a, B = state.cmp.b, cm = commonMonths(A, B), full = cm[0] === 1 && cm[1] === 12;
+      var rows = PROVS.map(function (n) { var a = provRange(n, A, cm[0], cm[1]), b = provRange(n, B, cm[0], cm[1]); return { n: n, a: a, b: b, d: b - a }; }).sort(function (p, q) { return q.d - p.d; });
+      out += '<div class="card"><h3>Cambio por provincia · ' + A + ' → ' + B + '</h3><p class="small">' + (full ? 'Años completos.' : 'Solo meses completos en común: ' + MESES_L[cm[0] - 1] + ' a ' + MESES_L[cm[1] - 1] + '.') + ' Ordenado de mayor aumento a mayor baja.</p>' +
+        '<table class="cmpt"><thead><tr><th scope="col">Provincia</th><th scope="col">' + A + '</th><th scope="col">' + B + '</th><th scope="col">Cambio</th></tr></thead><tbody>' +
+        rows.map(function (r) {
+          var pc = r.a ? (r.d / r.a * 100) : null;
+          return '<tr' + (r.n === state.prov ? ' class="on"' : '') + '><th scope="row"><button data-p="' + r.n + '">' + r.n + '</button></th><td>' + fmt(r.a) + '</td><td>' + fmt(r.b) + '</td><td class="' + (r.d > 0 ? 'up' : r.d < 0 ? 'down' : '') + '">' + (r.d > 0 ? '+' : r.d < 0 ? '−' : '') + fmt(Math.abs(r.d)) + (pc === null ? '' : '<small>' + (pc > 0 ? '+' : pc < 0 ? '−' : '') + Math.abs(pc).toFixed(0) + ' %</small>') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+      el.innerHTML = out;
+      var pc0 = $('#pclose'); if (pc0) pc0.onclick = function () { selectProv(null); };
+      el.querySelector('.cmpt').onclick = function (e) { var b = e.target.closest && e.target.closest('button[data-p]'); if (b) selectProv(b.getAttribute('data-p') === state.prov ? null : b.getAttribute('data-p')); };
+      return;
     }
     var mx = rk[0].v || 1;
     out += '<div class="card"><h3>Ranking de provincias · ' + y + '</h3><ol class="rank">' + rk.map(function (r, i) {
@@ -436,13 +541,19 @@
         '<li><b>258.794 ha</b><span>entre el 1 de enero y el 15 de febrero de 2022, según el Servicio Nacional de Manejo del Fuego: más que en todo 2021.</span></li></ul>' +
         '<p class="cav">' + CAV + '</p>' +
         sources([{ t: 'NASA FIRMS (VIIRS S-NPP)', u: 'https://firms.modaps.eosdis.nasa.gov/' }, { t: 'National Geographic: incendios en Argentina', u: 'https://www.nationalgeographicla.com/medio-ambiente/2022/02/incendios-en-argentina-las-perdidas-sus-causas-y-la-destruccion-masiva-de-biodiversidad' }]);
-      sw.innerHTML = '<div class="card"><h3>Recorré los años</h3><div class="player"><button id="pp" aria-label="Reproducir">▶</button><input id="yr" type="range" min="' + YEARS[0] + '" max="' + YEARS[YEARS.length - 1] + '" step="1" value="' + state.year + '" aria-label="Año"></div>' +
+      var opts = function (sel) { return YEARS.map(function (y) { return '<option' + (y === sel ? ' selected' : '') + '>' + y + '</option>'; }).join(''); };
+      var C0 = state.cmp || { a: 2019, b: 2020, view: 'd' };
+      sw.innerHTML = '<div class="card"><div class="tabs" role="tablist" aria-label="Modo del mapa"><button role="tab" id="tab1" aria-selected="' + !state.cmp + '">Un año</button><button role="tab" id="tab2" aria-selected="' + !!state.cmp + '">Comparar dos años</button></div>' +
+        '<div id="mode1"' + (state.cmp ? ' hidden' : '') + '><div class="player"><button id="pp" aria-label="Reproducir">▶</button><input id="yr" type="range" min="' + YEARS[0] + '" max="' + YEARS[YEARS.length - 1] + '" step="1" value="' + state.year + '" aria-label="Año"></div>' +
         '<div class="legend"><span>pocos focos</span><div class="bar"></div><span>muchos</span></div></div>' +
+        '<div id="mode2"' + (state.cmp ? '' : ' hidden') + '><div class="cmpsel"><label>Año A <select id="ca">' + opts(C0.a) + '</select></label><label>Año B <select id="cb">' + opts(C0.b) + '</select></label></div>' +
+        '<div class="seg" role="group" aria-label="Qué mostrar en el mapa"><button data-v="a"></button><button data-v="d"></button><button data-v="b"></button></div>' +
+        '<div class="legend" id="cleg"></div><p class="small" id="cnote"></p><p class="warn" id="cwarn" role="status"></p></div></div>' +
         '<div id="explore"></div>' +
         '<div class="card"><h3>Cómo leer el mapa</h3><p>Pasá el cursor por el mapa para ver los focos de cada celda, y hacé click en una provincia (o en el ranking) para ver su serie anual y su estacionalidad.</p><p>El color de cada celda (de unos 25 km) crece con la cantidad de focos de calor detectados en el año. El norte y el litoral se encienden todos los años: hay muchas quemas agrícolas y de pastizal.</p><p>Los números de cada incendio vienen de reportes oficiales y notas periodísticas, y no del satélite.</p></div>';
       $('#yr').oninput = function (e) { stopPlay(); setYear(+e.target.value); };
       $('#pp').onclick = function () { playing ? stopPlay() : startPlay(); };
-      renderExplore();
+      renderExplore(); bindCompare(C0);
       $('#yb').onclick = function (e) { var y = e.target.getAttribute && e.target.getAttribute('data-y'); if (y) { stopPlay(); setYear(+y); } };
     } else if (sl.type === 'event') {
       var ev = sl.ev, n = cur;
@@ -477,6 +588,7 @@
     side.scrollTop = 0; if (MOBILE.matches) window.scrollTo(0, 0); renderNav(); renderScene(); syncURL(); tip.hidden = true;
   }
   function setYear(y) {
+    if (state.cmp && $('#mode2')) { state.year = y; setCompare(null); return; }
     state.year = y; state.all = false; drawBase(); badge();
     var yr = $('#yr'); if (yr) yr.value = y; var yb = $('#yb'); if (yb) yb.innerHTML = yearBars();
     renderExplore(); syncURL();
