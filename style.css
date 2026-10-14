@@ -161,6 +161,20 @@ table.cmpt .up{color:rgb(255,170,90)} table.cmpt .down{color:rgb(130,190,250)}
 .stages span.done{color:#e4d6cc;border-color:#4a3126}
 .stages span.on{background:var(--fire);border-color:var(--fire);color:#1b0c04;font-weight:700}
 .stages i{font-style:normal;color:#5a4034}
+/* ambient scene motion (transform/opacity only); scroll still decides the state */
+.scene .amb-fl{transform-box:fill-box;transform-origin:50% 100%;animation:amb-fl 1.3s ease-in-out infinite alternate}
+@keyframes amb-fl{0%{transform:none}33%{transform:scale(1.03,.96) skewX(2deg)}66%{transform:scale(.97,1.04) skewX(-2deg)}100%{transform:scale(1.02,1) skewX(1deg)}}
+.scene .amb-gl{animation:amb-gl 1.7s ease-in-out infinite alternate}
+@keyframes amb-gl{from{opacity:.8}to{opacity:1}}
+.scene .amb-sm{animation:amb-sm 7s ease-in-out infinite alternate}
+@keyframes amb-sm{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--sx,16px),-10px);opacity:.55}}
+.scene .amb-em{opacity:0;animation:amb-em 3s linear infinite}
+@keyframes amb-em{0%{transform:translate(0,0);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx,0),var(--dy,-50px));opacity:0}}
+.scene.paused *{animation-play-state:paused!important}
+.blk{transition:opacity .2s ease,transform .2s ease}
+.blk.pre{opacity:0;transform:translateY(8px)}
+@media (prefers-reduced-motion:reduce){.scene *{animation:none!important}.scene .amb-em{opacity:0}.blk{transition:none}}
+
 /* scroll cue: shown at the start of each fire, gone on first scroll */
 #cue{position:fixed;left:0;bottom:var(--s-5);z-index:5;width:var(--sidew);display:flex;flex-direction:column;align-items:center;gap:var(--s-2);
   pointer-events:none;font-size:var(--fs-sm);font-weight:600;color:var(--gold);text-shadow:0 1px 8px #000}

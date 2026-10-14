@@ -527,9 +527,30 @@
   function scheduleScene() { if (scn && !scnRaf) scnRaf = requestAnimationFrame(renderScene); }
   function mountScene(ev) {
     scnEv = ev; scnStage = -1;
-    scn = FireScene.create({ kind: ev.cause.kind, means: ev.means || { crew: 3 }, hectares: ev.hero.value, unit: ev.hero.unit === 'hectáreas' ? 'ha' : ev.hero.unit,
+    scn = FireScene.create({ still: REDUCED, kind: ev.cause.kind, means: ev.means || { crew: 3 }, hectares: ev.hero.value, unit: ev.hero.unit === 'hectáreas' ? 'ha' : ev.hero.unit,
       aria: 'Ilustración esquemática: cómo empezó, cómo creció y cómo se combatió el incendio de ' + ev.region });
     return scn.html;
+  }
+  /* ambient motion runs only while the scene is on screen and the tab is visible */
+  var ambIO = null, sceneOnScreen = true;
+  function setPaused() { var sv = $('#scenewrap svg.scene'); if (sv) sv.classList.toggle('paused', !sceneOnScreen || document.hidden); }
+  function watchScene(svg) {
+    if (ambIO) ambIO.disconnect();
+    sceneOnScreen = true; setPaused();
+    if (!('IntersectionObserver' in window)) return;
+    ambIO = new IntersectionObserver(function (es) { sceneOnScreen = es[es.length - 1].isIntersecting; setPaused(); });
+    ambIO.observe(svg);
+  }
+  document.addEventListener('visibilitychange', setPaused);
+  /* each text block fades in once (200 ms) when it first enters the reading area */
+  var blkIO = null;
+  function revealBlocks(root) {
+    if (blkIO) blkIO.disconnect();
+    if (REDUCED || !('IntersectionObserver' in window)) return;
+    blkIO = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.remove('pre'); blkIO.unobserve(e.target); } });
+    }, { root: MOBILE.matches ? null : root, threshold: 0.05 });
+    Array.prototype.forEach.call(root.querySelectorAll('.blk'), function (el) { el.classList.add('pre'); blkIO.observe(el); });
   }
   $('#side').addEventListener('scroll', scheduleScene, { passive: true });
   window.addEventListener('scroll', scheduleScene, { passive: true });
@@ -598,7 +619,7 @@
       count($('#heronum'), ev.hero.value);
       sw.innerHTML = '<div class="scenebox">' + mountScene(ev) + '</div><div class="scenecap" aria-live="polite"><span class="step" id="scenecap-step">1</span><span id="scenecap-text"></span></div>' +
         '<p class="cav scenecav">Ilustración esquemática de cómo suele empezar y combatirse un incendio de este tipo; no reproduce el lugar ni los hechos exactos.</p>';
-      scn.mount($('#scenewrap svg.scene'));
+      scn.mount($('#scenewrap svg.scene')); watchScene($('#scenewrap svg.scene')); revealBlocks(side);
     } else {
       setMap({ all: true, hi: [], marker: null });
       side.innerHTML = '<div class="kicker">Cómo se hizo</div><h1>Datos, límites y advertencias</h1>' +
