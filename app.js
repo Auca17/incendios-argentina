@@ -509,7 +509,9 @@
   function renderScene() {
     scnRaf = 0;
     if (!scn) return;
-    var s = toScene(readProgress()), st = s < FireScene.S_FIRE ? 0 : s < FireScene.S_FIGHT ? 1 : 2;
+    var r = readProgress(), s = toScene(r), st = s < FireScene.S_FIRE ? 0 : s < FireScene.S_FIGHT ? 1 : 2;
+    var bar = $('#sbar'); if (bar) bar.style.transform = 'scaleX(' + s.toFixed(4) + ')';
+    if (r.p > 0.01) $('#cue').hidden = true;
     if (REDUCED) s = [0.2, 0.46, 0.74][st]; // still frames chosen so each stage shows its means
     scn.update(s);
     if (st !== scnStage) {
@@ -545,7 +547,7 @@
   function show(i) {
     cur = Math.max(0, Math.min(SLIDES.length - 1, i)); stopPlay();
     var sl = SLIDES[cur], side = $('#side'), sw = $('#scenewrap');
-    scn = null; cancelAnimationFrame(scnRaf); scnRaf = 0;
+    scn = null; cancelAnimationFrame(scnRaf); scnRaf = 0; $('#cue').hidden = sl.type !== 'event';
     document.body.classList.toggle('ev', sl.type === 'event');
     if (sl.type === 'intro') {
       setMap({ year: state.year, all: false, hi: state.prov ? [state.prov] : [], marker: null });

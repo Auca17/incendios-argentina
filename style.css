@@ -161,6 +161,15 @@ table.cmpt .up{color:rgb(255,170,90)} table.cmpt .down{color:rgb(130,190,250)}
 .stages span.done{color:#e4d6cc;border-color:#4a3126}
 .stages span.on{background:var(--fire);border-color:var(--fire);color:#1b0c04;font-weight:700}
 .stages i{font-style:normal;color:#5a4034}
+/* scroll cue: shown at the start of each fire, gone on first scroll */
+#cue{position:fixed;left:0;bottom:var(--s-5);z-index:5;width:var(--sidew);display:flex;flex-direction:column;align-items:center;gap:var(--s-2);
+  pointer-events:none;font-size:var(--fs-sm);font-weight:600;color:var(--gold);text-shadow:0 1px 8px #000}
+#cue::before{content:"";position:absolute;inset:-40px 0 -24px;z-index:-1;background:linear-gradient(180deg,rgba(17,11,8,0),#110b08 55%)}
+#cue[hidden]{display:none}
+#cue i{width:10px;height:10px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);animation:cue 1.6s ease-in-out infinite}
+@keyframes cue{50%{transform:translateY(4px) rotate(45deg)}}
+@media (prefers-reduced-motion:reduce){#cue i{animation:none}}
+
 /* three chapters, natural length (a sticky variant was tried and left visible empty space) */
 .ch{padding-bottom:var(--s-6)}
 .ch-last{padding-bottom:var(--s-5)}
@@ -204,4 +213,5 @@ h3.minor{margin:var(--s-5) 0 var(--s-2);font-size:var(--fs-xs);letter-spacing:.0
   body.ev #mapwrap{order:2;height:44vh;min-height:260px}
   body.ev .stages{top:max(46vh,280px);margin:-20px -18px var(--s-4);padding:var(--s-2) 18px 0}
   .sbar{margin:0 -18px}
+  #cue{width:auto;left:0;right:0;bottom:86px}
 }
