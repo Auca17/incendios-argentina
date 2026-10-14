@@ -46,8 +46,7 @@ h2{font-size:15px;margin:1.6em 0 .5em;color:var(--gold);text-transform:uppercase
 .src{display:block;font-size:13px;color:var(--muted);margin-top:2px}
 .note{font-size:13.5px;color:var(--muted);border-left:3px solid #4a3126;padding:2px 0 2px 10px;margin:.7em 0}
 ul.facts{list-style:none;padding:0;margin:1.1em 0 0;display:grid;gap:10px}
-ul.facts li{display:grid;grid-template-columns:104px 1fr;gap:12px;align-items:start;padding:10px 12px;
-  background:#1a110d;border:1px solid var(--line);border-radius:10px}
+ul.facts li{display:grid;grid-template-columns:104px 1fr;gap:12px;align-items:start;padding:4px 0}
 ul.facts b{font-size:19px;color:var(--gold);line-height:1.15;font-variant-numeric:tabular-nums}
 ul.facts span{font-size:14.5px;color:#e4d6cc}
 .cause{margin:0 0 var(--s-4);padding:var(--s-1) 0 var(--s-1) var(--s-4);border-left:3px solid var(--fire);font-size:15px;color:#ecdccf}
@@ -89,7 +88,7 @@ svg.scene{display:block;width:100%;height:auto}
   display:grid;place-items:center}
 /* nav */
 #nav{position:absolute;right:22px;bottom:18px;display:flex;align-items:center;gap:12px;z-index:5;
-  background:rgba(20,13,10,.85);backdrop-filter:blur(6px);padding:8px 12px;border-radius:40px;border:1px solid var(--line)}
+  background:rgba(20,13,10,.95);padding:8px 12px;border-radius:40px;border:1px solid var(--line)}
 #nav button{width:46px;height:46px;border-radius:50%;border:1px solid #6a3a24;background:#2f190d;color:var(--text);
   font-size:20px;cursor:pointer}
 #nav button:hover:not(:disabled){background:var(--fire);color:#1b0c04}
@@ -201,6 +200,35 @@ h3.minor{margin:var(--s-5) 0 var(--s-2);font-size:var(--fs-xs);letter-spacing:.0
 .scenecav{margin:0}
 @media (prefers-reduced-motion:reduce){.stages span{transition:none}}
 
+/* map line for fire chapters: week, foci and date */
+#yearbadge.ev{left:16px;right:16px;bottom:16px;font-size:13px;font-weight:400;letter-spacing:0;line-height:1.45;color:var(--text-2);
+  background:rgba(13,9,7,.92);border-radius:10px;padding:8px 12px;font-variant-numeric:tabular-nums}
+#yearbadge.ev b{color:var(--text)}
+#yearbadge .key{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:4px}
+#yearbadge .key i{flex:0 0 72px;height:6px;border-radius:3px;background:linear-gradient(90deg,#b3300f,#ff7a1a,#ffe27a)}
+
+/* caveat: once, in a small fixed capsule */
+#caveat{position:absolute;top:16px;left:16px;z-index:6;max-width:min(420px,calc(100% - 32px))}
+#cavbtn{font:inherit;font-size:12px;font-weight:600;color:var(--text-2);background:#140d0a;border:1px solid var(--line-strong);
+  border-radius:999px;padding:6px 12px;cursor:pointer;text-align:left}
+#cavbtn:hover,#cavbtn[aria-expanded="true"]{color:var(--text);border-color:var(--fire)}
+#cavtxt{margin:8px 0 0;padding:12px;font-size:13px;line-height:1.5;color:var(--text-2);background:#140d0a;border:1px solid var(--line);border-radius:12px}
+#cavtxt b{color:var(--text)}
+
+/* fire chapters in the sidebar: one idea each */
+.quote{margin:0;padding:0 0 0 var(--s-4);border-left:3px solid var(--fire);font-size:17px;line-height:1.5;color:var(--text)}
+.quote p{margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:var(--s-2);margin:var(--s-3) 0 0}
+.chips span{font-size:13px;color:var(--text-2);background:#21150f;border-radius:999px;padding:4px 10px}
+.chips b{color:var(--gold)}
+details.more{margin-top:var(--s-3)}
+details.more summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--gold)}
+details.more .body{padding-top:var(--s-2)}
+details.more .body p{margin:0 0 var(--s-2);font-size:14.5px;color:var(--text-2)}
+.nextbtn{margin-top:var(--s-5);font:inherit;font-weight:700;color:#1b0c04;background:var(--fire);border:0;border-radius:999px;padding:10px 18px;cursor:pointer}
+.nextbtn:hover{background:var(--gold)}
+body.ev #side{padding-bottom:30vh}
+
 @media (max-width:900px){
   html,body{height:auto}
   #app{display:flex;flex-direction:column;height:auto}
@@ -216,16 +244,22 @@ h3.minor{margin:var(--s-5) 0 var(--s-2);font-size:var(--fs-xs);letter-spacing:.0
   #mapwrap{order:-2}
   #scenewrap{order:1}
   #side{order:0}
-  body.ev #stage{display:contents}
-  body.ev #scenewrap{position:sticky;top:0;z-index:4;order:-1;height:46vh;min-height:280px;padding:8px 12px 6px;gap:4px;
-    justify-content:flex-start;overflow:hidden;background:var(--bg);border-bottom:1px solid var(--line)}
-  body.ev .scenebox{flex:1;min-height:0;border-radius:12px}
+  body.ev #stage{display:grid;position:sticky;top:0;z-index:4;order:-1;height:50vh;min-height:320px;
+    grid-template-columns:1fr;grid-template-rows:46% 54%;background:var(--bg);border-bottom:1px solid var(--line)}
+  body.ev #mapwrap{order:0;height:auto;min-height:0}
+  body.ev #scenewrap{order:1;height:auto;min-height:0;padding:4px 12px 8px;gap:0;justify-content:center;overflow:hidden}
+  body.ev .scenebox{flex:1;min-height:0;border-radius:12px;display:flex}
   body.ev svg.scene{height:100%}
-  body.ev .scenecap{font-size:13px;line-height:1.35;min-height:0;gap:8px}
-  body.ev .scenecap .step{width:24px;height:24px;font-size:13px}
-  body.ev .scenecav{font-size:11px;line-height:1.3}
-  body.ev #mapwrap{order:2;height:44vh;min-height:260px}
-  body.ev .stages{top:max(46vh,280px);margin:-20px -18px var(--s-4);padding:var(--s-2) 18px 0}
+  body.ev .scenecap{display:none}
+  body.ev #yearbadge.ev{left:8px;right:8px;bottom:4px;padding:3px 8px;font-size:11.5px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.ev #yearbadge.ev .key{display:none}
+  body.ev #yearbadge.ev .where{display:none}
+  body.ev #caveat{position:absolute;top:6px;left:8px;right:auto;margin:0}
+  body.ev #side{padding-bottom:40vh}
+  #caveat{position:static;order:-1;margin:12px 16px 0;max-width:none}
+  body:not(.ev) #side{padding-bottom:24px}
+  #cavbtn{font-size:11.5px}
+  body.ev .stages{top:max(50vh,320px);margin:-20px -18px var(--s-4);padding:var(--s-2) 18px 0}
   .sbar{margin:0 -18px}
   #cue{width:auto;left:0;right:0;bottom:86px}
 }

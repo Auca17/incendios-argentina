@@ -22,6 +22,7 @@ Este documento resume cómo se usó la inteligencia artificial en este repositor
 7. **Nombre.** Aplicó el nombre "Foco Cero", que eligió la persona autora entre opciones propuestas.
 8. **Revisión de fuentes.** Abrió las fuentes citadas y armó `VERIFICACION.md`, que compara cada cifra y causa del sitio con el texto de su fuente. No corrigió ningún texto: las diferencias quedan anotadas para que las decida la persona autora.
 9. **Diseño final.** Reorganizó la interfaz (tarjeta única, zona segura del escenario, navegación, aviso metodológico único) y acortó los textos de interfaz sin cambiar cifras, causas ni atribuciones.
+10. **Vuelta al layout de tres columnas.** A pedido de la persona autora, restauró el layout anterior (texto, mapa y escena en tres columnas) desde el historial del repositorio y le sumó el mapa por semana, el zoom a la provincia, los textos cortos y el aviso único. Las cifras, causas y fuentes no cambiaron.
 
 ## Qué no hizo
 
