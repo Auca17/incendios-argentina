@@ -453,7 +453,23 @@
 
   /* ---------- escena guiada por scroll ---------- */
   var MOBILE = window.matchMedia('(max-width: 900px)');
-  var STAGE_NAMES = ['Cómo empezó', 'Fuego', 'Combate'];
+  var STAGE_NAMES = ['Cómo empezó', 'El fuego', 'Combate'];
+  var CHAPTERS = ['Cómo empezó', 'El fuego: cuánto se perdió', 'Cómo se combatió'];
+  /* chapter of each fact, keyed by its figure (texts in EVENTS stay untouched); default: 1, the fire */
+  var FACT_STAGE = {
+    cordoba: { 'Octubre': 2 },
+    delta: { 'Bajante': 0 },
+    misiones: { '+200': 2, '1': 2, 'Por dentro': 2, 'Denuncia': 0 },
+    chubut: { '+500': 2, '4 provincias': 2 }
+  };
+  var FACT_TAG = { mendoza: { '+30 %': 'a nivel provincial' } };
+  function factList(ev, st) {
+    var map = FACT_STAGE[ev.id] || {}, tags = FACT_TAG[ev.id] || {};
+    var L = ev.facts.filter(function (f) { return (f[0] in map ? map[f[0]] : 1) === st; });
+    return L.length ? '<ul class="facts blk">' + L.map(function (f) {
+      return '<li><b>' + f[0] + '</b><span>' + f[1] + (tags[f[0]] ? ' <em class="tag">' + tags[f[0]] + '</em>' : '') + '</span></li>';
+    }).join('') + '</ul>' : '';
+  }
   var scn = null, scnEv = null, scnStage = -1, scnRaf = 0;
   function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
   function shortCause(ev) {
@@ -478,16 +494,17 @@
     var max = (el ? el.scrollHeight : document.documentElement.scrollHeight) - vh;
     var off = el ? el.getBoundingClientRect().top : 0, line = MOBILE.matches ? 0.62 : 0.4;
     function at(sel) { var n = $(sel); return n ? clamp((n.getBoundingClientRect().top - off + top - line * vh) / (max || 1), 0, 1) : null; }
-    var a = at('#st-loss'), b = at('#st-fight');
+    var a = at('#ch-fire'), b = at('#ch-fight');
     if (a === null || b === null || !(a > 0 && b > a && b < 1)) { a = 0.3; b = 0.55; }
     return { p: max > 0 ? clamp(top / max, 0, 1) : 0, a: a, b: b };
   }
   /* piecewise map so each scene stage lines up with its text section */
+  function soft(t) { return 0.4 * t + 0.6 * t * t * (3 - 2 * t); } // gentle ease inside each stage
   function toScene(r) {
     var S1 = FireScene.S_FIRE, S2 = FireScene.S_FIGHT;
-    if (r.p <= r.a) return S1 * r.p / r.a;
-    if (r.p <= r.b) return S1 + (S2 - S1) * (r.p - r.a) / (r.b - r.a);
-    return S2 + (1 - S2) * (r.p - r.b) / (1 - r.b);
+    if (r.p <= r.a) return S1 * soft(r.p / r.a);
+    if (r.p <= r.b) return S1 + (S2 - S1) * soft((r.p - r.a) / (r.b - r.a));
+    return S2 + (1 - S2) * soft((r.p - r.b) / (1 - r.b));
   }
   function renderScene() {
     scnRaf = 0;
@@ -558,17 +575,24 @@
     } else if (sl.type === 'event') {
       var ev = sl.ev, n = cur;
       setMap({ year: ev.year, all: false, hi: ev.provs, marker: ev.marker });
-      side.innerHTML = '<div class="stages" id="stages" aria-label="Etapas de la ilustración">' +
+      var chHead = function (i) { return '<h2 class="chh blk"><span aria-hidden="true">' + (i + 1) + '</span>' + CHAPTERS[i] + '</h2>'; };
+      side.innerHTML = '<div class="stages" id="stages" aria-label="Etapas de la ilustración"><div class="sl">' +
           STAGE_NAMES.map(function (t, i) { return (i ? '<i aria-hidden="true">→</i>' : '') + '<span data-st="' + i + '">' + (i + 1) + ' ' + t + '</span>'; }).join('') + '</div>' +
-        '<section class="st" id="st-what"><div class="kicker">' + n + ' de ' + EVENTS.length + ' · ' + ev.region + ' · ' + ev.when + '</div><h1>' + ev.title + '</h1>' +
-          '<div class="hero"><span class="num" id="heronum">0</span><span class="unit">' + ev.hero.unit + '</span></div>' +
-          '<p class="herolabel">' + ev.hero.label + '<span class="src">Fuente: ' + ev.hero.src + '</span></p>' +
-          '<p class="note">' + ev.hero.note + '</p><p class="scrollhint" aria-hidden="true">Bajá para ver cómo empezó, cómo creció y cómo se combatió ↓</p></section>' +
-        '<section class="st" id="st-cause"><h2>Cómo empezó</h2><div class="cause"><h3>Según las fuentes</h3><p>' + ev.cause.text + '</p></div></section>' +
-        '<section class="st" id="st-loss"><h2>Cuánto se perdió</h2><ul class="facts">' + ev.facts.map(function (f) { return '<li><b>' + f[0] + '</b><span>' + f[1] + '</span></li>'; }).join('') + '</ul></section>' +
-        '<section class="st" id="st-fight"><h2>Cómo se combatió</h2><p class="lead">' + ev.response + '</p><p class="note">' + meansText(ev.means || { crew: 3 }) + '</p></section>' +
-        '<section class="st" id="st-sat"><h2>Lo que muestra el satélite</h2>' + monthChart(ev) + '<p class="cav">' + CAV + ' El gráfico de barras es del satélite; las cifras de arriba son de las fuentes citadas.</p></section>' +
-        '<section class="st st-last" id="st-src"><h2>Fuentes</h2><ul class="plain">' + ev.sources.map(function (s) { return '<li><a href="' + s.u + '" target="_blank" rel="noopener">' + s.t + '</a></li>'; }).join('') + '</ul></section>';
+          '<div class="sbar" aria-hidden="true"><i id="sbar"></i></div></div>' +
+        '<section class="ch" id="ch-start"><div class="chin">' +
+          '<div class="kicker blk">' + n + ' de ' + EVENTS.length + ' · ' + ev.region + ' · ' + ev.when + '</div><h1 class="blk">' + ev.title + '</h1>' +
+          '<div class="hero blk"><span class="num" id="heronum">0</span><span class="unit">' + ev.hero.unit + '</span></div>' +
+          '<p class="herolabel blk">' + ev.hero.label + '<span class="src">Fuente: ' + ev.hero.src + '</span></p>' +
+          '<p class="note blk">' + ev.hero.note + '</p>' +
+          chHead(0) + '<p class="cause blk"><span class="lab">Según las fuentes.</span> ' + ev.cause.text + '</p>' + factList(ev, 0) +
+        '</div></section>' +
+        '<section class="ch" id="ch-fire"><div class="chin">' + chHead(1) +
+          '<p class="burnnote blk">La mancha oscura de la ilustración representa las <b>' + fmt(ev.hero.value) + ' ' + ev.hero.unit + '</b> de la cifra principal, en escala esquemática.</p>' + factList(ev, 1) + '</div></section>' +
+        '<section class="ch ch-last" id="ch-fight"><div class="chin">' + chHead(2) +
+          '<p class="lead blk">' + ev.response + '</p><p class="note blk">' + meansText(ev.means || { crew: 3 }) + '</p>' + factList(ev, 2) +
+          '<div class="blk">' + monthChart(ev) + '</div><p class="cav blk">' + CAV + ' El gráfico de barras es del satélite; las cifras de arriba son de las fuentes citadas.</p>' +
+          '<h3 class="minor blk">Fuentes</h3><ul class="plain blk">' + ev.sources.map(function (s) { return '<li><a href="' + s.u + '" target="_blank" rel="noopener">' + s.t + '</a></li>'; }).join('') + '</ul>' +
+        '</div></section>';
       count($('#heronum'), ev.hero.value);
       sw.innerHTML = '<div class="scenebox">' + mountScene(ev) + '</div><div class="scenecap" aria-live="polite"><span class="step" id="scenecap-step">1</span><span id="scenecap-text"></span></div>' +
         '<p class="cav scenecav">Ilustración esquemática de cómo suele empezar y combatirse un incendio de este tipo; no reproduce el lugar ni los hechos exactos.</p>';
@@ -586,7 +610,7 @@
       sw.innerHTML = '<div class="card"><h3>Todos los años juntos</h3><p>Así se ve la suma de los focos de calor de 2012 a 2026. El cinturón del norte y el litoral concentra la mayor parte.</p><div class="legend"><span>pocos focos</span><div class="bar"></div><span>muchos</span></div></div>' +
         '<div class="card"><h3>Para volver a empezar</h3><p>Usá <b>←</b> o los puntos de abajo para volver al recorrido.</p></div>';
     }
-    side.scrollTop = 0; if (MOBILE.matches) window.scrollTo(0, 0); renderNav(); renderScene(); syncURL(); tip.hidden = true; enter(side); enter(sw);
+    side.scrollTop = 0; if (MOBILE.matches) window.scrollTo(0, 0); renderNav(); renderScene(); syncURL(); tip.hidden = true; if (sl.type !== 'event') enter(side); enter(sw);
   }
   function setYear(y) {
     if (state.cmp && $('#mode2')) { state.year = y; setCompare(null); return; }
@@ -602,6 +626,7 @@
   function stopPlay() { playing = false; clearInterval(timer); var b = $('#pp'); if (b) b.textContent = '▶'; }
   function slideName(i) { return i === 0 ? 'Inicio' : i === SLIDES.length - 1 ? 'Cómo se hizo' : SLIDES[i].ev.region; }
   function enter(el) { if (REDUCED || !el) return; el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); }
+  function focusSide() { if (!MOBILE.matches) $('#side').focus({ preventScroll: true }); }
   function renderNav() {
     $('#prev').disabled = cur === 0; $('#next').disabled = cur === SLIDES.length - 1;
     $('#dots').innerHTML = SLIDES.map(function (s, i) { var t = slideName(i); return '<button class="' + (i === cur ? 'on' : '') + '" data-i="' + i + '" title="' + t + '" aria-label="' + (i + 1) + ': ' + t + '"' + (i === cur ? ' aria-current="page"' : '') + '></button>'; }).join('');
@@ -612,8 +637,9 @@
   $('#next').onclick = function () { show(cur + 1); };
   document.addEventListener('keydown', function (e) {
     if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName) && e.key !== 'Escape') { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') e.target.blur(); else return; }
-    if (e.key === 'ArrowRight' || e.key === 'PageDown') show(cur + 1);
-    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') show(cur - 1);
+    // ←/→ change screen; Space, Page Up/Down and ↑/↓ scroll the column, which moves the scene
+    if (e.key === 'ArrowRight') { show(cur + 1); focusSide(); }
+    else if (e.key === 'ArrowLeft') { show(cur - 1); focusSide(); }
   });
   var tx = null;
   document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
@@ -622,6 +648,7 @@
 
   resize();
   show(isNaN(URLP.slide) ? 0 : URLP.slide);
+  focusSide();
   // el layout puede terminar de acomodarse después del primer render
   requestAnimationFrame(function () { resize(); startLoop(); });
 })();
