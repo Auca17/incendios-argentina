@@ -20,10 +20,12 @@ Este documento resume cómo se usó la inteligencia artificial en este repositor
 5. **Datos.** Corrió `scripts/process.py` sobre los CSV de FIRMS que proveyó la persona autora. Comprobó que `data/data.js` saliera idéntico al anterior (mismo hash) y generó los archivos semanales por incendio.
 6. **Verificación.** Probó cada tanda con capturas automáticas en escritorio (1440 px) y en móvil (390 px), en local y en la URL publicada, incluida una comparación de píxeles para comprobar que la escena cambia en cada tramo del scroll.
 7. **Nombre.** Aplicó el nombre "Foco Cero", que eligió la persona autora entre opciones propuestas.
+8. **Revisión de fuentes.** Abrió las fuentes citadas y armó `VERIFICACION.md`, que compara cada cifra y causa del sitio con el texto de su fuente. No corrigió ningún texto: las diferencias quedan anotadas para que las decida la persona autora.
+9. **Diseño final.** Reorganizó la interfaz (tarjeta única, zona segura del escenario, navegación, aviso metodológico único) y acortó los textos de interfaz sin cambiar cifras, causas ni atribuciones.
 
 ## Qué no hizo
 
-- No generó imágenes, ilustraciones ni gráficos con IA generativa de imágenes. Todo el dibujo es código escrito a mano y renderizado por el navegador.
+- No generó imágenes, ilustraciones, animaciones ni gráficos con IA generativa de imágenes. Las ilustraciones y animaciones están escritas en código (SVG, CSS y canvas) y las dibuja el navegador.
 - No agregó cifras, causas ni fuentes por su cuenta. Las cifras de cada incendio, sus fuentes y el lenguaje de atribución vienen del trabajo de la persona autora.
 - No cambió el procesamiento de `data/data.js`: el archivo regenerado es idéntico al que había generado la persona autora.
 
