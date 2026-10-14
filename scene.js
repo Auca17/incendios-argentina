@@ -178,9 +178,9 @@
     for (c = 0; c < nCrew; c++) s += crewSVG(c);
     if (means.plane) s += '<path id="sg-ppath" d="' + PLANE_PATH + '" stroke="rgba(255,240,220,.28)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + PLANE;
     if (means.heli) s += '<path id="sg-hpath" d="M' + HELI_KEYS.map(function (k) { return k[1] + ' ' + k[2]; }).join('L') + '" stroke="rgba(255,240,220,.22)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + HELI;
-    if (o.label !== false) s += '<g id="sg-label" opacity="0"><rect x="186" y="74" width="168" height="31" rx="6" fill="rgba(10,10,10,.82)"/>' +
-      '<text id="sg-count" x="194" y="88" font-size="9.6" fill="#f4eae3" font-weight="700">0 ' + (o.unit || 'ha') + ' · según la fuente</text>' +
-      '<text x="194" y="99" font-size="7" fill="#c8b6aa">Mancha oscura: tamaño esquemático (escala log.)</text></g>';
+    s += '<g id="sg-label" opacity="0"><rect x="196" y="58" width="176" height="34" rx="6" fill="rgba(12,8,6,.74)"/>' +
+      '<text id="sg-count" x="204" y="73" font-size="10.5" fill="#f4eae3" font-weight="700">0 ' + (o.unit || 'ha') + ' · según la fuente</text>' +
+      '<text x="204" y="85" font-size="7.6" fill="#c8b6aa">Mancha oscura: tamaño esquemático (escala log.)</text></g>';
     s += '</svg>';
 
     var R = null;
@@ -245,10 +245,8 @@
       /* burned area grows to the peak and then stays */
       var bt = ease(seg(s, 0.05, 0.6));
       R.burn.setAttribute('rx', n1(burnR * bt)); R.burn.setAttribute('ry', n1(burnR * 0.3 * bt));
-      if (R.label) {
-        R.label.setAttribute('opacity', seg(s, 0.02, 0.07).toFixed(2));
-        R.count.textContent = fmt((o.hectares || 0) * ease(seg(s, 0.05, 0.6))) + ' ' + (o.unit || 'ha') + ' · según la fuente';
-      }
+      R.label.setAttribute('opacity', seg(s, 0.02, 0.07).toFixed(2));
+      R.count.textContent = fmt((o.hectares || 0) * ease(seg(s, 0.05, 0.6))) + ' ' + (o.unit || 'ha') + ' · según la fuente';
 
       var lits = [], sizes = R.flames.map(function (q, i) {
         var r = flameK(q.f, s), k = r.k * q.f.k, tall = 1 + 0.25 * heat;

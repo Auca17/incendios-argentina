@@ -13,44 +13,19 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="loading" aria-hidden="true"><b>Foco Cero</b><span>Cargando datos…</span></div>
-
-<div id="stage">
-  <canvas id="map" role="img" aria-label="Mapa de Argentina con los focos de calor. Para analizar una provincia con teclado, usá el capítulo Explorar."></canvas>
-  <div id="scenewrap"></div>
-  <div id="figure" class="glass" hidden><b id="figN"></b><span id="figL"></span></div>
-  <div id="foot"></div>
-  <div id="cue" aria-hidden="true" hidden><span></span><i></i></div>
-  <div id="tip" role="tooltip" hidden></div>
+<div id="app">
+  <aside id="side" tabindex="-1" aria-label="Texto de la pantalla"></aside>
+  <main id="stage">
+    <div id="mapwrap"><canvas id="map" role="img" aria-label="Mapa de Argentina con focos de calor por celda. Para analizar una provincia con teclado, usá el ranking."></canvas><div id="yearbadge"></div><div id="tip" role="tooltip" hidden></div></div>
+    <section id="scenewrap"></section>
+    <nav id="nav" aria-label="Navegación">
+      <button id="prev" aria-label="Anterior">←</button>
+      <div id="dots" role="group" aria-label="Pantallas"></div>
+      <button id="next" aria-label="Siguiente">→</button>
+    </nav>
+  </main>
+  <div id="cue" aria-hidden="true" hidden><span>Seguí bajando: el fuego avanza</span><i></i></div>
 </div>
-
-<header id="top">
-  <button id="brand" class="cap" data-go="0" aria-label="Foco Cero, volver al inicio"><b>Foco Cero</b><span>2012–2026</span></button>
-  <span id="chip" class="cap" aria-hidden="true"></span>
-  <div class="tr">
-    <button id="info" class="cap" aria-haspopup="dialog" aria-controls="about" aria-label="Sobre los datos">ⓘ</button>
-    <button id="pause" class="cap" aria-pressed="false">Pausar animación</button>
-    <button class="cap lnk" data-go="8">Cómo se hizo</button>
-  </div>
-</header>
-
-<main id="cards" aria-label="Relato"></main>
-
-<button id="caveat" class="cap" aria-haspopup="dialog" aria-controls="about">Focos de calor ≠ hectáreas quemadas · Escena esquemática</button>
-<nav id="dots" aria-label="Capítulos"><ol id="railList"></ol></nav>
-<nav id="mnav" aria-label="Capítulos"><button id="prev" aria-label="Capítulo anterior">←</button><span id="mname"></span><button id="next" aria-label="Capítulo siguiente">→</button></nav>
-<div id="progress" aria-hidden="true"><i></i></div>
-
-<div id="about" class="pop glass" role="dialog" aria-labelledby="aboutT" hidden>
-  <h2 id="aboutT">Cómo leer estos datos</h2>
-  <p>Cada punto del mapa es un <b>foco de calor</b>: un píxel de unos 375 m donde el satélite (sensor VIIRS, NASA FIRMS) detectó una temperatura anómala. No es una hectárea quemada ni necesariamente un incendio forestal: incluye quemas agrícolas, de pastizal y de rastrojo. Un satélite pasa pocas veces por día y puede perder fuegos breves o tapados por nubes.</p>
-  <p>Las hectáreas, causas y medios de combate de cada incendio vienen de informes oficiales y notas periodísticas, citados en cada capítulo con su fuente.</p>
-  <p>Las escenas son <b>ilustraciones esquemáticas</b> de cómo suele empezar y combatirse un incendio de ese tipo. No reproducen el lugar ni los hechos exactos, y solo muestran los medios de combate que nombran las fuentes.</p>
-  <button class="cap" data-close>Cerrar</button>
-</div>
-<div id="srcpanel" class="pop glass" role="dialog" aria-labelledby="srcT" hidden></div>
-
-<div id="spacer" aria-hidden="true"></div>
 <p id="announce" class="sr-only" aria-live="polite"></p>
 <script src="data/data.js"></script>
 <script src="scene.js"></script>
