@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Argentina arde: focos de calor 2012–2026</title>
+<meta name="description" content="Recorrido interactivo por los focos de calor detectados desde el espacio en Argentina entre 2012 y 2026, y por seis grandes incendios con sus cifras y fuentes.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <aside id="side" aria-live="polite"></aside>
+  <main id="stage">
+    <div id="mapwrap"><canvas id="map" aria-label="Mapa de Argentina con focos de calor"></canvas><div id="yearbadge"></div></div>
+    <section id="scenewrap"></section>
+    <nav id="nav" aria-label="Navegación">
+      <button id="prev" aria-label="Anterior">←</button>
+      <div id="dots"></div>
+      <button id="next" aria-label="Siguiente">→</button>
+    </nav>
+  </main>
+</div>
+<script src="data/data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

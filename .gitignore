@@ -1,0 +1,7 @@
+data-raw/
+*.csv
+*.zip
+node_modules/
+.atl/
+prompt-incendios-v2.md
+odd/
