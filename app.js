@@ -512,7 +512,7 @@
     var r = readProgress(), s = toScene(r), st = s < FireScene.S_FIRE ? 0 : s < FireScene.S_FIGHT ? 1 : 2;
     var bar = $('#sbar'); if (bar) bar.style.transform = 'scaleX(' + s.toFixed(4) + ')';
     if (r.p > 0.01) $('#cue').hidden = true;
-    if (REDUCED) s = [0.2, 0.46, 0.74][st]; // still frames chosen so each stage shows its means
+    if (REDUCED) s = [0.18, 0.5, 0.8][st]; // still frames chosen so each stage shows its means
     scn.update(s);
     if (st !== scnStage) {
       scnStage = st;

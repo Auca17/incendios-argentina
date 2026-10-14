@@ -1,9 +1,11 @@
 /* Scroll-driven schematic fire scene.
-   The picture is a pure function of the progress s (0..1): no timers, no self-running animation.
-   Stages: 0–0.30 ignition, 0.30–0.55 peak, 0.55–1 suppression. */
+   The state is a pure function of the progress s (0..1), reversible when scrolling up.
+   Every element follows a long, eased segment of s, so any scroll step changes something visible.
+   Stages: 0–0.34 ignition, 0.34–0.67 fire, 0.67–1 suppression.
+   Ambient CSS motion (flicker, smoke drift, embers) runs on top and never changes the state. */
 (function () {
   'use strict';
-  var S_FIRE = 0.30, S_FIGHT = 0.55, GROUND = 262;
+  var S_FIRE = 0.34, S_FIGHT = 0.67, GROUND = 262;
 
   function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
   function seg(s, a, b) { return clamp((s - a) / (b - a), 0, 1); }
@@ -13,26 +15,40 @@
   function rnd(i) { return frac(Math.sin(i * 127.1 + 311.7) * 43758.5453); }
   function hex(h) { return [1, 3, 5].map(function (k) { return parseInt(h.slice(k, k + 2), 16); }); }
   function mix(a, b, t) { var A = hex(a), B = hex(b); return 'rgb(' + [0, 1, 2].map(function (k) { return Math.round(lerp(A[k], B[k], t)); }).join(',') + ')'; }
+  /* three-stop colour ramp: a at 0, b at m, c at 1 */
+  function ramp(a, b, c, m, t) { return t < m ? mix(a, b, ease(t / m)) : mix(b, c, ease((t - m) / (1 - m))); }
   function n1(v) { return v.toFixed(1); }
   function fmt(n) { return Math.round(n).toLocaleString('es-AR'); }
+  /* piecewise-linear track with eased segments: keys = [[s, x, y], ...] */
+  function track(keys, s) {
+    if (s <= keys[0][0]) return { x: keys[0][1], y: keys[0][2], dx: 0, i: 0 };
+    for (var i = 1; i < keys.length; i++) {
+      if (s <= keys[i][0]) {
+        var a = keys[i - 1], b = keys[i], t = ease(seg(s, a[0], b[0]));
+        return { x: lerp(a[1], b[1], t), y: lerp(a[2], b[2], t), dx: b[1] - a[1], i: i };
+      }
+    }
+    var l = keys[keys.length - 1];
+    return { x: l[1], y: l[2], dx: 0, i: keys.length };
+  }
 
-  /* ---------- layout per cause ---------- */
-  var ORIGIN = { intencional: [64, 244], quema: [40, 236], sequia: [210, 230] };
+  /* ---------- layout per cause: the action sits centre-right, the left third may be under text cards ---------- */
+  var ORIGIN = { intencional: [178, 246], quema: [150, 236], sequia: [250, 232] };
   function flameSites(kind) {
-    var L = [], o = ORIGIN[kind], dmax = 330;
+    var L = [], o = ORIGIN[kind];
     for (var i = 0; i < 15; i++) {
-      var x = 46 + i * 21 + rnd(i) * 10, y = 212 + rnd(i + 20) * 42, k = 0.7 + rnd(i + 40) * 0.55, t;
-      if (kind === 'intencional') t = 0.03 + 0.25 * Math.min(1, Math.hypot(x - o[0], y - o[1]) / dmax);
-      else if (kind === 'quema') t = 0.02 + 0.26 * (x - 40) / 330;
-      else t = 0.05 + 0.23 * (0.55 * rnd(i + 60) + 0.45 * Math.abs(x - o[0]) / 170);
-      L.push({ x: x, y: y, k: k * (0.75 + (y - 212) / 160), t: t });
+      var x = 150 + i * 12.5 + rnd(i) * 8, y = 214 + rnd(i + 20) * 40, k = 0.7 + rnd(i + 40) * 0.55, t;
+      if (kind === 'intencional') t = 0.02 + 0.3 * Math.min(1, Math.hypot(x - o[0], (y - o[1]) * 1.5) / 160);
+      else if (kind === 'quema') t = 0.02 + 0.3 * (x - 150) / 190;
+      else t = 0.03 + 0.29 * (0.5 * rnd(i + 60) + 0.5 * Math.abs(x - o[0]) / 100);
+      L.push({ x: x, y: y, k: k * (0.75 + (y - 212) / 160), t: Math.min(t, 0.32) });
     }
     return L.sort(function (a, b) { return a.y - b.y; });
   }
   function nearestT(fl, x, y) {
     var best = 1, bd = 1e9;
     fl.forEach(function (f) { var d = Math.hypot(f.x - x, (f.y - y) * 1.6); if (d < bd) { bd = d; best = f.t; } });
-    return bd < 70 ? best : 2;
+    return bd < 60 ? best : 2;
   }
 
   /* ---------- drawing ---------- */
@@ -44,11 +60,11 @@
       '<radialGradient id="sg-glow"><stop offset="0" stop-color="#ffb347" stop-opacity=".6"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient>' +
       '<radialGradient id="sg-burng"><stop offset="0" stop-color="#0c0806"/><stop offset=".75" stop-color="#1a100b"/><stop offset="1" stop-color="#2a1a10" stop-opacity="0"/></radialGradient>' +
       '<linearGradient id="sg-water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6f4ff" stop-opacity=".85"/><stop offset="1" stop-color="#8fd3ff" stop-opacity="0"/></linearGradient>' +
-      '<radialGradient id="sg-puff"><stop id="sg-pf0" offset="0" stop-opacity=".85"/><stop id="sg-pf1" offset=".55" stop-opacity=".45"/><stop id="sg-pf2" offset="1" stop-opacity="0"/></radialGradient>' +
+      '<radialGradient id="sg-puff"><stop id="sg-pf0" offset="0" stop-opacity=".9"/><stop id="sg-pf1" offset=".55" stop-opacity=".5"/><stop id="sg-pf2" offset="1" stop-opacity="0"/></radialGradient>' +
       '</defs>';
   }
-  /* landscape split into parallax layers: far (mountains, horizon), mid (hills), ground (static) */
-  function landscape(kind) {
+  /* parallax layers: far (mountains, horizon) and mid (hills) pan at different speeds; ground stays */
+  function landscape(kind, lake) {
     var far = '', mid = '', ground = '';
     if (kind === 'intencional') {
       far += '<path d="M0 172L38 142L70 154L112 104L150 140L186 120L232 152L272 92L312 134L352 116L400 146V230H0Z" fill="#262230"/>';
@@ -71,6 +87,7 @@
           '<ellipse class="sg-tree" data-x="' + x + '" data-y="' + y + '" cx="0" cy="-19" rx="15" ry="7" fill="#3d4a26"/></g>';
       });
     }
+    if (lake) ground += '<ellipse cx="362" cy="226" rx="46" ry="7" fill="#26404f"/><ellipse cx="356" cy="225" rx="30" ry="3" fill="#3d6176" opacity=".7"/>';
     return { far: far, mid: mid, ground: ground };
   }
   function grass(kind) {
@@ -90,15 +107,18 @@
       '<path d="' + FLAME + '" fill="#ffe3a0" transform="scale(.4)"/></g></g>' +
       '<circle id="sg-e' + i + '" cx="0" cy="-1" r="2.2" fill="#ff5a14" opacity="0"/></g>';
   }
-  var HELI = '<g id="sg-heli" opacity="0"><g id="sg-helibody">' +
-    '<path d="M0 10V40" stroke="#4a4a4a" stroke-width=".9"/><path d="M-7 40H7L5 50H-5Z" fill="#e0701e" stroke="#2a1a10" stroke-width=".8"/>' +
+  /* helicopter faces left; the bucket hangs from a rope whose length changes when dipping */
+  var HELI = '<g id="sg-heli" opacity="0"><g id="sg-hflip"><g id="sg-helibody">' +
+    '<path id="sg-rope" d="M0 10V40" stroke="#4a4a4a" stroke-width=".9"/>' +
+    '<g id="sg-bucket" transform="translate(0 40)"><path d="M-7 0H7L5 10H-5Z" fill="#e0701e" stroke="#2a1a10" stroke-width=".8"/><path id="sg-bfill" d="M-6 2H6L4.6 9H-4.6Z" fill="#7fc4ff" opacity="0"/></g>' +
     '<path d="M20-6L58-3V1L20 4Z" fill="#9a2a14"/><path d="M54-3L60-15H64L60 1Z" fill="#9a2a14"/>' +
     '<ellipse cx="61" cy="-8" rx="6" ry="6" fill="#ddd" opacity=".18"/><path id="sg-trot" d="M61-14V-2" stroke="#ddd" stroke-width="1.4"/>' +
     '<path d="M-26 2C-26-10-14-14 0-14L14-12C20-10 22-4 22 2C22 8 14 10 0 10H-18C-24 10-26 6-26 2Z" fill="#c23a1c"/>' +
     '<path d="M-25 1C-24-8-16-12-8-12V1Z" fill="#9fd6ff" opacity=".85"/><path d="M-20 5H18" stroke="#f1e6dc" stroke-width="1.4"/>' +
     '<path d="M-18 18H16M-12 10L-14 18M8 10L10 18" stroke="#2c2c2c" stroke-width="1.6" fill="none"/>' +
     '<rect x="-2" y="-19" width="4" height="6" fill="#3a3a3a"/><ellipse cx="0" cy="-20" rx="42" ry="2.4" fill="#ddd" opacity=".2"/>' +
-    '<rect id="sg-rot" x="-42" y="-21" width="84" height="2" rx="1" fill="#e8e0d8"/></g></g>';
+    '<rect id="sg-rot" x="-42" y="-21" width="84" height="2" rx="1" fill="#e8e0d8"/></g></g></g>';
+  /* hydrant plane faces right: it crosses left to right */
   var PLANE = '<g id="sg-plane" opacity="0">' +
     '<path d="M-6-8L10-8L-2-22L-14-22Z" fill="#bdb3a8"/>' +
     '<path d="M-28-6L-35-21H-27L-20-7Z" fill="#c8321a"/><path d="M-36-2H-24L-27-6H-38Z" fill="#bdb3a8"/>' +
@@ -107,7 +127,7 @@
     '<path d="M-6 6H14L12 10H-4Z" fill="#7a7a7a"/><ellipse id="sg-prop" cx="39.5" cy="0" rx="1.8" ry="9" fill="#e8e0d8" opacity=".45"/>' +
     '<path d="M-6 2L12 2L-4 17L-17 17Z" fill="#e2d8cb"/></g>';
   function crewSVG(i) {
-    return '<g id="sg-c' + i + '" opacity="0"><path id="sg-h' + i + '" d="M5-18Q14-4 30 0L90 2" stroke="#c9b24a" stroke-width="1.5" fill="none"/>' +
+    return '<g id="sg-c' + i + '" opacity="0"><path d="M5-18Q14-4 30 0L90 2" stroke="#c9b24a" stroke-width="1.5" fill="none"/>' +
       '<path id="sg-la' + i + '" d="M0-14L-3 0" stroke="#3a3a46" stroke-width="3" stroke-linecap="round"/><path id="sg-lb' + i + '" d="M0-14L3 0" stroke="#30303a" stroke-width="3" stroke-linecap="round"/>' +
       '<rect x="3" y="-26" width="5" height="10" rx="1.5" fill="#6a4026"/><rect x="-4" y="-27" width="9" height="14" rx="2" fill="#e0601e"/>' +
       '<rect x="-4" y="-21" width="9" height="1.6" fill="#f4e27a"/><circle cx="0" cy="-31" r="3.6" fill="#e2b48c"/>' +
@@ -115,22 +135,31 @@
       '<path d="M-1-23L-9-20" stroke="#e0601e" stroke-width="2.6" stroke-linecap="round"/><path d="M-8-20L-14-21" stroke="#2a2a2a" stroke-width="2.2"/></g>';
   }
 
+  /* ---------- timelines ---------- */
+  var PLANE_PATH = 'M-80 128C40 140 140 166 240 164S420 118 520 70', PLANE_IN = S_FIGHT, PLANE_OUT = 0.9;
+  /* heli: lake -> fire -> lake -> fire, with dips (refill) and drops */
+  var HELI_KEYS = [[0.69, 450, 60], [0.74, 362, 176], [0.77, 362, 176], [0.83, 246, 116], [0.86, 232, 114], [0.91, 362, 176], [0.935, 362, 176], [0.985, 204, 114], [1, 196, 112]];
+  var HELI_DIPS = [[0.74, 0.77], [0.91, 0.935]], HELI_DROPS = [[0.83, 0.865], [0.985, 1.01]];
+  function inAny(s, list) { for (var i = 0; i < list.length; i++) if (s >= list[i][0] && s <= list[i][1]) return list[i]; return null; }
+  function bucketFull(s) { return (s > 0.765 && s < 0.85) || (s > 0.93 && s < 0.995) ? 1 : 0; }
+
   /* ---------- scene factory ---------- */
   function create(o) {
     var kind = o.kind in ORIGIN ? o.kind : 'sequia', means = o.means || { crew: 3 }, fl = flameSites(kind);
-    var nCrew = means.crew || 0, burnR = 50 + 110 * clamp(Math.log(Math.max(o.hectares || 1, 10)) / Math.log(1e6), 0, 1);
-    var s = '<svg class="scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" role="img" aria-label="' + (o.aria || 'Ilustración esquemática del incendio') + '">' + defs();
+    var nCrew = means.crew || 0, burnR = 46 + 100 * clamp(Math.log(Math.max(o.hectares || 1, 10)) / Math.log(1e6), 0, 1);
+    var burnX = kind === 'sequia' ? 250 : 240;
+    var s = '<svg class="scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice" role="img" aria-label="' + (o.aria || 'Ilustración esquemática del incendio') + '">' + defs();
     s += '<rect width="400" height="300" fill="url(#sg-sky)"/>';
     s += kind === 'sequia'
-      ? '<g id="sg-sun"><circle cx="322" cy="64" r="48" fill="#ff9a3a" opacity=".16"/><circle id="sg-sunc" cx="322" cy="64" r="26" fill="#ffbe5c"/></g>'
-      : '<g id="sg-sun"><circle id="sg-sunc" cx="336" cy="58" r="13" fill="#ffd9a0" opacity=".6"/></g>';
-    var LS = landscape(kind);
+      ? '<g id="sg-sun"><circle cx="330" cy="96" r="44" fill="#ff9a3a" opacity=".16"/><circle id="sg-sunc" cx="330" cy="96" r="24" fill="#ffbe5c"/></g>'
+      : '<g id="sg-sun"><circle id="sg-sunc" cx="336" cy="92" r="13" fill="#ffd9a0" opacity=".7"/></g>';
+    var LS = landscape(kind, !!means.heli);
     s += '<g id="sg-far">' + LS.far + '</g><g id="sg-mid">' + LS.mid + '</g>' + LS.ground;
-    s += '<ellipse id="sg-burn" cx="' + (kind === 'sequia' ? 210 : 190) + '" cy="240" rx="0" ry="0" fill="url(#sg-burng)"/>';
+    s += '<ellipse id="sg-burn" cx="' + burnX + '" cy="240" rx="0" ry="0" fill="url(#sg-burng)"/>';
     s += grass(kind);
-    if (kind === 'sequia') for (var w = 0; w < 4; w++) s += '<path class="sg-wind" d="M' + (20 + w * 80) + ' ' + (96 + w * 20) + 'q60-12 120 0" stroke="rgba(255,235,210,.4)" stroke-width="2" fill="none" stroke-linecap="round" stroke-dasharray="14 18"/>';
+    for (var w = 0; w < 4; w++) s += '<path class="sg-wind" d="M' + (120 + w * 60) + ' ' + (110 + w * 18) + 'q60-12 120 0" stroke="rgba(255,235,210,.4)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-dasharray="14 18" opacity="0"/>';
     s += '<g id="sg-smoke">';
-    for (var p = 0; p < 28; p++) s += '<g class="amb-sm" style="--sx:' + n1(12 + rnd(p + 400) * 8) + 'px;animation-duration:' + n1(6 + rnd(p + 401) * 3) + 's;animation-delay:-' + n1(rnd(p + 402) * 9) + 's"><circle id="sg-p' + p + '" r="10" fill="url(#sg-puff)" opacity="0"/></g>';
+    for (var p = 0; p < 30; p++) s += '<g class="amb-sm" style="--sx:' + n1(12 + rnd(p + 400) * 8) + 'px;animation-duration:' + n1(6 + rnd(p + 401) * 3) + 's;animation-delay:-' + n1(rnd(p + 402) * 9) + 's"><circle id="sg-p' + p + '" r="10" fill="url(#sg-puff)" opacity="0"/></g>';
     s += '</g>';
     fl.forEach(function (f, i) { s += flameSVG(f, i); });
     s += '<g id="sg-embers">';
@@ -143,128 +172,145 @@
     s += '<rect id="sg-haze" width="400" height="300" fill="#ff6a1a" opacity="0" style="mix-blend-mode:screen"/>';
     s += '<polygon id="sg-pwater" points="0,0" fill="url(#sg-water)" opacity="0"/>';
     s += '<g id="sg-hdrops" opacity="0">';
-    for (var d = 0; d < 12; d++) s += '<circle r="' + n1(1.4 + rnd(d + 200) * 1.2) + '" fill="#a8dcff"/>';
+    for (var d = 0; d < 14; d++) s += '<circle r="' + n1(1.4 + rnd(d + 200) * 1.2) + '" fill="#a8dcff"/>';
     s += '</g>';
     for (var c = 0; c < nCrew; c++) s += '<path id="sg-j' + c + '" d="M0 0" stroke="#9fd8ff" stroke-width="2" fill="none" stroke-dasharray="3 5" stroke-linecap="round" opacity="0"/>';
     for (c = 0; c < nCrew; c++) s += crewSVG(c);
-    if (means.heli) s += '<path id="sg-hpath" d="M470 46C400 36 360 104 280 104S140 100 90 96S10 40-70 28" stroke="rgba(255,240,220,.22)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + HELI;
-    if (means.plane) s += '<path id="sg-ppath" d="M-90 66Q200 92 500 42" stroke="rgba(255,240,220,.22)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + PLANE;
-    s += '<g id="sg-label" opacity="0"><rect x="10" y="10" width="236" height="34" rx="6" fill="rgba(12,8,6,.72)"/>' +
-      '<text x="18" y="25" font-size="10" fill="#f4eae3" font-weight="700">' + (o.hectares ? fmt(o.hectares) + ' ' + (o.unit || 'ha') : '') + ' · según la fuente</text>' +
-      '<text x="18" y="37" font-size="8" fill="#c8b6aa">Mancha oscura: tamaño esquemático, escala logarítmica</text></g>';
+    if (means.plane) s += '<path id="sg-ppath" d="' + PLANE_PATH + '" stroke="rgba(255,240,220,.28)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + PLANE;
+    if (means.heli) s += '<path id="sg-hpath" d="M' + HELI_KEYS.map(function (k) { return k[1] + ' ' + k[2]; }).join('L') + '" stroke="rgba(255,240,220,.22)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + HELI;
+    s += '<g id="sg-label" opacity="0"><rect x="196" y="58" width="176" height="34" rx="6" fill="rgba(12,8,6,.74)"/>' +
+      '<text id="sg-count" x="204" y="73" font-size="10.5" fill="#f4eae3" font-weight="700">0 ' + (o.unit || 'ha') + ' · según la fuente</text>' +
+      '<text x="204" y="85" font-size="7.6" fill="#c8b6aa">Mancha oscura: tamaño esquemático (escala log.)</text></g>';
     s += '</svg>';
 
     var R = null;
     function mount(svg) {
       var q = function (id) { return svg.querySelector('#' + id); };
       R = {
-        s0: q('sg-s0'), s1: q('sg-s1'), s2: q('sg-s2'), far: q('sg-far'), mid: q('sg-mid'), pf: [q('sg-pf0'), q('sg-pf1'), q('sg-pf2')],
-        embers: Array.prototype.map.call(svg.querySelectorAll('#sg-embers > g'), function (el) { return { el: el, f: +el.getAttribute('data-f') }; }), sun: q('sg-sun'), sunc: q('sg-sunc'), burn: q('sg-burn'), haze: q('sg-haze'), label: q('sg-label'),
+        s0: q('sg-s0'), s1: q('sg-s1'), s2: q('sg-s2'), sun: q('sg-sun'), sunc: q('sg-sunc'), burn: q('sg-burn'), haze: q('sg-haze'), label: q('sg-label'), count: q('sg-count'),
+        far: q('sg-far'), mid: q('sg-mid'), pf: [q('sg-pf0'), q('sg-pf1'), q('sg-pf2')],
         lighter: q('sg-lighter'), lflame: q('sg-lflame'), pwater: q('sg-pwater'), hdrops: q('sg-hdrops'),
-        heli: q('sg-heli'), helibody: q('sg-helibody'), rot: q('sg-rot'), trot: q('sg-trot'), hpath: q('sg-hpath'),
+        heli: q('sg-heli'), hflip: q('sg-hflip'), helibody: q('sg-helibody'), rot: q('sg-rot'), trot: q('sg-trot'), hpath: q('sg-hpath'),
+        rope: q('sg-rope'), bucket: q('sg-bucket'), bfill: q('sg-bfill'),
         plane: q('sg-plane'), prop: q('sg-prop'), ppath: q('sg-ppath'),
         flames: fl.map(function (f, i) { return { g: q('sg-f' + i), e: q('sg-e' + i), f: f }; }),
-        puffs: Array.prototype.map.call(svg.querySelectorAll('#sg-smoke circle'), function (el) { return el; }),
+        puffs: Array.prototype.slice.call(svg.querySelectorAll('#sg-smoke circle')),
         drops: Array.prototype.slice.call(svg.querySelectorAll('#sg-hdrops circle')),
         wind: Array.prototype.slice.call(svg.querySelectorAll('.sg-wind')),
+        embers: Array.prototype.map.call(svg.querySelectorAll('#sg-embers > g'), function (el) { return { el: el, f: +el.getAttribute('data-f') }; }),
         trees: Array.prototype.map.call(svg.querySelectorAll('.sg-tree'), function (el) { return { el: el, t: nearestT(fl, +el.getAttribute('data-x'), +el.getAttribute('data-y') + 30), c: el.getAttribute('fill') }; }),
         grass: Array.prototype.map.call(svg.querySelectorAll('#sg-grass path'), function (el) { return { el: el, t: nearestT(fl, +el.getAttribute('data-x'), +el.getAttribute('data-y')), c: el.getAttribute('stroke') }; }),
         crew: []
       };
-      for (var i = 0; i < nCrew; i++) R.crew.push({ g: q('sg-c' + i), la: q('sg-la' + i), lb: q('sg-lb' + i), j: q('sg-j' + i), x: 296 + i * 21, y: 270 + (i % 2) * 9 });
-      R.hlen = R.hpath ? R.hpath.getTotalLength() : 0;
+      for (var i = 0; i < nCrew; i++) R.crew.push({ g: q('sg-c' + i), la: q('sg-la' + i), lb: q('sg-lb' + i), j: q('sg-j' + i), x: 334 + i * 13, y: 270 + (i % 2) * 9 });
       R.plen = R.ppath ? R.ppath.getTotalLength() : 0;
     }
 
-    /* fire size of one site at progress s (0..1.15) */
+    /* when the plane passes over x (approximate inverse of its eased track) */
+    function planeAt(x) { return PLANE_IN + (PLANE_OUT - PLANE_IN) * clamp((x + 80) / 600, 0, 1); }
+    /* fire size of one site: ignition, a peak at mid scroll, then a gradual decline that never reaches zero */
     function flameK(f, s) {
-      var grow = ease(seg(s, f.t, f.t + 0.12)) * (0.55 + 0.45 * ease(seg(s, S_FIRE, 0.47)));
-      var start = 0.6 + 0.24 * (1 - f.x / 400) - (means.plane || means.heli ? 0.04 : 0);
-      var cut = ease(seg(s, start, start + 0.28));
-      return { k: grow * (1 - 0.72 * cut), cut: cut, lit: grow };
+      var lit = ease(seg(s, f.t, f.t + 0.16));
+      var env = s < 0.52 ? 0.5 + 0.5 * ease(seg(s, 0.12, 0.52)) : 1 - 0.55 * ease(seg(s, 0.52, 1));
+      var cut = 0;
+      if (means.plane) cut += 0.18 * ease(seg(s, planeAt(f.x), planeAt(f.x) + 0.05));
+      if (means.heli) { if (Math.abs(f.x - 240) < 40) cut += 0.15 * ease(seg(s, 0.83, 0.87)); if (Math.abs(f.x - 200) < 40) cut += 0.12 * ease(seg(s, 0.985, 1)); }
+      if (nCrew && f.x > 250) cut += 0.2 * ease(seg(s, 0.8, 1));
+      var k = lit * env * (1 - Math.min(cut, 0.45));
+      return { k: Math.max(k, lit * 0.22), lit: lit, cut: cut };
     }
 
     function update(s) {
       if (!R) return;
       s = clamp(s, 0, 1);
-      var I = ease(seg(s, 0.03, 0.45)) * (1 - 0.6 * ease(seg(s, 0.62, 1)));
-      R.s0.setAttribute('stop-color', mix('#18202e', '#2a0f0c', I));
-      R.s1.setAttribute('stop-color', mix('#3a3040', '#6e1f10', I));
-      R.s2.setAttribute('stop-color', mix('#7a5c48', '#c8501c', I));
-      R.haze.setAttribute('opacity', (I * 0.12).toFixed(3));
-      R.sun.setAttribute('opacity', (1 - 0.7 * I).toFixed(2));
-      if (kind === 'sequia') R.sunc.setAttribute('r', n1(26 + 2 * Math.sin(s * 40)));
-      R.wind.forEach(function (w, i) { w.setAttribute('stroke-dashoffset', n1(-s * 900 - i * 13)); w.setAttribute('opacity', (1 - 0.6 * seg(s, 0.5, 0.7)).toFixed(2)); });
+      var heat = s < 0.52 ? ease(seg(s, 0.02, 0.52)) : 1 - 0.6 * ease(seg(s, 0.52, 1));
+      /* sky: day -> reddish -> smoke grey, continuously */
+      R.s0.setAttribute('stop-color', ramp('#2d4157', '#2a0f0c', '#2b2a2c', 0.55, s));
+      R.s1.setAttribute('stop-color', ramp('#6c7f8c', '#6e1f10', '#4d4644', 0.55, s));
+      R.s2.setAttribute('stop-color', ramp('#c09a74', '#c8501c', '#7a6656', 0.55, s));
+      R.haze.setAttribute('opacity', (heat * 0.12).toFixed(3));
+      R.sun.setAttribute('opacity', (1 - 0.8 * ease(seg(s, 0, 0.6))).toFixed(2));
+      if (!o.still) {
+        R.far.setAttribute('transform', 'translate(' + n1(-16 + 10 - 20 * s) + ' ' + n1(10 * s) + ') scale(1.08 1)');
+        R.mid.setAttribute('transform', 'translate(' + n1(-16 + 14 - 28 * s) + ' ' + n1(5 * s) + ') scale(1.08 1)');
+      }
+      var wind = ease(seg(s, 0.05, 0.75));
+      R.wind.forEach(function (w, i) { w.setAttribute('stroke-dashoffset', n1(-s * 1200 - i * 13)); w.setAttribute('opacity', (0.15 + 0.6 * wind * (1 - 0.5 * seg(s, 0.8, 1))).toFixed(2)); });
 
       if (R.lighter) {
-        var lo = 1 - seg(s, 0.12, 0.2);
-        R.lighter.setAttribute('opacity', lo.toFixed(2));
-        R.lflame.setAttribute('transform', 'translate(6.5 -6) scale(' + (0.35 * (0.9 + 0.1 * Math.sin(s * 300))).toFixed(3) + ')');
+        R.lighter.setAttribute('opacity', (1 - seg(s, 0.08, 0.16)).toFixed(2));
+        R.lflame.setAttribute('transform', 'translate(6.5 -6) scale(' + (0.2 + 0.25 * seg(s, 0, 0.06)).toFixed(3) + ')');
       }
 
-      var bt = ease(seg(s, 0.22, S_FIGHT));
+      /* burned area grows to the peak and then stays */
+      var bt = ease(seg(s, 0.05, 0.6));
       R.burn.setAttribute('rx', n1(burnR * bt)); R.burn.setAttribute('ry', n1(burnR * 0.3 * bt));
-      R.label.setAttribute('opacity', seg(s, 0.36, 0.46).toFixed(2));
+      R.label.setAttribute('opacity', seg(s, 0.02, 0.07).toFixed(2));
+      R.count.textContent = fmt((o.hectares || 0) * ease(seg(s, 0.05, 0.6))) + ' ' + (o.unit || 'ha') + ' · según la fuente';
 
-      if (!o.still) { R.far.setAttribute('transform', 'translate(0 ' + n1(16 * s) + ')'); R.mid.setAttribute('transform', 'translate(0 ' + n1(8 * s) + ')'); }
-      var lits = [];
-      var sizes = R.flames.map(function (o, i) {
-        var r = flameK(o.f, s), k = r.k * o.f.k;
-        lits.push(r.k);
-        o.g.setAttribute('opacity', r.lit > 0.02 ? Math.min(1, r.lit * 3).toFixed(2) : '0');
-        o.g.setAttribute('transform', 'scale(' + k.toFixed(3) + ')');
-        o.e.setAttribute('opacity', (r.cut * 0.9 * (0.75 + 0.25 * Math.sin(s * 70 + i))).toFixed(2));
+      var lits = [], sizes = R.flames.map(function (q, i) {
+        var r = flameK(q.f, s), k = r.k * q.f.k, tall = 1 + 0.25 * heat;
+        lits.push(r.lit);
+        q.g.setAttribute('opacity', r.lit > 0.02 ? Math.min(1, r.lit * 3).toFixed(2) : '0');
+        q.g.setAttribute('transform', 'scale(' + k.toFixed(3) + ' ' + (k * tall).toFixed(3) + ')');
+        q.e.setAttribute('opacity', (r.lit * 0.9 * ease(seg(s, 0.6, 1))).toFixed(2));
         return k;
       });
-
-      R.trees.forEach(function (t) { t.el.setAttribute('fill', mix(t.c, '#140c08', ease(seg(s, t.t + 0.05, t.t + 0.2)))); });
-      R.grass.forEach(function (g) { g.el.setAttribute('stroke', mix(g.c, '#1a120c', ease(seg(s, g.t, g.t + 0.1)))); });
-
       R.embers.forEach(function (e) { e.el.setAttribute('opacity', Math.min(1, (lits[e.f] || 0) * 2).toFixed(2)); });
-      var cols = [1, 4, 7, 10, 13], steam = seg(s, 0.6, 0.95), smokeCol = mix('#857a74', '#bdb7b2', steam);
-      R.pf.forEach(function (st) { st.setAttribute('stop-color', smokeCol); });
+
+      R.trees.forEach(function (t) { t.el.setAttribute('fill', mix(t.c, '#140c08', ease(seg(s, t.t + 0.05, t.t + 0.25)))); });
+      R.grass.forEach(function (g) { g.el.setAttribute('stroke', mix(g.c, '#1a120c', ease(seg(s, g.t, g.t + 0.12)))); });
+
+      /* smoke plume: grows taller and wider, leans with the wind, light grey -> near black -> grey */
+      R.pf.forEach(function (st) { st.setAttribute('stop-color', ramp('#b8b0aa', '#2c2624', '#8e8884', 0.6, s)); });
+      var H = 30 + 200 * ease(seg(s, 0.02, 0.6)), lean = 20 + 150 * ease(seg(s, 0.05, 1)), dens = Math.min(1, 0.25 + 0.9 * heat);
+      var bx = ORIGIN[kind][0] + 50 * ease(seg(s, 0, 0.5)), by = 222;
       R.puffs.forEach(function (el, i) {
-        var c = i % cols.length, src = R.flames[cols[c]] || R.flames[0], dens = Math.min(1, sizes[cols[c]] * 1.4 + (s > S_FIRE ? 0.25 * seg(s, S_FIRE, 1) : 0));
-        var u = frac(s * 5 + i * 0.137 + c * 0.21), x = src.f.x + u * 70 + Math.sin(u * 6 + i) * 6, y = src.f.y - 20 - u * 190;
-        el.setAttribute('cx', n1(x)); el.setAttribute('cy', n1(y)); el.setAttribute('r', n1(12 + u * 42));
-        el.setAttribute('opacity', Math.min(1, dens * Math.sin(Math.PI * u) * 0.95).toFixed(2));
+        var u = frac(i / R.puffs.length + s * 2.2), side = (i % 3 - 1) * (6 + 20 * u);
+        el.setAttribute('cx', n1(bx + lean * Math.pow(u, 1.4) + side)); el.setAttribute('cy', n1(by - u * H));
+        el.setAttribute('r', n1((10 + u * 36) * (0.6 + 0.6 * ease(seg(s, 0.02, 0.55)))));
+        el.setAttribute('opacity', (dens * Math.sin(Math.PI * Math.min(1, u * 1.15)) * 0.95).toFixed(2));
       });
 
-      var water = [];
+      /* crew walk in single file towards the fire front during the whole suppression stage */
       R.crew.forEach(function (m, i) {
-        var a = ease(seg(s, 0.56 + i * 0.03, 0.72 + i * 0.03)), x = lerp(440 + i * 16, m.x, a), walking = a > 0 && a < 1;
-        var sw = walking ? Math.sin(s * 320 + i) * 16 : 0;
+        var a = ease(seg(s, 0.64 + i * 0.03, 1)), x = lerp(430 + i * 26, m.x, a), walking = a > 0 && a < 1;
+        var sw = walking ? Math.sin(s * 360 + i) * 16 : 0;
         m.g.setAttribute('opacity', a > 0 ? '1' : '0');
         m.g.setAttribute('transform', 'translate(' + n1(x) + ' ' + m.y + ')');
         m.la.setAttribute('transform', 'rotate(' + n1(sw) + ' 0 -14)'); m.lb.setAttribute('transform', 'rotate(' + n1(-sw) + ' 0 -14)');
-        var on = a >= 1 ? seg(s, 0.72 + i * 0.03, 0.76 + i * 0.03) : 0, nx = x - 14, ny = m.y - 21, tx = nx - 66 - i * 6, ty = m.y - 30 - (i % 2) * 8;
-        m.j.setAttribute('d', 'M' + n1(nx) + ' ' + n1(ny) + 'Q' + n1(nx - 30) + ' ' + n1(ny - 34) + ' ' + n1(tx) + ' ' + n1(ty));
+        var on = seg(a, 0.45, 0.6), reach = 40 + 40 * a, nx = x - 14, ny = m.y - 21, tx = nx - reach, ty = m.y - 26 - (i % 2) * 8;
+        m.j.setAttribute('d', 'M' + n1(nx) + ' ' + n1(ny) + 'Q' + n1(nx - reach * 0.45) + ' ' + n1(ny - 30) + ' ' + n1(tx) + ' ' + n1(ty));
         m.j.setAttribute('stroke-dashoffset', n1(-s * 1400));
         m.j.setAttribute('opacity', (on * 0.9).toFixed(2));
-        if (on) water.push(tx);
       });
 
       if (R.plane) {
-        var pu = seg(s, 0.58, 0.84), pt = R.ppath.getPointAtLength(R.plen * pu), vis = pu > 0 && pu < 1;
-        R.plane.setAttribute('opacity', vis ? '1' : '0'); R.ppath.setAttribute('opacity', seg(s, 0.55, 0.6) * (1 - seg(s, 0.84, 0.9)) + '');
-        R.plane.setAttribute('transform', 'translate(' + n1(pt.x) + ' ' + n1(pt.y) + ') rotate(' + n1(lerp(4, -8, pu)) + ')');
+        var pu = ease(seg(s, PLANE_IN, PLANE_OUT)), pt = R.ppath.getPointAtLength(R.plen * pu), vis = s > PLANE_IN && s < PLANE_OUT;
+        var pt2 = R.ppath.getPointAtLength(Math.min(R.plen, R.plen * pu + 2)), ang = Math.atan2(pt2.y - pt.y, pt2.x - pt.x) * 180 / Math.PI;
+        R.plane.setAttribute('opacity', vis ? '1' : '0'); R.ppath.setAttribute('opacity', (seg(s, PLANE_IN - 0.03, PLANE_IN) * (1 - seg(s, PLANE_OUT, PLANE_OUT + 0.03))).toFixed(2));
+        R.plane.setAttribute('transform', 'translate(' + n1(pt.x) + ' ' + n1(pt.y) + ') rotate(' + n1(ang) + ')');
         R.prop.setAttribute('ry', n1(9 * Math.abs(Math.cos(s * 400))));
-        var release = vis && pt.x > 70 && pt.x < 340 ? 1 : 0;
+        var release = vis && pt.x > 150 && pt.x < 340;
         R.pwater.setAttribute('opacity', release ? '0.85' : '0');
-        R.pwater.setAttribute('points', [[pt.x - 4, pt.y + 9], [pt.x + 10, pt.y + 9], [pt.x - 40, GROUND - 30], [pt.x - 110, GROUND - 30]].map(function (q) { return n1(q[0]) + ',' + n1(q[1]); }).join(' '));
+        R.pwater.setAttribute('points', [[pt.x - 2, pt.y + 9], [pt.x + 10, pt.y + 9], [pt.x - 30, GROUND - 26], [pt.x - 96, GROUND - 26]].map(function (q) { return n1(q[0]) + ',' + n1(q[1]); }).join(' '));
       }
       if (R.heli) {
-        var hu = seg(s, 0.66, 0.99), hp = R.hpath.getPointAtLength(R.hlen * hu), hvis = hu > 0 && hu < 1;
-        R.heli.setAttribute('opacity', hvis ? '1' : '0'); R.hpath.setAttribute('opacity', seg(s, 0.62, 0.67) * (1 - seg(s, 0.97, 1)) + '');
+        var hp = track(HELI_KEYS, s), hvis = s > HELI_KEYS[0][0];
+        R.heli.setAttribute('opacity', hvis ? '1' : '0'); R.hpath.setAttribute('opacity', (0.8 * seg(s, 0.66, 0.69)).toFixed(2));
         R.heli.setAttribute('transform', 'translate(' + n1(hp.x) + ' ' + n1(hp.y) + ')');
-        R.helibody.setAttribute('transform', 'rotate(' + n1(-6 + 3 * Math.sin(hu * 6)) + ')');
+        R.hflip.setAttribute('transform', hp.dx > 0 ? 'scale(-1 1)' : '');
+        R.helibody.setAttribute('transform', 'rotate(' + n1(hp.dx === 0 ? 0 : -7) + ')');
         R.rot.setAttribute('transform', 'scale(' + Math.cos(s * 520).toFixed(3) + ' 1)');
         R.trot.setAttribute('transform', 'rotate(' + n1(s * 9000) + ' 61 -8)');
-        var dropOn = hvis && hp.x > 60 && hp.x < 340;
-        R.hdrops.setAttribute('opacity', dropOn ? '1' : '0');
+        var dip = inAny(s, HELI_DIPS), rope = dip ? 40 + 12 * Math.sin(Math.PI * seg(s, dip[0], dip[1])) : 40;
+        R.rope.setAttribute('d', 'M0 10V' + n1(rope)); R.bucket.setAttribute('transform', 'translate(0 ' + n1(rope) + ')');
+        R.bfill.setAttribute('opacity', String(bucketFull(s) * 0.95));
+        var drop = inAny(s, HELI_DROPS);
+        R.hdrops.setAttribute('opacity', drop ? '1' : '0');
         R.drops.forEach(function (el, i) {
-          var u = frac(s * 30 + i / R.drops.length), y0 = hp.y + 52;
-          el.setAttribute('cx', n1(hp.x + (rnd(i + 300) - 0.5) * 10 + u * 6)); el.setAttribute('cy', n1(y0 + u * Math.max(10, GROUND - 20 - y0)));
+          var u = frac(s * 40 + i / R.drops.length), y0 = hp.y + rope + 10;
+          el.setAttribute('cx', n1(hp.x + (rnd(i + 300) - 0.5) * 12 + u * 4)); el.setAttribute('cy', n1(y0 + u * Math.max(10, GROUND - 24 - y0)));
         });
       }
     }
