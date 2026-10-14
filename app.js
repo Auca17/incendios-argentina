@@ -153,6 +153,18 @@
   function colorFor(n, mx) { var t = Math.min(1, Math.log(n + 1) / Math.log(mx + 1)); return LUT[Math.round(t * 63)]; }
 
   function totalYear(y) { return (D.meta.por_anio[String(y)]) || 0; }
+  var PROVS = D.prov.features.map(function (f) { return f.properties.name; });
+  var FULL = YEARS.filter(function (y) { return y > 2012 && y < 2026; });
+  function mkey(y, m) { return y + '-' + (m < 10 ? '0' : '') + m; }
+  function provYear(p, y) { var o = D.pm[p] || {}, s = 0; for (var m = 1; m <= 12; m++) s += o[mkey(y, m)] || 0; return s; }
+  function ranking(y) { return PROVS.map(function (n) { return { n: n, v: provYear(n, y) }; }).sort(function (a, b) { return b.v - a.v; }); }
+  /* shareable view: #<slide>&y=<year>&p=<province> */
+  var URLP = (function () {
+    var parts = decodeURIComponent((location.hash || '').slice(1)).split('&'), o = { slide: parseInt(parts[0], 10) };
+    parts.slice(1).forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) o[kv.slice(0, i)] = kv.slice(i + 1); });
+    o.y = YEARS.indexOf(+o.y) >= 0 ? +o.y : null; o.p = PROVS.indexOf(o.p) >= 0 ? o.p : null;
+    return o;
+  })();
   function monthSeries(provs, year) {
     var out = [];
     for (var m = 1; m <= 12; m++) {
@@ -167,7 +179,8 @@
   var LON0 = -73.8, LON1 = -53.4, LAT0 = -55.3, LAT1 = -21.6, K = Math.cos(38 * Math.PI / 180);
   var cv = $('#map'), ctx = cv.getContext('2d');
   var base = document.createElement('canvas'), bctx = base.getContext('2d');
-  var state = { year: 2020, all: false, hi: [], marker: null };
+  var state = { year: URLP.y || 2020, all: false, hi: [], marker: null, prov: URLP.p, hover: null };
+  var cellIdx = {};
   var geo = D.prov.features, paths = [], F = null, dpr = 1;
 
   function project(lon, lat) { return [F.ox + (lon - LON0) * K * F.s, F.oy + (LAT1 - lat) * F.s]; }
@@ -190,6 +203,7 @@
     bctx.setTransform(dpr, 0, 0, dpr, 0, 0); bctx.clearRect(0, 0, F.w, F.h);
     paths.forEach(function (o) { bctx.fillStyle = state.hi.indexOf(o.name) >= 0 ? '#2b1a12' : '#1a120e'; bctx.fill(o.p); });
     var cw = STEP * K * F.s + 0.7, ch = STEP * F.s + 0.7, mx = state.all ? maxAll : maxN;
+    cellIdx = {}; cells().forEach(function (c) { cellIdx[Math.floor(c[0] / STEP) + ',' + Math.floor(c[1] / STEP)] = c[2]; });
     cells().forEach(function (c) { var q = project(c[0], c[1]); bctx.fillStyle = colorFor(c[2], mx); bctx.fillRect(q[0] - cw / 2, q[1] - ch / 2, cw, ch); });
     bctx.lineJoin = 'round';
     paths.forEach(function (o) { if (state.hi.indexOf(o.name) < 0) { bctx.strokeStyle = 'rgba(120,84,66,.55)'; bctx.lineWidth = 0.7; bctx.stroke(o.p); } });
@@ -199,6 +213,7 @@
   function paint(t) {
     if (!F) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); ctx.drawImage(base, 0, 0);
+    if (state.hover && state.hi.indexOf(state.hover.name) < 0) { ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.strokeStyle = '#ffd9a0'; ctx.lineWidth = 1.5; ctx.stroke(state.hover.p); }
     if (state.marker) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       var q = project(state.marker[0], state.marker[1]), ph = (t % 1600) / 1600;
@@ -215,6 +230,49 @@
     var el = $('#yearbadge');
     if (state.all) { el.innerHTML = '2012–2026<small>focos acumulados</small>'; return; }
     el.innerHTML = state.year + '<small>' + fmt(totalYear(state.year)) + ' focos de calor' + (state.year === 2026 ? ' (hasta el 14/10)' : '') + (state.year === 2012 ? ' (desde el 20/01)' : '') + '</small>';
+  }
+
+  /* ---------- exploración sobre el mapa ---------- */
+  var tip = $('#tip');
+  function deg(v, pos, neg) { return Math.abs(v).toFixed(2).replace('.', ',') + '° ' + (v < 0 ? neg : pos); }
+  function hitTest(x, y) {
+    if (!F) return {};
+    var lon = LON0 + (x - F.ox) / (K * F.s), lat = LAT1 - (y - F.oy) / F.s, pr = null;
+    bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (var i = 0; i < paths.length; i++) if (bctx.isPointInPath(paths[i].p, x * dpr, y * dpr)) { pr = paths[i]; break; }
+    var gx = Math.floor(lon / STEP), gy = Math.floor(lat / STEP);
+    return { prov: pr, n: cellIdx[gx + ',' + gy] || 0, clon: gx * STEP + STEP / 2, clat: gy * STEP + STEP / 2 };
+  }
+  function periodLabel() { return state.all ? '2012–2026' : String(state.year); }
+  function showTip(h, x, y) {
+    if (!h.prov && !h.n) { tip.hidden = true; return; }
+    var t = h.prov ? '<b>' + h.prov.name + '</b>' + (state.all ? '' : '<span>' + fmt(provYear(h.prov.name, state.year)) + ' focos en ' + state.year + '</span>') : '<b>Fuera del territorio argentino</b>';
+    t += '<span class="cell">Celda de 0,25° (unos 25 km) en ' + deg(h.clat, 'N', 'S') + ', ' + deg(h.clon, 'E', 'O') + ': <b>' + fmt(h.n) + '</b> ' + (h.n === 1 ? 'foco' : 'focos') + ' (' + periodLabel() + ')</span>';
+    if (h.prov) t += '<span class="hint">Click para analizar la provincia</span>';
+    tip.innerHTML = t; tip.hidden = false;
+    var W = cv.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.left = Math.max(6, Math.min(W - tw - 6, x + 14)) + 'px'; tip.style.top = Math.max(6, y - th - 12) + 'px';
+  }
+  function setHover(pr) { if ((state.hover && state.hover.name) === (pr && pr.name)) return; state.hover = pr; paint(performance.now()); }
+  cv.addEventListener('mousemove', function (e) {
+    var r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, h = hitTest(x, y);
+    showTip(h, x, y); setHover(h.prov); cv.style.cursor = h.prov ? 'pointer' : 'default';
+  });
+  cv.addEventListener('mouseleave', function () { tip.hidden = true; setHover(null); });
+  cv.addEventListener('click', function (e) {
+    var r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, h = hitTest(x, y);
+    showTip(h, x, y);
+    if (h.prov) selectProv(h.prov.name);
+  });
+  function selectProv(name) {
+    state.prov = name;
+    if (cur !== 0) { show(0); return; }
+    setMap({ hi: name ? [name] : [] }); renderExplore(); syncURL();
+  }
+  function syncURL() {
+    var h = '#' + cur;
+    if (cur === 0) { h += '&y=' + state.year; if (state.prov) h += '&p=' + encodeURIComponent(state.prov); }
+    try { history.replaceState(null, '', h); } catch (e) { }
   }
 
   /* ---------- gráficos SVG ---------- */
@@ -238,6 +296,54 @@
       out += '<text x="' + (x + bw / 2) + '" y="' + (h - 5) + '" font-size="7.5" fill="#b09d92" text-anchor="middle">' + String(y).slice(2) + '</text>';
     });
     return '<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Focos de calor por año">' + out + '</svg>';
+  }
+
+  function provYearsSVG(p) {
+    var vals = YEARS.map(function (y) { return provYear(p, y); }), mx = Math.max.apply(null, vals) || 1, w = 320, h = 104, bw = 17.5, gap = 3, out = '';
+    YEARS.forEach(function (y, i) {
+      var v = vals[i], bh = Math.max(1, (v / mx) * (h - 34)), x = i * (bw + gap) + 2, on = y === state.year;
+      out += '<rect data-y="' + y + '" x="' + x + '" y="' + (h - 18 - bh) + '" width="' + bw + '" height="' + bh + '" rx="2" fill="' + (on ? '#ffc83d' : '#ff6a1a') + '" opacity="' + (on ? 1 : 0.55) + '"><title>' + y + ': ' + fmt(v) + ' focos</title></rect>';
+      out += '<text x="' + (x + bw / 2) + '" y="' + (h - 5) + '" font-size="7.5" fill="#b09d92" text-anchor="middle">' + String(y).slice(2) + '</text>';
+    });
+    var pk = vals.indexOf(mx);
+    out += '<text x="' + (pk * (bw + gap) + 2 + bw / 2) + '" y="' + (h - 18 - (h - 34) - 4) + '" font-size="8.5" fill="#ffc83d" text-anchor="middle" font-weight="700">' + fmt(mx) + '</text>';
+    return '<svg class="pyears" viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Focos de calor por año en ' + p + '">' + out + '</svg>';
+  }
+  function provSeasonSVG(p, y) {
+    var o = D.pm[p] || {}, avg = [], sel = [];
+    for (var m = 1; m <= 12; m++) {
+      var s = 0; FULL.forEach(function (yy) { s += o[mkey(yy, m)] || 0; }); avg.push(s / FULL.length);
+      sel.push(y === 2026 && m > 10 ? null : (o[mkey(y, m)] || 0));
+    }
+    var mx = Math.max.apply(null, avg.concat(sel.map(function (v) { return v || 0; }))) || 1, w = 320, h = 104, gw = 25, out = '';
+    for (var i = 0; i < 12; i++) {
+      var x = i * (gw + 1.5) + 2, ha = Math.max(1, avg[i] / mx * (h - 30)), hs = sel[i] === null ? 0 : Math.max(1, sel[i] / mx * (h - 30));
+      out += '<rect x="' + x + '" y="' + (h - 16 - ha) + '" width="11" height="' + ha + '" rx="1.5" fill="#8a6a58"><title>' + MESES_L[i] + ', promedio ' + FULL[0] + '–' + FULL[FULL.length - 1] + ': ' + fmt(avg[i]) + ' focos</title></rect>';
+      if (sel[i] !== null) out += '<rect x="' + (x + 12) + '" y="' + (h - 16 - hs) + '" width="11" height="' + hs + '" rx="1.5" fill="#ff6a1a"><title>' + MESES_L[i] + ' ' + y + ': ' + fmt(sel[i]) + ' focos</title></rect>';
+      out += '<text x="' + (x + 11.5) + '" y="' + (h - 4) + '" font-size="8" fill="#b09d92" text-anchor="middle">' + MESES[i] + '</text>';
+    }
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Estacionalidad mensual en ' + p + '">' + out + '</svg>' +
+      '<div class="legend2"><span><i style="background:#8a6a58"></i>promedio ' + FULL[0] + '–' + FULL[FULL.length - 1] + '</span><span><i style="background:#ff6a1a"></i>' + y + (y === 2026 ? ' (hasta el 14/10)' : '') + '</span></div>';
+  }
+  function renderExplore() {
+    var el = $('#explore'); if (!el) return;
+    var y = state.year, rk = ranking(y), tot = totalYear(y), out = '';
+    if (state.prov) {
+      var p = state.prov, pos = 0; rk.forEach(function (r, i) { if (r.n === p) pos = i + 1; });
+      var v = provYear(p, y);
+      out += '<div class="card pcard"><div class="phead"><h3>' + p + '</h3><button class="x" id="pclose" aria-label="Quitar la selección de provincia">×</button></div>' +
+        '<p class="pkpi"><b>' + fmt(v) + '</b> focos en ' + y + (y === 2026 ? ' (hasta el 14/10)' : '') + ' · puesto <b>' + pos + '</b> de ' + PROVS.length + ' · ' + (tot ? (v / tot * 100).toFixed(1).replace('.', ',') : '0') + ' % del país</p>' +
+        '<h4>Serie anual (click en un año para verlo en el mapa)</h4><div class="pyrs" id="pyrs">' + provYearsSVG(p) + '</div>' +
+        '<h4>Estacionalidad: focos por mes</h4>' + provSeasonSVG(p, y) + '</div>';
+    }
+    var mx = rk[0].v || 1;
+    out += '<div class="card"><h3>Ranking de provincias · ' + y + '</h3><ol class="rank">' + rk.map(function (r, i) {
+      return '<li><button data-p="' + r.n + '"' + (r.n === state.prov ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '><span class="rn">' + (i + 1) + '</span><span class="rl">' + r.n + '</span><span class="rb"><i style="width:' + (r.v / mx * 100).toFixed(1) + '%"></i></span><span class="rv">' + fmt(r.v) + '</span></button></li>';
+    }).join('') + '</ol></div>';
+    el.innerHTML = out;
+    var pc = $('#pclose'); if (pc) pc.onclick = function () { selectProv(null); };
+    var py = $('#pyrs'); if (py) py.onclick = function (e) { var yy = e.target.getAttribute && e.target.getAttribute('data-y'); if (yy) { stopPlay(); setYear(+yy); } };
+    el.querySelector('.rank').onclick = function (e) { var b = e.target.closest && e.target.closest('button[data-p]'); if (b) selectProv(b.getAttribute('data-p') === state.prov ? null : b.getAttribute('data-p')); };
   }
 
   /* ---------- escena guiada por scroll ---------- */
@@ -320,7 +426,7 @@
     scn = null; cancelAnimationFrame(scnRaf); scnRaf = 0;
     document.body.classList.toggle('ev', sl.type === 'event');
     if (sl.type === 'intro') {
-      setMap({ year: 2020, all: false, hi: [], marker: null });
+      setMap({ year: state.year, all: false, hi: state.prov ? [state.prov] : [], marker: null });
       side.innerHTML = '<div class="kicker">Argentina · 2012–2026</div><h1>Argentina arde</h1>' +
         '<p class="lead">Desde 2012, un satélite de la NASA detectó <b>' + fmt(D.meta.total_focos) + ' focos de calor</b> dentro del territorio argentino. Cada punto del mapa es uno de ellos.</p>' +
         '<p>Elegí un año con el reproductor, o avanzá con <b>→</b> para ver seis incendios con sus cifras, sus causas y lo que dicen las fuentes.</p>' +
@@ -330,11 +436,13 @@
         '<li><b>258.794 ha</b><span>entre el 1 de enero y el 15 de febrero de 2022, según el Servicio Nacional de Manejo del Fuego: más que en todo 2021.</span></li></ul>' +
         '<p class="cav">' + CAV + '</p>' +
         sources([{ t: 'NASA FIRMS (VIIRS S-NPP)', u: 'https://firms.modaps.eosdis.nasa.gov/' }, { t: 'National Geographic: incendios en Argentina', u: 'https://www.nationalgeographicla.com/medio-ambiente/2022/02/incendios-en-argentina-las-perdidas-sus-causas-y-la-destruccion-masiva-de-biodiversidad' }]);
-      sw.innerHTML = '<div class="card"><h3>Recorré los años</h3><div class="player"><button id="pp" aria-label="Reproducir">▶</button><input id="yr" type="range" min="' + YEARS[0] + '" max="' + YEARS[YEARS.length - 1] + '" step="1" value="2020" aria-label="Año"></div>' +
+      sw.innerHTML = '<div class="card"><h3>Recorré los años</h3><div class="player"><button id="pp" aria-label="Reproducir">▶</button><input id="yr" type="range" min="' + YEARS[0] + '" max="' + YEARS[YEARS.length - 1] + '" step="1" value="' + state.year + '" aria-label="Año"></div>' +
         '<div class="legend"><span>pocos focos</span><div class="bar"></div><span>muchos</span></div></div>' +
-        '<div class="card"><h3>Cómo leer el mapa</h3><p>El color de cada celda (de unos 25 km) crece con la cantidad de focos de calor detectados en el año. El norte y el litoral se encienden todos los años: hay muchas quemas agrícolas y de pastizal.</p><p>Los números de cada incendio vienen de reportes oficiales y notas periodísticas, y no del satélite.</p></div>';
+        '<div id="explore"></div>' +
+        '<div class="card"><h3>Cómo leer el mapa</h3><p>Pasá el cursor por el mapa para ver los focos de cada celda, y hacé click en una provincia (o en el ranking) para ver su serie anual y su estacionalidad.</p><p>El color de cada celda (de unos 25 km) crece con la cantidad de focos de calor detectados en el año. El norte y el litoral se encienden todos los años: hay muchas quemas agrícolas y de pastizal.</p><p>Los números de cada incendio vienen de reportes oficiales y notas periodísticas, y no del satélite.</p></div>';
       $('#yr').oninput = function (e) { stopPlay(); setYear(+e.target.value); };
       $('#pp').onclick = function () { playing ? stopPlay() : startPlay(); };
+      renderExplore();
       $('#yb').onclick = function (e) { var y = e.target.getAttribute && e.target.getAttribute('data-y'); if (y) { stopPlay(); setYear(+y); } };
     } else if (sl.type === 'event') {
       var ev = sl.ev, n = cur;
@@ -366,11 +474,12 @@
       sw.innerHTML = '<div class="card"><h3>Todos los años juntos</h3><p>Así se ve la suma de los focos de calor de 2012 a 2026. El cinturón del norte y el litoral concentra la mayor parte.</p><div class="legend"><span>pocos focos</span><div class="bar"></div><span>muchos</span></div></div>' +
         '<div class="card"><h3>Para volver a empezar</h3><p>Usá <b>←</b> o los puntos de abajo para volver al recorrido.</p></div>';
     }
-    side.scrollTop = 0; if (MOBILE.matches) window.scrollTo(0, 0); renderNav(); renderScene(); try { history.replaceState(null, '', '#' + cur); } catch (e) { }
+    side.scrollTop = 0; if (MOBILE.matches) window.scrollTo(0, 0); renderNav(); renderScene(); syncURL(); tip.hidden = true;
   }
   function setYear(y) {
     state.year = y; state.all = false; drawBase(); badge();
     var yr = $('#yr'); if (yr) yr.value = y; var yb = $('#yb'); if (yb) yb.innerHTML = yearBars();
+    renderExplore(); syncURL();
   }
   function startPlay() {
     playing = true; var b = $('#pp'); if (b) b.textContent = '❚❚';
@@ -396,8 +505,7 @@
   window.addEventListener('resize', function () { resize(); startLoop(); scheduleScene(); });
 
   resize();
-  var h = parseInt((location.hash || '').slice(1), 10);
-  show(isNaN(h) ? 0 : h);
+  show(isNaN(URLP.slide) ? 0 : URLP.slide);
   // el layout puede terminar de acomodarse después del primer render
   requestAnimationFrame(function () { resize(); startLoop(); });
 })();
