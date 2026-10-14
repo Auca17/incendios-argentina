@@ -454,7 +454,7 @@
   /* ---------- escena guiada por scroll ---------- */
   var MOBILE = window.matchMedia('(max-width: 900px)');
   var STAGE_NAMES = ['Cómo empezó', 'El fuego', 'Combate'];
-  var CHAPTERS = ['Cómo empezó', 'El fuego: cuánto se perdió', 'Cómo se combatió'];
+  var CHAPTERS = ['Cómo empezó', 'El fuego', 'Cómo se combatió'];
   /* chapter of each fact, keyed by its figure (texts in EVENTS stay untouched); default: 1, the fire */
   var FACT_STAGE = {
     cordoba: { 'Octubre': 2 },
@@ -466,7 +466,7 @@
   function factList(ev, st) {
     var map = FACT_STAGE[ev.id] || {}, tags = FACT_TAG[ev.id] || {};
     var L = ev.facts.filter(function (f) { return (f[0] in map ? map[f[0]] : 1) === st; });
-    return L.length ? '<ul class="facts blk">' + L.map(function (f) {
+    return L.length ? '<ul class="facts">' + L.map(function (f) {
       return '<li><b>' + f[0] + '</b><span>' + f[1] + (tags[f[0]] ? ' <em class="tag">' + tags[f[0]] + '</em>' : '') + '</span></li>';
     }).join('') + '</ul>' : '';
   }
@@ -557,11 +557,6 @@
 
   /* ---------- render de diapositivas ---------- */
   var cur = 0, timer = 0, playing = false;
-  function count(el, v) {
-    if (REDUCED) { el.textContent = fmt(v); return; }
-    var t0 = performance.now(), dur = 1300;
-    (function tick(t) { var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3); el.textContent = fmt(v * e); if (p < 1) requestAnimationFrame(tick); })(t0);
-  }
   function sources(list) {
     return '<details class="sources"><summary>Fuentes de esta pantalla</summary><ul class="plain">' + list.map(function (s) { return '<li><a href="' + s.u + '" target="_blank" rel="noopener">' + s.t + '</a></li>'; }).join('') + '</ul></details>';
   }
@@ -569,7 +564,9 @@
     cur = Math.max(0, Math.min(SLIDES.length - 1, i)); stopPlay();
     var sl = SLIDES[cur], side = $('#side'), sw = $('#scenewrap');
     scn = null; cancelAnimationFrame(scnRaf); scnRaf = 0; $('#cue').hidden = sl.type !== 'event';
+    var wasEv = document.body.classList.contains('ev');
     document.body.classList.toggle('ev', sl.type === 'event');
+    if (wasEv !== (sl.type === 'event')) resize();
     if (sl.type === 'intro') {
       setMap({ year: state.year, all: false, hi: state.prov ? [state.prov] : [], marker: null });
       side.innerHTML = '<div class="kicker">Argentina · 2012–2026</div><h1>Argentina arde</h1>' +
@@ -598,25 +595,29 @@
     } else if (sl.type === 'event') {
       var ev = sl.ev, n = cur;
       setMap({ year: ev.year, all: false, hi: ev.provs, marker: ev.marker });
-      var chHead = function (i) { return '<h2 class="chh blk"><span aria-hidden="true">' + (i + 1) + '</span>' + CHAPTERS[i] + '</h2>'; };
+      var chHead = function (i) { return '<h2 class="chh"><span aria-hidden="true">' + (i + 1) + '</span>' + CHAPTERS[i] + '</h2>'; };
+      var card = function (html, cls) { return html ? '<div class="ccard blk' + (cls ? ' ' + cls : '') + '">' + html + '</div>' : ''; };
       side.innerHTML = '<div class="stages" id="stages" aria-label="Etapas de la ilustración"><div class="sl">' +
           STAGE_NAMES.map(function (t, i) { return (i ? '<i aria-hidden="true">→</i>' : '') + '<span data-st="' + i + '">' + (i + 1) + ' ' + t + '</span>'; }).join('') + '</div>' +
           '<div class="sbar" aria-hidden="true"><i id="sbar"></i></div></div>' +
-        '<section class="ch" id="ch-start"><div class="chin">' +
-          '<div class="kicker blk">' + n + ' de ' + EVENTS.length + ' · ' + ev.region + ' · ' + ev.when + '</div><h1 class="blk">' + ev.title + '</h1>' +
-          '<div class="hero blk"><span class="num" id="heronum">0</span><span class="unit">' + ev.hero.unit + '</span></div>' +
-          '<p class="herolabel blk">' + ev.hero.label + '<span class="src">Fuente: ' + ev.hero.src + '</span></p>' +
-          '<p class="note blk">' + ev.hero.note + '</p>' +
-          chHead(0) + '<p class="cause blk"><span class="lab">Según las fuentes.</span> ' + ev.cause.text + '</p>' + factList(ev, 0) +
-        '</div></section>' +
-        '<section class="ch" id="ch-fire"><div class="chin">' + chHead(1) +
-          '<p class="burnnote blk">La mancha oscura de la ilustración representa las <b>' + fmt(ev.hero.value) + ' ' + ev.hero.unit + '</b> de la cifra principal, en escala esquemática.</p>' + factList(ev, 1) + '</div></section>' +
-        '<section class="ch ch-last" id="ch-fight"><div class="chin">' + chHead(2) +
-          '<p class="lead blk">' + ev.response + '</p><p class="note blk">' + meansText(ev.means || { crew: 3 }) + '</p>' + factList(ev, 2) +
-          '<div class="blk">' + monthChart(ev) + '</div><p class="cav blk">' + CAV + ' El gráfico de barras es del satélite; las cifras de arriba son de las fuentes citadas.</p>' +
-          '<h3 class="minor blk">Fuentes</h3><ul class="plain blk">' + ev.sources.map(function (s) { return '<li><a href="' + s.u + '" target="_blank" rel="noopener">' + s.t + '</a></li>'; }).join('') + '</ul>' +
-        '</div></section>';
-      count($('#heronum'), ev.hero.value);
+        '<section class="ch" id="ch-start">' +
+          card(chHead(0) + '<div class="kicker">' + n + ' de ' + EVENTS.length + ' · ' + ev.region + ' · ' + ev.when + '</div><h1>' + ev.title + '</h1>' +
+            '<p class="headline"><b>' + fmt(ev.hero.value) + ' ' + ev.hero.unit + '</b> ' + ev.hero.label + '</p>') +
+          card('<p>' + ev.cause.text + '</p><p class="qsrc">Cómo empezó, según las fuentes citadas</p>', 'quote') +
+          card(factList(ev, 0)) +
+        '</section>' +
+        '<section class="ch" id="ch-fire">' +
+          card(chHead(1) + '<div class="hero"><span class="num">' + fmt(ev.hero.value) + '</span><span class="unit">' + ev.hero.unit + '</span></div>' +
+            '<p class="src">Fuente: ' + ev.hero.src + '</p><p class="burnnote">La mancha oscura de la ilustración representa esta cifra en escala esquemática.</p>') +
+          card('<h3 class="minor">Sobre esta cifra</h3><p>' + ev.hero.note + '</p>', 'cmp') +
+          card(factList(ev, 1)) +
+        '</section>' +
+        '<section class="ch ch-last" id="ch-fight">' +
+          card(chHead(2) + '<p class="lead">' + ev.response + '</p><p class="note">' + meansText(ev.means || { crew: 3 }) + '</p>') +
+          card(factList(ev, 2)) +
+          card(monthChart(ev) + '<p class="cav">' + CAV + ' El gráfico de barras es del satélite; las cifras de este relato son de las fuentes citadas.</p>') +
+          '<details class="ccard blk sources"><summary>Fuentes de este incendio</summary><ul class="plain">' + ev.sources.map(function (s) { return '<li><a href="' + s.u + '" target="_blank" rel="noopener">' + s.t + '</a></li>'; }).join('') + '</ul></details>' +
+        '</section>';
       sw.innerHTML = '<div class="scenebox">' + mountScene(ev) + '</div><div class="scenecap" aria-live="polite"><span class="step" id="scenecap-step">1</span><span id="scenecap-text"></span></div>' +
         '<p class="cav scenecav">Ilustración esquemática de cómo suele empezar y combatirse un incendio de este tipo; no reproduce el lugar ni los hechos exactos.</p>';
       scn.mount($('#scenewrap svg.scene')); watchScene($('#scenewrap svg.scene')); revealBlocks(side);
