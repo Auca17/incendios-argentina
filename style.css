@@ -43,7 +43,8 @@ ul.facts span{font-size:14.5px;color:#e4d6cc}
 .chart .peak{font-size:13px;color:#e4d6cc;margin-top:4px}
 details.sources{margin-top:18px;font-size:13.5px;color:var(--muted)}
 details.sources summary{cursor:pointer;color:#e4d6cc}
-details.sources a{color:#ffb070}
+details.sources a,#side a{color:#ffb070}
+#side a:hover{color:#ffd0a0}
 .cav{font-size:13px;color:var(--muted);margin-top:14px;line-height:1.5}
 .cav b{color:#e4d6cc}
 ul.plain{padding-left:18px;margin:.4em 0}
@@ -71,10 +72,6 @@ svg.scene{display:block;width:100%;height:auto}
 .scenecap{display:flex;align-items:center;gap:12px;font-size:15px;color:#ecdccf;min-height:48px}
 .scenecap .step{flex:none;width:30px;height:30px;border-radius:50%;background:var(--fire);color:#1b0c04;font-weight:800;
   display:grid;place-items:center}
-.scenecap button{margin-left:auto;flex:none;border:1px solid #6a3a24;background:#2a170e;color:var(--text);
-  border-radius:20px;padding:6px 14px;font-size:13px;cursor:pointer}
-.scenecap button:hover{background:#3a2012}
-
 /* nav */
 #nav{position:absolute;right:22px;bottom:18px;display:flex;align-items:center;gap:12px;z-index:5;
   background:rgba(20,13,10,.85);backdrop-filter:blur(6px);padding:8px 12px;border-radius:40px;border:1px solid var(--line)}
@@ -87,45 +84,19 @@ svg.scene{display:block;width:100%;height:auto}
 #dots i.on{background:var(--fire);width:24px;border-radius:6px}
 button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
-/* scene animation */
-.fl{opacity:0;transform-box:fill-box;transform-origin:50% 100%}
-.go .fl{animation:ignite .9s ease-out var(--d,1s) forwards}
-.p2 .fl{animation:ignite 0s forwards,shrink 6s ease-in 2.8s forwards}
-.fi{transform-box:fill-box;transform-origin:50% 100%;animation:flicker .55s ease-in-out infinite alternate}
-@keyframes ignite{from{opacity:0;transform:scale(.1)}to{opacity:1;transform:scale(1)}}
-@keyframes shrink{from{opacity:1;transform:scale(1)}to{opacity:.85;transform:scale(.38,.3)}}
-@keyframes flicker{from{transform:scale(1,1) skewX(-3deg)}to{transform:scale(.9,1.13) skewX(3deg)}}
-.sm{opacity:0;transform-box:fill-box;transform-origin:center}
-.go .sm{animation:rise 5s ease-out infinite var(--d,2s)}
-@keyframes rise{0%{opacity:0;transform:translate(0,0) scale(.5)}20%{opacity:.5}100%{opacity:0;transform:translate(34px,-120px) scale(2.4)}}
-.heli{opacity:0}
-.p2 .heli{animation:fly 4s cubic-bezier(.2,.7,.3,1) forwards}
-@keyframes fly{from{opacity:1;transform:translate(-260px,-30px)}to{opacity:1;transform:translate(0,0)}}
-.rotor{transform-box:fill-box;transform-origin:center;animation:spin .12s linear infinite}
-@keyframes spin{0%{transform:scaleX(1)}50%{transform:scaleX(.12)}100%{transform:scaleX(1)}}
-.drop{opacity:0}
-.p2 .drop{animation:fall 1.1s ease-in infinite var(--d,4s)}
-@keyframes fall{0%{opacity:0;transform:translateY(0)}15%{opacity:1}90%{opacity:.8}100%{opacity:0;transform:translateY(78px)}}
-.crew{opacity:0}
-.p2 .crew{animation:fadein 1s ease-out 1.2s forwards}
-@keyframes fadein{to{opacity:1}}
-.jet{stroke-dasharray:6 6;animation:dash .5s linear infinite}
-@keyframes dash{to{stroke-dashoffset:-12}}
-.wind{stroke-dasharray:14 18;animation:dash2 1.2s linear infinite}
-@keyframes dash2{to{stroke-dashoffset:-32}}
-.lighter,.sunbig{opacity:0}
-.go .lighter{animation:fadein .6s ease-out .1s forwards}
-.go .sunbig{animation:fadein 1.2s ease-out forwards}
-.p2 .lighter{opacity:.35;animation:none}
-.sunbig circle.core{animation:pulse 3s ease-in-out infinite}
-@keyframes pulse{50%{transform:scale(1.07)}}
-.sunbig circle.core{transform-box:fill-box;transform-origin:center}
-
-@media (prefers-reduced-motion:reduce){
-  .fl,.heli,.drop,.crew,.sm,.lighter,.sunbig{animation:none!important;opacity:1}
-  .sm{opacity:.25}.drop{opacity:0}.fi,.rotor,.jet,.wind{animation:none!important}
-  .p2 .fl{transform:scale(.38,.3)}
-}
+/* scroll-driven event column */
+.stages{position:sticky;top:-30px;z-index:3;display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+  margin:-30px -30px 22px;padding:12px 30px;background:rgba(21,14,10,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);font-size:12.5px}
+.stages span{padding:4px 11px;border-radius:20px;border:1px solid var(--line);color:var(--muted);transition:background .25s,color .25s}
+.stages span.done{color:#e4d6cc;border-color:#4a3126}
+.stages span.on{background:var(--fire);border-color:var(--fire);color:#1b0c04;font-weight:700}
+.stages i{font-style:normal;color:#5a4034}
+.st{min-height:58vh;padding-bottom:28px}
+.st h2:first-child{margin-top:.2em}
+.st-last{min-height:72vh}
+.scrollhint{margin-top:2.2em;font-size:13px;color:var(--fire);letter-spacing:.02em}
+.scenecav{margin:0}
+@media (prefers-reduced-motion:reduce){.stages span{transition:none}}
 
 @media (max-width:900px){
   html,body{height:auto}
@@ -138,4 +109,16 @@ button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid
   .hero .num{font-size:46px}
   ul.facts li{grid-template-columns:88px 1fr}
   #nav{position:fixed;right:12px;bottom:12px}
+  body.ev #stage{display:contents}
+  body.ev #scenewrap{position:sticky;top:0;z-index:4;order:-1;height:46vh;min-height:280px;padding:8px 12px 6px;gap:4px;
+    justify-content:flex-start;overflow:hidden;background:var(--bg);border-bottom:1px solid var(--line)}
+  body.ev .scenebox{flex:1;min-height:0;border-radius:12px}
+  body.ev svg.scene{height:100%}
+  body.ev .scenecap{font-size:13px;line-height:1.35;min-height:0;gap:8px}
+  body.ev .scenecap .step{width:24px;height:24px;font-size:13px}
+  body.ev .scenecav{font-size:11px;line-height:1.3}
+  body.ev #mapwrap{order:2;height:44vh;min-height:260px}
+  body.ev .stages{top:max(46vh,280px);margin:-20px -18px 18px;padding:10px 18px}
+  .st{min-height:auto;padding-bottom:22vh}
+  .st-last{padding-bottom:40vh}
 }

@@ -23,10 +23,11 @@
         ['27', 'incendios de más de 500 ha sumaron 306.956 ha: casi toda la superficie quemada.'],
         ['99.856 ha', 'en el departamento Río Cuarto, el más afectado. Siguen Punilla (54.464) y Cruz del Eje (47.037).'],
         ['297.638 ha', 'de Bosque Chaqueño Serrano, la región fitogeográfica más golpeada.'],
-        ['20 %', 'de lo quemado fueron rastrojos de maíz y soja.']
+        ['20 %', 'de lo quemado fueron rastrojos de maíz y soja.'],
+        ['Octubre', 'recién entonces llegaron las lluvias, y los incendios se prolongaron hasta mediados de noviembre, según el informe provincial.']
       ],
       cause: { kind: 'sequia', text: 'El informe oficial no da porcentajes por causa. Señala baja humedad, heladas, vientos y mucho combustible seco, y menciona "el factor antrópico, como la imprudencia y la negligencia".' },
-      response: 'Brigadistas y bomberos en tierra. Las lluvias recién llegaron en octubre y los incendios se prolongaron hasta mediados de noviembre.',
+      response: 'La fuente no detalla los medios de combate.', means: { crew: 3 },
       months: { prov: ['Córdoba'], year: 2020, from: 5, to: 11 },
       sources: [{ t: 'Informe incendios 2020, Provincia de Córdoba', u: 'https://ambiente.cba.gov.ar/wp-content/uploads/2024/11/INFORME-INCENDIOS-2020-Provincia-de-Cordoba.pdf' }]
     },
@@ -42,7 +43,7 @@
         ['Bajante', 'prolongada del río, que una especialista compara con la de hace unos 50 años.']
       ],
       cause: { kind: 'quema', text: 'Organizaciones ambientalistas señalan las quemas como origen del desastre, en un contexto de bajante histórica y sequía.' },
-      response: 'Las islas son de difícil acceso: el combate depende de brigadistas con embarcaciones y medios aéreos.',
+      response: 'La fuente no detalla los medios de combate.', means: { crew: 3 },
       months: { prov: ['Santa Fe', 'Entre Ríos', 'Buenos Aires'], year: 2020, from: 1, to: 12 },
       sources: [{ t: 'La Capital: más de 300 mil hectáreas incendiadas en el Delta (2020)', u: 'https://www.lacapital.com.ar/la-ciudad/con-el-2020-se-van-mas-300-mil-hectareas-incendiadas-el-delta-del-rio-parana-n2631286.html' }]
     },
@@ -58,7 +59,7 @@
         ['Denuncia', 'penal por estragos presentada por el gobierno de Misiones.']
       ],
       cause: { kind: 'quema', text: 'La empresa habla de una quema ilegal para limpiar terreno. No hay responsables identificados.' },
-      response: 'Un avión hidrante y más de 200 personas. La lluvia ayudó a controlar el fuego.',
+      response: 'Un avión hidrante y más de 200 personas. La lluvia ayudó a controlar el fuego.', means: { crew: 4, plane: 1 },
       months: { prov: ['Misiones'], year: 2020, from: 5, to: 12 },
       sources: [{ t: 'Misiones Online: Yabotí, 340 hectáreas', u: 'https://misionesonline.net/2020/11/27/yaboti-habria-340-hectareas-de-bosques-nativos-afectadas-por-el-incendio-en-el-lote-8-y-9-de-la-empresa-forestal-juan-alberto-sa/' }]
     },
@@ -71,10 +72,11 @@
         ['6.055', 'focos de calor solo en enero y febrero de 2022, una cifra inusual para esa época.'],
         ['275 mil ha', 'de esteros y bañados quemadas (eran 245 mil días antes): la cobertura más afectada.'],
         ['+ que 2021', 'en dos meses de 2022 se quemó en el país más que en todo 2021 (unas 330 mil ha).'],
-        ['100 %', 'de la herpetofauna (reptiles y anfibios) perdida en el Parque San Cayetano en los incendios de 2020, según el investigador Kowalewski.']
+        ['100 %', 'de la herpetofauna (reptiles y anfibios) perdida en el Parque San Cayetano en los incendios de 2020, según el investigador Kowalewski.'],
+        ['Iberá', 'gran parte de los focos activos estaba dentro de la Reserva del Iberá, un macrosistema de 1,3 millones de hectáreas, según National Geographic.']
       ],
       cause: { kind: 'sequia', text: 'Casi 24 meses de La Niña, calor y baja humedad. Especialistas citados hablan de quemas para obtener pastura fresca; la nota no cuantifica cuánto fue intencional.' },
-      response: 'Gran parte de los focos activos estaba dentro de la Reserva del Iberá, un macrosistema de 1,3 millones de hectáreas.',
+      response: 'La fuente no detalla los medios de combate.', means: { crew: 3 },
       months: { prov: ['Corrientes'], year: 2022, from: 1, to: 12 },
       sources: [{ t: 'National Geographic: incendios en Argentina, pérdidas y causas', u: 'https://www.nationalgeographicla.com/medio-ambiente/2022/02/incendios-en-argentina-las-perdidas-sus-causas-y-la-destruccion-masiva-de-biodiversidad' }]
     },
@@ -90,7 +92,7 @@
         ['+30 %', 'brigadistas temporarios sumados al Plan para esa temporada.']
       ],
       cause: { kind: 'intencional', text: 'Las autoridades indicaron que el incendio fue provocado.' },
-      response: 'Brigadistas del Plan Provincial de Manejo del Fuego. La provincia pidió a Nación un avión hidrante para Luján de Cuyo.',
+      response: 'Brigadistas del Plan Provincial de Manejo del Fuego. La provincia pidió a Nación un avión hidrante para Luján de Cuyo.', means: { crew: 3 },
       months: { prov: ['Mendoza'], year: 2023, from: 1, to: 12 },
       sources: [
         { t: 'Los Andes: incendios arrasaron 85.000 hectáreas en Mendoza (dic. 2023)', u: 'https://www.losandes.com.ar/sociedad/luego-de-que-incendios-arrasaran-85000-hectareas-en-mendoza-aumentan-el-numero-de-brigadistas' },
@@ -105,12 +107,12 @@
       facts: [
         ['14.000 ha', 'quemadas al 12 de enero, una semana después del inicio (5 de enero).'],
         ['~47', 'viviendas totalmente destruidas, según el último reporte provincial.'],
-        ['75 %', 'del bosque nativo de Epuyén se habría perdido, según expertos citados (Cholila Online).'],
+        ['75 %', 'del bosque nativo de Epuyén se habría perdido, según expertos citados por Infobae.'],
         ['+500', 'personas desplegadas, con aviones hidrantes, anfibios y helicópteros con helibalde.'],
         ['4 provincias', 'en emergencia ígnea por DNU (30 de enero): Chubut, Neuquén, Río Negro y La Pampa.']
       ],
       cause: { kind: 'intencional', text: 'El gobernador Ignacio Torres afirmó el 6 de enero que el fuego fue intencional. La nota no informa si hay responsables identificados ni resoluciones judiciales.' },
-      response: 'Más de 500 personas, aviones hidrantes y helicópteros. Las lluvias de la cordillera no superaron los 8 mm y no frenaron el avance.',
+      response: 'Más de 500 personas, aviones hidrantes y helicópteros. Las lluvias de la cordillera no superaron los 8 mm y no frenaron el avance.', means: { crew: 5, plane: 1, heli: 1 },
       months: { prov: ['Chubut'], year: 2026, from: 1, to: 10 },
       sources: [
         { t: 'Infobae: un mes de los incendios en Chubut', u: 'https://www.infobae.com/sociedad/2026/02/05/un-mes-de-los-incendios-en-chubut-la-cronologia-de-la-catastrofe-ambiental-que-ya-arraso-con-mas-de-50-mil-hectareas/' },
@@ -238,74 +240,69 @@
     return '<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Focos de calor por año">' + out + '</svg>';
   }
 
-  /* ---------- escena animada ---------- */
-  var FLAME = '<symbol id="flame" viewBox="0 0 20 30"><path d="M10 0C12 8 19 11 19 20a9 9 0 0 1-18 0c0-6 5-8 6-14 1 2 2 3 3-6z" fill="url(#fg)"/><path d="M10 13c1 4 5 5 5 9a5 5 0 0 1-10 0c0-3 3-4 3-7 1 1 1 1 2-2z" fill="#ffe27a"/></symbol>';
-  function flamesFor(kind) {
-    var L = [];
-    if (kind === 'intencional') {
-      [[78, 236, 14, 1.2], [96, 232, 16, 1.7], [118, 228, 18, 2.2], [142, 222, 20, 2.7], [168, 218, 22, 3.1], [195, 222, 20, 3.5], [226, 220, 22, 3.9], [262, 222, 20, 4.3], [300, 224, 18, 4.7]].forEach(function (a) { L.push(a); });
-    } else if (kind === 'quema') {
-      for (var i = 0; i < 14; i++) L.push([40 + i * 25, 238 + (i % 2) * 6, 15 + (i % 3) * 2, 1 + i * 0.28]);
-    } else {
-      [[60, 196, 22, 2.4], [112, 204, 24, 2.9], [165, 192, 20, 3.3], [220, 202, 24, 2.7], [272, 194, 22, 3.6], [334, 205, 26, 3.1], [140, 232, 20, 4.0], [250, 234, 22, 4.4], [200, 236, 18, 4.8]].forEach(function (a) { L.push(a); });
-    }
-    return L;
-  }
-  function sceneSVG(kind) {
-    var s = '<svg id="scene" class="scene" viewBox="0 0 400 300" role="img" aria-label="Ilustración: cómo empezó el fuego y cómo se combate"><defs>' +
-      '<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#15102a"/><stop offset=".6" stop-color="#4a2018"/><stop offset="1" stop-color="#8a3a1c"/></linearGradient>' +
-      '<linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb03a"/><stop offset=".6" stop-color="#ff5a14"/><stop offset="1" stop-color="#c8260c"/></linearGradient>' + FLAME + '</defs>';
-    s += '<rect width="400" height="300" fill="url(#sky)"/>';
-    if (kind === 'sequia') s += '<g class="sunbig"><circle cx="330" cy="62" r="46" fill="#ff8a2a" opacity=".16"/><circle class="core" cx="330" cy="62" r="26" fill="#ffb347"/></g>';
-    else s += '<circle cx="340" cy="58" r="14" fill="#ffd9a0" opacity=".5"/>';
-    s += '<path d="M0 190 Q70 150 140 178 T290 168 T400 180 V300 H0z" fill="#2a1914"/>';
-    s += '<path d="M0 218 Q90 190 180 212 T400 204 V300 H0z" fill="#1c110d"/>';
-    if (kind === 'quema') {
-      for (var r = 0; r < 4; r++) s += '<path d="M0 ' + (236 + r * 15) + ' H400" stroke="' + (r % 2 ? '#3a2a18' : '#2e2112') + '" stroke-width="9"/>';
-    }
-    if (kind === 'sequia') {
-      s += '<path d="M20 262 l22 -8 l14 10 l22 -6 M130 270 l18 -10 l24 8 M250 262 l24 -6 l16 10 l20 -8 M330 276 l16 -8" stroke="#0e0806" stroke-width="2" fill="none"/>';
-      for (var w = 0; w < 3; w++) s += '<path class="wind" d="M' + (30 + w * 70) + ' ' + (100 + w * 22) + ' q60 -12 120 0" stroke="rgba(255,235,210,.35)" stroke-width="2.2" fill="none" stroke-linecap="round" style="animation-delay:' + (w * 0.3) + 's"/>';
-    }
-    [[40, 200, 1], [95, 210, 1.15], [150, 196, .9], [215, 206, 1.1], [270, 198, 1], [335, 208, 1.2], [372, 200, .85]].forEach(function (t) {
-      var x = t[0], y = t[1], k = t[2];
-      s += '<g transform="translate(' + x + ' ' + y + ') scale(' + k + ')"><rect x="-2.5" y="-14" width="5" height="16" fill="#2a1b12"/><ellipse cx="0" cy="-26" rx="13" ry="16" fill="#1f3322"/><ellipse cx="-4" cy="-30" rx="6" ry="8" fill="#2a4529" opacity=".7"/></g>';
-    });
-    flamesFor(kind).forEach(function (f) {
-      var x = f[0], y = f[1], w = f[2], d = f[3].toFixed(1);
-      s += '<g class="fl" style="--d:' + d + 's"><use class="fi" href="#flame" x="' + (x - w / 2) + '" y="' + (y - w * 1.5) + '" width="' + w + '" height="' + (w * 1.5) + '"/></g>';
-    });
-    [[130, 190, 2.8], [210, 185, 3.6], [280, 188, 4.4], [90, 195, 3.2]].forEach(function (c) {
-      s += '<circle class="sm" cx="' + c[0] + '" cy="' + c[1] + '" r="13" fill="#9a8c86" opacity="0" style="--d:' + c[2] + 's"/>';
-    });
-    if (kind === 'intencional') {
-      s += '<g class="lighter"><rect x="44" y="238" width="14" height="24" rx="3" fill="#b9b2ac"/><rect x="46" y="233" width="10" height="7" rx="1" fill="#6e6862"/><use class="fi" href="#flame" x="45" y="215" width="12" height="18"/></g>';
-    }
-    s += '<g class="crew"><g transform="translate(300 266)"><circle cx="0" cy="-17" r="4" fill="#e9b88a"/><rect x="-4" y="-13" width="8" height="14" rx="2" fill="#d9531a"/><rect x="-6" y="-17" width="12" height="3" rx="1.5" fill="#f2c230"/></g>' +
-      '<g transform="translate(330 270)"><circle cx="0" cy="-17" r="4" fill="#e9b88a"/><rect x="-4" y="-13" width="8" height="14" rx="2" fill="#d9531a"/><rect x="-6" y="-17" width="12" height="3" rx="1.5" fill="#f2c230"/></g>' +
-      '<path class="jet" d="M305 255 Q270 232 238 228" stroke="#7fc4ff" stroke-width="2.2" fill="none"/><path class="jet" d="M335 259 Q300 238 262 232" stroke="#7fc4ff" stroke-width="2.2" fill="none"/></g>';
-    s += '<g class="heli"><g transform="translate(150 78)"><ellipse cx="0" cy="0" rx="26" ry="11" fill="#c23a1c"/><rect x="18" y="-3" width="40" height="6" rx="3" fill="#a02e16"/><rect x="54" y="-10" width="4" height="14" fill="#a02e16"/>' +
-      '<path d="M-14 -8 Q-4 -12 8 -8 L8 -2 H-14z" fill="#9fd6ff" opacity=".85"/><rect x="-6" y="-17" width="4" height="7" fill="#444"/><rect class="rotor" x="-38" y="-19" width="76" height="3" rx="1.5" fill="#d8d0c8"/>' +
-      '<path d="M-18 12 H18" stroke="#444" stroke-width="2"/><path d="M-6 12 L0 50 M6 12 L0 50" stroke="#555" stroke-width="1.2"/>' +
-      '<path d="M-12 50 H12 L9 62 H-9z" fill="#3d86c6"/>' +
-      [0, 1, 2, 3].map(function (i) { return '<circle class="drop" cx="' + (-6 + i * 4) + '" cy="64" r="2.6" fill="#7fc4ff" style="--d:' + (3.6 + i * 0.25) + 's"/>'; }).join('') +
-      '</g></g>';
-    return s + '</svg>';
-  }
-  var sceneTimer = 0;
-  function playScene(ev) {
-    var sv = $('#scene'); if (!sv) return;
-    clearTimeout(sceneTimer);
-    sv.classList.remove('go', 'p2'); void sv.getBoundingClientRect();
-    var cap = $('#scenecap-text'), step = $('#scenecap-step');
-    step.textContent = '1'; cap.innerHTML = '<b>Cómo empezó.</b> ' + shortCause(ev);
-    if (REDUCED) { sv.classList.add('go', 'p2'); step.textContent = '2'; cap.innerHTML = '<b>Cómo se combate.</b> ' + ev.response; return; }
-    sv.classList.add('go');
-    sceneTimer = setTimeout(function () { sv.classList.add('p2'); step.textContent = '2'; cap.innerHTML = '<b>Cómo se combate.</b> ' + ev.response; }, 5600);
-  }
+  /* ---------- escena guiada por scroll ---------- */
+  var MOBILE = window.matchMedia('(max-width: 900px)');
+  var STAGE_NAMES = ['Cómo empezó', 'Fuego', 'Combate'];
+  var scn = null, scnEv = null, scnStage = -1, scnRaf = 0;
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
   function shortCause(ev) {
     return ({ intencional: 'Un fuego provocado, según las fuentes citadas.', sequia: 'Sequía, calor y viento con el monte listo para arder.', quema: 'Una quema que se salió de control, según las fuentes citadas.' })[ev.cause.kind];
   }
+  function meansText(m) {
+    var L = [];
+    if (m.plane) L.push('avión hidrante');
+    if (m.heli) L.push('helicóptero con helibalde');
+    L.push('brigadistas con mangueras');
+    return 'En la ilustración: ' + L.join(', ') + (m.plane || m.heli ? ', tal como mencionan las fuentes.' : ' genéricos; no se dibujan medios aéreos porque la fuente no los menciona.');
+  }
+  function stageCaption(ev, st) {
+    if (st === 0) return '<b>Cómo empezó.</b> ' + shortCause(ev);
+    if (st === 1) return '<b>El fuego en su punto máximo.</b> ' + fmt(ev.hero.value) + ' ' + ev.hero.unit + ', según ' + ev.hero.src + '.';
+    return '<b>Cómo se combatió.</b> ' + ev.response;
+  }
+  /* reading progress p (0..1) of the left column, or of the page on mobile */
+  function readProgress() {
+    var el = MOBILE.matches ? null : $('#side');
+    var top = el ? el.scrollTop : window.scrollY, vh = el ? el.clientHeight : window.innerHeight;
+    var max = (el ? el.scrollHeight : document.documentElement.scrollHeight) - vh;
+    var off = el ? el.getBoundingClientRect().top : 0, line = MOBILE.matches ? 0.62 : 0.4;
+    function at(sel) { var n = $(sel); return n ? clamp((n.getBoundingClientRect().top - off + top - line * vh) / (max || 1), 0, 1) : null; }
+    var a = at('#st-loss'), b = at('#st-fight');
+    if (a === null || b === null || !(a > 0 && b > a && b < 1)) { a = 0.3; b = 0.55; }
+    return { p: max > 0 ? clamp(top / max, 0, 1) : 0, a: a, b: b };
+  }
+  /* piecewise map so each scene stage lines up with its text section */
+  function toScene(r) {
+    var S1 = FireScene.S_FIRE, S2 = FireScene.S_FIGHT;
+    if (r.p <= r.a) return S1 * r.p / r.a;
+    if (r.p <= r.b) return S1 + (S2 - S1) * (r.p - r.a) / (r.b - r.a);
+    return S2 + (1 - S2) * (r.p - r.b) / (1 - r.b);
+  }
+  function renderScene() {
+    scnRaf = 0;
+    if (!scn) return;
+    var s = toScene(readProgress()), st = s < FireScene.S_FIRE ? 0 : s < FireScene.S_FIGHT ? 1 : 2;
+    if (REDUCED) s = [0.2, 0.46, 0.92][st];
+    scn.update(s);
+    if (st !== scnStage) {
+      scnStage = st;
+      $('#scenecap-step').textContent = st + 1;
+      $('#scenecap-text').innerHTML = stageCaption(scnEv, st);
+      Array.prototype.forEach.call(document.querySelectorAll('#stages [data-st]'), function (n) {
+        var k = +n.getAttribute('data-st'); n.classList.toggle('on', k === st); n.classList.toggle('done', k < st);
+        if (k === st) n.setAttribute('aria-current', 'step'); else n.removeAttribute('aria-current');
+      });
+    }
+  }
+  function scheduleScene() { if (scn && !scnRaf) scnRaf = requestAnimationFrame(renderScene); }
+  function mountScene(ev) {
+    scnEv = ev; scnStage = -1;
+    scn = FireScene.create({ kind: ev.cause.kind, means: ev.means || { crew: 3 }, hectares: ev.hero.value, unit: ev.hero.unit === 'hectáreas' ? 'ha' : ev.hero.unit,
+      aria: 'Ilustración esquemática: cómo empezó, cómo creció y cómo se combatió el incendio de ' + ev.region });
+    return scn.html;
+  }
+  $('#side').addEventListener('scroll', scheduleScene, { passive: true });
+  window.addEventListener('scroll', scheduleScene, { passive: true });
 
   /* ---------- render de diapositivas ---------- */
   var cur = 0, timer = 0, playing = false;
@@ -320,7 +317,8 @@
   function show(i) {
     cur = Math.max(0, Math.min(SLIDES.length - 1, i)); stopPlay();
     var sl = SLIDES[cur], side = $('#side'), sw = $('#scenewrap');
-    clearTimeout(sceneTimer);
+    scn = null; cancelAnimationFrame(scnRaf); scnRaf = 0;
+    document.body.classList.toggle('ev', sl.type === 'event');
     if (sl.type === 'intro') {
       setMap({ year: 2020, all: false, hi: [], marker: null });
       side.innerHTML = '<div class="kicker">Argentina · 2012–2026</div><h1>Argentina arde</h1>' +
@@ -341,18 +339,21 @@
     } else if (sl.type === 'event') {
       var ev = sl.ev, n = cur;
       setMap({ year: ev.year, all: false, hi: ev.provs, marker: ev.marker });
-      side.innerHTML = '<div class="kicker">' + n + ' de ' + EVENTS.length + ' · ' + ev.region + ' · ' + ev.when + '</div><h1>' + ev.title + '</h1>' +
-        '<div class="hero"><span class="num" id="heronum">0</span><span class="unit">' + ev.hero.unit + '</span></div>' +
-        '<p class="herolabel">' + ev.hero.label + '<span class="src">Fuente: ' + ev.hero.src + '</span></p>' +
-        '<p class="note">' + ev.hero.note + '</p>' +
-        '<ul class="facts">' + ev.facts.map(function (f) { return '<li><b>' + f[0] + '</b><span>' + f[1] + '</span></li>'; }).join('') + '</ul>' +
-        '<div class="cause"><h3>Cómo empezó, según las fuentes</h3><p>' + ev.cause.text + '</p></div>' +
-        monthChart(ev) + '<p class="cav">' + CAV + ' El gráfico de barras es del satélite; las cifras de arriba son de las fuentes citadas.</p>' + sources(ev.sources);
+      side.innerHTML = '<div class="stages" id="stages" aria-label="Etapas de la ilustración">' +
+          STAGE_NAMES.map(function (t, i) { return (i ? '<i aria-hidden="true">→</i>' : '') + '<span data-st="' + i + '">' + (i + 1) + ' ' + t + '</span>'; }).join('') + '</div>' +
+        '<section class="st" id="st-what"><div class="kicker">' + n + ' de ' + EVENTS.length + ' · ' + ev.region + ' · ' + ev.when + '</div><h1>' + ev.title + '</h1>' +
+          '<div class="hero"><span class="num" id="heronum">0</span><span class="unit">' + ev.hero.unit + '</span></div>' +
+          '<p class="herolabel">' + ev.hero.label + '<span class="src">Fuente: ' + ev.hero.src + '</span></p>' +
+          '<p class="note">' + ev.hero.note + '</p><p class="scrollhint" aria-hidden="true">Bajá para ver cómo empezó, cómo creció y cómo se combatió ↓</p></section>' +
+        '<section class="st" id="st-cause"><h2>Cómo empezó</h2><div class="cause"><h3>Según las fuentes</h3><p>' + ev.cause.text + '</p></div></section>' +
+        '<section class="st" id="st-loss"><h2>Cuánto se perdió</h2><ul class="facts">' + ev.facts.map(function (f) { return '<li><b>' + f[0] + '</b><span>' + f[1] + '</span></li>'; }).join('') + '</ul></section>' +
+        '<section class="st" id="st-fight"><h2>Cómo se combatió</h2><p class="lead">' + ev.response + '</p><p class="note">' + meansText(ev.means || { crew: 3 }) + '</p></section>' +
+        '<section class="st" id="st-sat"><h2>Lo que muestra el satélite</h2>' + monthChart(ev) + '<p class="cav">' + CAV + ' El gráfico de barras es del satélite; las cifras de arriba son de las fuentes citadas.</p></section>' +
+        '<section class="st st-last" id="st-src"><h2>Fuentes</h2><ul class="plain">' + ev.sources.map(function (s) { return '<li><a href="' + s.u + '" target="_blank" rel="noopener">' + s.t + '</a></li>'; }).join('') + '</ul></section>';
       count($('#heronum'), ev.hero.value);
-      sw.innerHTML = '<div class="scenebox">' + sceneSVG(ev.cause.kind) + '</div><div class="scenecap"><span class="step" id="scenecap-step">1</span><span id="scenecap-text"></span><button id="replay">Repetir</button></div>' +
-        '<p class="cav" style="margin:0">Ilustración esquemática de cómo suele empezar y combatirse un incendio de este tipo; no reproduce el lugar ni los hechos exactos.</p>';
-      $('#replay').onclick = function () { playScene(ev); };
-      playScene(ev);
+      sw.innerHTML = '<div class="scenebox">' + mountScene(ev) + '</div><div class="scenecap" aria-live="polite"><span class="step" id="scenecap-step">1</span><span id="scenecap-text"></span></div>' +
+        '<p class="cav scenecav">Ilustración esquemática de cómo suele empezar y combatirse un incendio de este tipo; no reproduce el lugar ni los hechos exactos.</p>';
+      scn.mount($('#scenewrap svg.scene'));
     } else {
       setMap({ all: true, hi: [], marker: null });
       side.innerHTML = '<div class="kicker">Cómo se hizo</div><h1>Datos, límites y advertencias</h1>' +
@@ -365,7 +366,7 @@
       sw.innerHTML = '<div class="card"><h3>Todos los años juntos</h3><p>Así se ve la suma de los focos de calor de 2012 a 2026. El cinturón del norte y el litoral concentra la mayor parte.</p><div class="legend"><span>pocos focos</span><div class="bar"></div><span>muchos</span></div></div>' +
         '<div class="card"><h3>Para volver a empezar</h3><p>Usá <b>←</b> o los puntos de abajo para volver al recorrido.</p></div>';
     }
-    side.scrollTop = 0; renderNav(); try { history.replaceState(null, '', '#' + cur); } catch (e) { }
+    side.scrollTop = 0; if (MOBILE.matches) window.scrollTo(0, 0); renderNav(); renderScene(); try { history.replaceState(null, '', '#' + cur); } catch (e) { }
   }
   function setYear(y) {
     state.year = y; state.all = false; drawBase(); badge();
@@ -392,7 +393,7 @@
   var tx = null;
   document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
   document.addEventListener('touchend', function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; tx = null; if (Math.abs(dx) > 80) show(cur + (dx < 0 ? 1 : -1)); }, { passive: true });
-  window.addEventListener('resize', function () { resize(); startLoop(); });
+  window.addEventListener('resize', function () { resize(); startLoop(); scheduleScene(); });
 
   resize();
   var h = parseInt((location.hash || '').slice(1), 10);
