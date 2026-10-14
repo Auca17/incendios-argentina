@@ -498,7 +498,7 @@
 
   /* ---------- cards ---------- */
   function sourcesList(list) { return '<ul class="plain">' + list.map(function (s) { return '<li><a href="' + s.u + '" target="_blank" rel="noopener">' + s.t + '</a></li>'; }).join('') + '</ul>'; }
-  function eyebrow(i, t) { return '<p class="eyebrow"><span aria-hidden="true">' + i + '</span>' + t + '</p>'; }
+  function eyebrow(i, t) { return '<p class="eyebrow" data-t="' + t + '"><span aria-hidden="true">' + i + '</span>' + t + '</p>'; }
   function callout(lab, html) { return '<div class="callout"><b class="lab">' + lab + '</b><p>' + html + '</p></div>'; }
   function nextBtn() { return cur < SLIDES.length - 1 ? '<button class="nextbtn" data-go="' + (cur + 1) + '">Siguiente: ' + NAMES[cur + 1] + ' →</button>' : ''; }
   function introCards() {
@@ -561,8 +561,8 @@
     if (i === activeCard) return;
     activeCard = i;
     Array.prototype.forEach.call(document.querySelectorAll('#cards .card'), function (c, k) {
-      var on = k === i; c.classList.toggle('on', on); c.setAttribute('aria-hidden', String(!on));
-      if (on) { var h = c.querySelector('.eyebrow,h2,h1'); $('#announce').textContent = NAMES[cur] + ': ' + (h ? h.textContent : ''); }
+      var on = k === i; c.classList.toggle('on', on); c.setAttribute('aria-hidden', String(!on)); c.inert = !on; // hidden cards take no focus
+      if (on) { var h = c.querySelector('.eyebrow,h2,h1'); $('#announce').textContent = NAMES[cur] + ': ' + (h ? (h.getAttribute('data-t') || h.textContent) : ''); }
     });
   }
 
@@ -760,7 +760,7 @@
     if (sl.type === 'event') { state.year = sl.ev.year; state.hi = sl.ev.provs; loadFoci(sl.ev); }
     else state.hi = cur === EXPLORE && state.prov ? [state.prov] : [];
     var cards = sl.type === 'intro' ? introCards() : sl.type === 'event' ? eventCards(sl.ev, cur) : sl.type === 'explore' ? exploreCards() : methodCards();
-    $('#cards').innerHTML = cards.map(function (h, k) { return '<section class="card glass" aria-hidden="true" data-k="' + k + '">' + h + '</section>'; }).join('');
+    $('#cards').innerHTML = cards.map(function (h, k) { return '<section class="card glass" aria-hidden="true" inert data-k="' + k + '">' + h + '</section>'; }).join('');
     activeCard = -1;
     scn = null; $('#scenewrap').innerHTML = ''; $('#scenewrap').style.opacity = '0';
     if (sl.type === 'event') { $('#scenewrap').innerHTML = '<div class="scenebox">' + mountScene(sl.ev) + '</div>'; scn.mount($('#scenewrap svg.scene')); }
