@@ -493,7 +493,7 @@
     scnRaf = 0;
     if (!scn) return;
     var s = toScene(readProgress()), st = s < FireScene.S_FIRE ? 0 : s < FireScene.S_FIGHT ? 1 : 2;
-    if (REDUCED) s = [0.2, 0.46, 0.92][st];
+    if (REDUCED) s = [0.2, 0.46, 0.74][st]; // still frames chosen so each stage shows its means
     scn.update(s);
     if (st !== scnStage) {
       scnStage = st;
@@ -580,12 +580,13 @@
         '<h2>Qué no mide</h2><ul class="plain"><li>No son hectáreas quemadas.</li><li>Incluyen quemas agrícolas, de pastizal y de rastrojo, que son muchas en el norte y el litoral.</li><li>Un satélite pasa pocas veces por día: puede perderse fuegos cortos o tapados por nubes.</li></ul>' +
         '<h2>De dónde salen las cifras</h2><p>Las hectáreas, causas y consecuencias de cada incendio vienen de informes oficiales y notas periodísticas citadas en cada pantalla. Cuando dos fuentes difieren, se muestran las dos. Cuando una causa no está confirmada, se dice quién la afirma.</p>' +
         '<h2>Mapa base</h2><p>Límites provinciales de Natural Earth (dominio público), simplificados.</p>' +
-        '<h2>Código y datos</h2><p>Toda la visualización es una página estática, sin servidores. El código está en el repositorio <a style="color:#ffb070" href="https://github.com/Auca17/incendios-argentina" target="_blank" rel="noopener">Auca17/incendios-argentina</a>.</p>' +
+        '<h2>Exploración y comparación</h2><p>El ranking y la estacionalidad por provincia suman los focos asignados a cada provincia por mes. Al comparar dos años, el mapa resta celda por celda y no pinta diferencias de menos de 3 focos. Como 2012 empieza el 20 de enero y 2026 termina el 14 de octubre, el ranking de cambios usa solo los meses completos en común cuando entra alguno de esos años.</p>' +
+        '<h2>Código</h2><p>Toda la visualización es una página estática, sin servidores. Las ilustraciones, el mapa y los gráficos están dibujados con código (SVG y canvas), sin imágenes externas.</p>' +
         sources([{ t: 'NASA FIRMS', u: 'https://firms.modaps.eosdis.nasa.gov/' }, { t: 'Natural Earth', u: 'https://www.naturalearthdata.com/' }]);
       sw.innerHTML = '<div class="card"><h3>Todos los años juntos</h3><p>Así se ve la suma de los focos de calor de 2012 a 2026. El cinturón del norte y el litoral concentra la mayor parte.</p><div class="legend"><span>pocos focos</span><div class="bar"></div><span>muchos</span></div></div>' +
         '<div class="card"><h3>Para volver a empezar</h3><p>Usá <b>←</b> o los puntos de abajo para volver al recorrido.</p></div>';
     }
-    side.scrollTop = 0; if (MOBILE.matches) window.scrollTo(0, 0); renderNav(); renderScene(); syncURL(); tip.hidden = true;
+    side.scrollTop = 0; if (MOBILE.matches) window.scrollTo(0, 0); renderNav(); renderScene(); syncURL(); tip.hidden = true; enter(side); enter(sw);
   }
   function setYear(y) {
     if (state.cmp && $('#mode2')) { state.year = y; setCompare(null); return; }
@@ -599,11 +600,14 @@
     timer = setInterval(function () { if (state.year >= YEARS[YEARS.length - 1]) { stopPlay(); return; } setYear(state.year + 1); }, 1100);
   }
   function stopPlay() { playing = false; clearInterval(timer); var b = $('#pp'); if (b) b.textContent = '▶'; }
+  function slideName(i) { return i === 0 ? 'Inicio' : i === SLIDES.length - 1 ? 'Cómo se hizo' : SLIDES[i].ev.region; }
+  function enter(el) { if (REDUCED || !el) return; el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); }
   function renderNav() {
     $('#prev').disabled = cur === 0; $('#next').disabled = cur === SLIDES.length - 1;
-    $('#dots').innerHTML = SLIDES.map(function (s, i) { return '<i class="' + (i === cur ? 'on' : '') + '" data-i="' + i + '" title="' + (i === 0 ? 'Inicio' : i === SLIDES.length - 1 ? 'Cómo se hizo' : SLIDES[i].ev.region) + '"></i>'; }).join('');
+    $('#dots').innerHTML = SLIDES.map(function (s, i) { var t = slideName(i); return '<button class="' + (i === cur ? 'on' : '') + '" data-i="' + i + '" title="' + t + '" aria-label="' + (i + 1) + ': ' + t + '"' + (i === cur ? ' aria-current="page"' : '') + '></button>'; }).join('');
+    $('#announce').textContent = 'Pantalla ' + (cur + 1) + ' de ' + SLIDES.length + ': ' + slideName(cur);
   }
-  $('#dots').onclick = function (e) { var i = e.target.getAttribute('data-i'); if (i !== null) show(+i); };
+  $('#dots').onclick = function (e) { var i = e.target.getAttribute('data-i'); if (i !== null) { show(+i); var b = $('#dots button.on'); if (b) b.focus(); } };
   $('#prev').onclick = function () { show(cur - 1); };
   $('#next').onclick = function () { show(cur + 1); };
   document.addEventListener('keydown', function (e) {

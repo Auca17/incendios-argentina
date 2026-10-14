@@ -5,21 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Argentina arde: focos de calor 2012–2026</title>
 <meta name="description" content="Recorrido interactivo por los focos de calor detectados desde el espacio en Argentina entre 2012 y 2026, y por seis grandes incendios con sus cifras y fuentes.">
+<meta name="theme-color" content="#0d0907">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Argentina arde: focos de calor 2012–2026">
+<meta property="og:description" content="Exploración interactiva de los focos de calor detectados por satélite en Argentina y seis grandes incendios contados con sus fuentes.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23140d0a'/%3E%3Cpath d='M16 4c2 6 9 9 9 16a9 9 0 0 1-18 0c0-5 4-7 5-12 1 2 2 3 4-4z' fill='%23ff6a1a'/%3E%3Cpath d='M16 15c1 3 4 4 4 7a4 4 0 0 1-8 0c0-2 2-3 2-5 1 1 1 1 2-2z' fill='%23ffd873'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="app">
-  <aside id="side" aria-live="polite"></aside>
+  <aside id="side" tabindex="-1" aria-label="Texto de la pantalla"></aside>
   <main id="stage">
-    <div id="mapwrap"><canvas id="map" aria-label="Mapa de Argentina con focos de calor"></canvas><div id="yearbadge"></div><div id="tip" role="tooltip" hidden></div></div>
+    <div id="mapwrap"><canvas id="map" role="img" aria-label="Mapa de Argentina con focos de calor por celda. Para analizar una provincia con teclado, usá el ranking."></canvas><div id="yearbadge"></div><div id="tip" role="tooltip" hidden></div></div>
     <section id="scenewrap"></section>
     <nav id="nav" aria-label="Navegación">
       <button id="prev" aria-label="Anterior">←</button>
-      <div id="dots"></div>
+      <div id="dots" role="group" aria-label="Pantallas"></div>
       <button id="next" aria-label="Siguiente">→</button>
     </nav>
   </main>
 </div>
+<p id="announce" class="sr-only" aria-live="polite"></p>
 <script src="data/data.js"></script>
 <script src="scene.js"></script>
 <script src="app.js"></script>
