@@ -1,14 +1,19 @@
 'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SLIDES } from '../lib/slides';
-import { useHashRoute } from '../lib/router';
+import { routeYear, useHashRoute, type Compare } from '../lib/router';
 import { useReadProgress } from '../lib/progress';
 import { loadProvincias } from '../lib/data';
 import { stageOf, toScene } from '../lib/fire';
+import { buildView, type ViewSpec } from '../lib/explore';
+import { useNational } from '../lib/useNational';
+import { useIsMobile } from '../lib/useMediaQuery';
 import TopBar from './TopBar';
 import Sidebar from './Sidebar';
-import MapPanel from './MapPanel';
+import MapPanel, { type ExploreMap } from './MapPanel';
 import ScenePanel from './ScenePanel';
+import ExplorePanel from './ExplorePanel';
+import MethodPanel from './MethodPanel';
 import ScrollCue from './ScrollCue';
 import AvisoPopover from './AvisoPopover';
 import Nav from './Nav';
@@ -16,21 +21,27 @@ import styles from './Experience.module.css';
 
 const NO_PROVINCES: string[] = [];
 const NO_GEO: any[] = [];
+const NO_HI: string[] = [];
 
 const slideName = (i: number) => {
   const s = SLIDES[i];
   return s.type === 'event' ? s.ev.region : s.name;
 };
 
-/** Wires the router (chapter) and the sidebar reading progress (p) to the three panels. */
+/** Wires the router (screen, year, province, comparison) and the sidebar reading progress (p) to the panels. */
 export default function Experience() {
   const [geo, setGeo] = useState<any[]>(NO_GEO);
-  const provinces = useMemo(() => (geo === NO_GEO ? NO_PROVINCES : geo.map((f) => f.properties.name as string)), [geo]);
-  const { route, setSlide, go } = useHashRoute(SLIDES.length, provinces);
+  // undefined until the outlines are known: the router then keeps `p` as given and validates it once they load
+  const provinces = useMemo(() => (geo === NO_GEO ? undefined : geo.map((f) => f.properties.name as string)), [geo]);
+  const { route, setSlide, go, update } = useHashRoute(SLIDES.length, provinces);
+  const routeRef = useRef(route);
+  routeRef.current = route;
   const sideRef = useRef<HTMLElement>(null);
   const read = useReadProgress(sideRef, route.slide);
   const slide = SLIDES[route.slide];
   const isEvent = slide.type === 'event';
+  const isMobile = useIsMobile();
+  const { nat, failed } = useNational(!isEvent);
 
   useEffect(() => {
     let live = true;
@@ -47,6 +58,45 @@ export default function Experience() {
     if (!window.matchMedia('(max-width: 899.98px)').matches) sideRef.current?.focus({ preventScroll: true });
   };
 
+  /* ---------- explore state lives in the address (legacy format) ---------- */
+  const year = routeYear(route);
+  const cmp = route.c;
+  const prov = slide.type === 'intro' ? route.p : null;
+
+  const onYear = useCallback((y: number) => update({ y, c: null }), [update]);
+  const onCompare = useCallback(
+    (c: Compare | null) => update({ c, y: c ? c.b : routeYear(routeRef.current) }),
+    [update],
+  );
+  const onProv = useCallback((p: string | null) => update({ p }), [update]);
+  // clicking a province on the map opens the explore screen on it (legacy selectProv)
+  const onSelect = useCallback((p: string) => update({ p, slide: 0 }), [update]);
+
+  const kind = slide.type === 'method' ? 'all' : cmp ? 'cmp' : 'year';
+  const view = useMemo(() => {
+    if (!nat || isEvent) return null;
+    const spec: ViewSpec = kind === 'all' ? { kind: 'all' } : kind === 'cmp' ? { kind: 'cmp', cmp: cmp! } : { kind: 'year', year };
+    return buildView(nat, spec);
+    // cmp and year are compared by value so a new route object does not rebuild the view
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nat, isEvent, kind, year, cmp?.a, cmp?.b, cmp?.view]);
+  const hi = useMemo(() => (prov ? [prov] : NO_HI), [prov]);
+
+  const explore: ExploreMap | null = isEvent
+    ? null
+    : { kind, year, cmp, nat, view, hi, onSelect };
+
+  const panel =
+    slide.type === 'intro' ? (
+      <ExplorePanel
+        nat={nat} failed={failed} provinces={provinces ?? NO_PROVINCES}
+        year={year} cmp={cmp} prov={prov}
+        onYear={onYear} onCompare={onCompare} onProv={onProv}
+      />
+    ) : slide.type === 'method' ? (
+      <MethodPanel />
+    ) : null;
+
   return (
     <div className={styles.app}>
       <TopBar index={route.slide} count={SLIDES.length} name={slide.name} />
@@ -59,10 +109,17 @@ export default function Experience() {
           stage={stage}
           nextName={route.slide < SLIDES.length - 1 ? slideName(route.slide + 1) : null}
           onNext={next}
+          year={slide.type === 'intro' ? year : null}
+          onPickYear={onYear}
+          inline={isMobile ? panel : null}
         />
-        <div className={styles.stage}>
-          <MapPanel p={read.p} slide={slide} geo={geo} />
-          <ScenePanel s={s} stage={stage} slide={slide} />
+        <div className={isEvent ? styles.stage : `${styles.stage} ${styles.stageMap}`}>
+          <MapPanel p={read.p} slide={slide} geo={geo} explore={explore} />
+          {isEvent ? (
+            <ScenePanel s={s} stage={stage} slide={slide} />
+          ) : (
+            !isMobile && <section className={styles.panelCol} aria-label="Exploración">{panel}</section>
+          )}
         </div>
         <div className={styles.avisoSlot}><AvisoPopover /></div>
         <ScrollCue hidden={!isEvent || read.p > 0.01} />

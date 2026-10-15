@@ -9,7 +9,7 @@
 .side:focus { outline: none; }
 /* Room below the last chapter so the combat stage reaches p = 1 (and clears the nav on small screens). */
 .inner { padding-bottom: 30vh; }
-.plain { padding-top: var(--s-4); display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2); }
+.plain { padding-bottom: var(--s-6); }
 
 .kicker {
   font-size: var(--fs-12);
@@ -30,8 +30,15 @@
 }
 
 @media (max-width: 899.98px) {
-  .side { --side-pad: var(--s-2); border-right: 0; flex: 1; }
+  .side {
+    --side-pad: var(--s-2);
+    border-right: 0;
+    flex: 1;
+    /* text fades out under the floating nav instead of running behind it */
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 112px), transparent calc(100% - 60px));
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 112px), transparent calc(100% - 60px));
+  }
   /* clear the floating nav; the combat stage still gets ~400 px of scroll */
-  .inner { padding-bottom: calc(var(--s-8) + var(--s-4)); }
+  .inner { padding-bottom: calc(var(--s-8) + var(--s-6)); }
   .heading { font-size: var(--fs-20); }
 }

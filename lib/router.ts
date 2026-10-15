@@ -38,10 +38,13 @@ export function parseHash(hash: string, slideCount: number, provinces?: string[]
   return { slide: clampSlide(parseInt(parts[0], 10), slideCount), y, p, c: compare };
 }
 
+/** Year shown on the explore screen: the second year of a comparison, else `y`, else 2020 (legacy). */
+export const routeYear = (r: Route): number => (r.c ? r.c.b : r.y != null ? r.y : 2020);
+
 export function formatHash(r: Route): string {
   let h = '#' + r.slide;
   if (r.slide === 0) {
-    if (r.y != null) h += '&y=' + r.y;
+    h += '&y=' + routeYear(r);
     if (r.p) h += '&p=' + encodeURIComponent(r.p);
     if (r.c) h += '&c=' + r.c.a + '-' + r.c.b + '-' + r.c.view;
   }
@@ -75,7 +78,8 @@ export function useHashRoute(slideCount: number, provinces?: string[]) {
   const setSlide = useCallback((slide: number) => update({ slide }), [update]);
 
   useEffect(() => {
-    const read = () => apply(parseHash(window.location.hash, slideCount, provinces), false);
+    // like legacy, the address is rewritten to the canonical form of the view that was opened
+    const read = () => apply(parseHash(window.location.hash, slideCount, provinces), true);
     read();
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);

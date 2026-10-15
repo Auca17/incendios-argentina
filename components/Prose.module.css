@@ -1,0 +1,47 @@
+/* Text of the home and method screens (the fire chapters have their own styles in FireSidebar). */
+.text { padding-top: var(--s-1); }
+/* low specificity on purpose: the classes below override it */
+.text :where(p) { margin: 0 0 var(--s-2); font-size: var(--fs-16); color: var(--text-2); }
+.text :where(b) { color: var(--text); }
+.kicker {
+  margin: var(--s-3) 0 0;
+  font-size: var(--fs-12);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.title { margin: var(--s-1) 0 var(--s-2); font-size: var(--fs-32); line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
+.lead { margin: 0 0 var(--s-2); font-size: var(--fs-20); line-height: 1.5; color: var(--text); }
+.h {
+  margin: var(--s-4) 0 var(--s-1);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.note {
+  margin: var(--s-2) 0;
+  padding-left: var(--s-2);
+  border-left: 3px solid #4a3126;
+  font-size: var(--fs-14);
+  color: var(--muted);
+}
+.facts { list-style: none; margin: var(--s-3) 0 0; padding: 0; display: grid; gap: var(--s-2); }
+.facts li { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: var(--s-2); align-items: start; }
+.facts b { font-size: var(--fs-20); line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--accent); overflow-wrap: anywhere; }
+.facts span { font-size: var(--fs-14); color: var(--text-2); }
+.plain { margin: var(--s-1) 0; padding-left: var(--s-3); }
+.plain li { margin: var(--s-1) 0; font-size: var(--fs-14); color: var(--text-2); }
+.plain b { color: var(--text); }
+.sources { margin-top: var(--s-3); font-size: var(--fs-14); color: var(--muted); }
+.sources summary { cursor: pointer; color: var(--text-2); }
+.sources ul { margin: var(--s-1) 0 0; padding-left: var(--s-3); }
+.sources li { margin: var(--s-half) 0; color: var(--text-2); }
+.slot { margin: var(--s-3) 0; }
+
+@media (max-width: 899.98px) {
+  .title { font-size: var(--fs-20); }
+  .lead { font-size: var(--fs-16); }
+  .facts li { grid-template-columns: 112px minmax(0, 1fr); }
+}

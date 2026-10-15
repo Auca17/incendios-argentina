@@ -6,9 +6,11 @@
  *  - one class with an explicit lifecycle (no globals); the base layer is cached off-screen;
  *  - a single rAF scheduler: the base layer is redrawn only when the week, the camera or the size
  *    change; the marker pulse only costs a drawImage + 3 arcs and stops when off-screen/hidden/reduced motion;
- *  - the fire chapters are the only mode implemented here (other screens draw plain province outlines).
+ *  - two modes: the fire chapters (weekly foci) and the national grid (one year, two-year comparison or the
+ *    2012-2026 accumulation) with hover and hit testing. Hover only repaints the cached base plus one outline.
  */
 import type { Foci } from './data';
+import type { GridView } from './explore';
 
 const LON0 = -73.8, LON1 = -53.4, LAT0 = -55.3, LAT1 = -21.6;
 const K = Math.cos((38 * Math.PI) / 180);
@@ -16,6 +18,9 @@ const COUNTRY: number[] = [LON0, LON1, LAT0, LAT1];
 const FLY_MS = 800;
 
 export type MapScene = { provs: string[]; marker: [number, number] | null; foci: Foci | null };
+
+/** Result of a hit test on the grid map: province under the pointer and the 0.25 degree cell it falls in. */
+export type Hit = { prov: string | null; key: string; clon: number; clat: number; value: number | { a: number; b: number } | null };
 
 type Frame = { s: number; ox: number; oy: number; w: number; h: number };
 type PathItem = { name: string; p: Path2D };
@@ -34,6 +39,10 @@ export class FireMap {
   private fly: { from: number[]; to: number[]; t0: number } | null = null;
   private target = '';
   private scene: MapScene = { provs: [], marker: null, foci: null };
+  private gridMode = false;
+  private grid: GridView | null = null;
+  private gridHi: string[] = [];
+  private hover: string | null = null;
   private week = 0;
   private inset = { top: 0, bottom: 0 };
   private raf = 0;
@@ -69,10 +78,48 @@ export class FireMap {
   }
 
   setScene(scene: MapScene) {
+    this.gridMode = false;
+    this.grid = null;
+    this.hover = null;
     this.scene = scene;
     this.baseDirty = true;
     this.retarget();
     this.schedule();
+  }
+
+  /** Grid mode: draws `view` (null while it loads) and outlines the provinces in `hi`; the camera shows the whole country. */
+  setGrid(view: GridView | null, hi: string[]) {
+    this.gridMode = true;
+    this.grid = view;
+    this.gridHi = hi;
+    if (this.scene.provs.length || this.scene.marker || this.scene.foci) this.scene = { provs: [], marker: null, foci: null };
+    this.baseDirty = true;
+    this.retarget();
+    this.schedule();
+  }
+
+  /** Province under the pointer gets a light outline; repaints the overlay only, not the base layer. */
+  setHover(name: string | null) {
+    if (name === this.hover) return;
+    this.hover = name;
+    this.schedule();
+  }
+
+  /** Hit test at CSS pixel (x, y) of the canvas. Grid mode only. */
+  hit(x: number, y: number): Hit | null {
+    const F = this.F;
+    if (!F || !this.gridMode) return null;
+    const step = this.grid ? this.grid.step : 0.25;
+    const lon = LON0 + (x - F.ox) / (K * F.s), lat = LAT1 - (y - F.oy) / F.s;
+    let prov: string | null = null;
+    this.bctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    for (let i = 0; i < this.paths.length; i++) {
+      if (this.bctx.isPointInPath(this.paths[i].p, x * this.dpr, y * this.dpr)) { prov = this.paths[i].name; break; }
+    }
+    const gx = Math.floor(lon / step), gy = Math.floor(lat / step);
+    const key = gx + ',' + gy;
+    const value = this.grid ? this.grid.index.get(key) ?? null : null;
+    return { prov, key, clon: gx * step + step / 2, clat: gy * step + step / 2, value };
   }
 
   /** Week shown (1-based count of weeks drawn). Only redraws the base layer when it changes. */
@@ -171,7 +218,33 @@ export class FireMap {
 
   /* ---------- drawing ---------- */
 
+  private drawGrid() {
+    const F = this.F!, b = this.bctx, hi = this.gridHi, G = this.grid;
+    b.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    b.clearRect(0, 0, F.w, F.h);
+    this.paths.forEach((o) => { b.fillStyle = hi.indexOf(o.name) >= 0 ? '#2b1a12' : '#1a120e'; b.fill(o.p); });
+    if (G) {
+      const cw = G.step * K * F.s + 0.7, ch = G.step * F.s + 0.7;
+      G.cells.forEach((c) => {
+        const q = this.project(c[0], c[1]);
+        b.fillStyle = G.color(c[2]);
+        b.fillRect(q[0] - cw / 2, q[1] - ch / 2, cw, ch);
+      });
+    }
+    b.lineJoin = 'round';
+    this.paths.forEach((o) => {
+      if (hi.indexOf(o.name) < 0) { b.strokeStyle = 'rgba(120,84,66,.55)'; b.lineWidth = 0.7; b.stroke(o.p); }
+    });
+    this.paths.forEach((o) => {
+      if (hi.indexOf(o.name) >= 0) {
+        b.strokeStyle = '#ff9a3c'; b.lineWidth = 2; b.shadowColor = 'rgba(255,140,40,.8)'; b.shadowBlur = 10;
+        b.stroke(o.p); b.shadowBlur = 0;
+      }
+    });
+  }
+
   private drawBase() {
+    if (this.gridMode) { this.drawGrid(); return; }
     const F = this.F!, b = this.bctx, hi = this.scene.provs;
     b.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     b.clearRect(0, 0, F.w, F.h);
@@ -205,6 +278,10 @@ export class FireMap {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, this.cv.width, this.cv.height);
     ctx.drawImage(this.base, 0, 0);
+    if (this.gridMode && this.hover && this.gridHi.indexOf(this.hover) < 0) {
+      const o = this.paths.find((x) => x.name === this.hover);
+      if (o) { ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); ctx.strokeStyle = '#ffd9a0'; ctx.lineWidth = 1.5; ctx.stroke(o.p); }
+    }
     const m = this.scene.marker;
     if (m) {
       ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);

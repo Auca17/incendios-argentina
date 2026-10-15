@@ -22,7 +22,7 @@ export default function MonthChart({ series, provs, year, from, to }: Props) {
             <g key={MESES[i]}>
               <rect x={x} y={H - 16 - bh} width={BW} height={bh} rx={2}
                 fill={future ? '#2a1d17' : i === peak ? '#ffc83d' : '#ff6a1a'} opacity={inRange ? 1 : 0.35}>
-                <title>{MESES_L[i]}: {fmt(v)} focos</title>
+                <title>{`${MESES_L[i]}: ${fmt(v)} focos`}</title>
               </rect>
               <text x={x + BW / 2} y={H - 3} fontSize={8.5} fill="#b09d92" textAnchor="middle">{MESES[i]}</text>
             </g>
