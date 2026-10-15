@@ -1,8 +1,24 @@
-# Foco Cero
+# Lo que el fuego se llevó: 15 años, 6 historias
 
 Seis incendios argentinos contados con sus fuentes y los focos de calor detectados por satélite (NASA FIRMS, VIIRS S-NPP) entre 2012 y 2026, con un mapa para explorar los datos.
 
 Sitio estático: HTML, CSS y JavaScript sin compilación ni dependencias externas. Se publica con GitHub Pages desde la raíz de la rama `main`.
+
+## Autor
+
+**Augustus Rufino** · GitHub: [@Auca17](https://github.com/Auca17)
+
+Idea, investigación, verificación de fuentes y dirección del proyecto. El código se escribió con asistencia de IA bajo supervisión del autor; el detalle está en `IA-declaracion.md`.
+
+## Cómo verlo localmente
+
+El sitio carga los datos con `<script>`, pero conviene servirlo por HTTP en lugar de abrir el archivo directamente:
+
+```sh
+python -m http.server 8000
+```
+
+Después abrir `http://localhost:8000`.
 
 ## Cómo está organizado el código
 
@@ -14,6 +30,7 @@ Sitio estático: HTML, CSS y JavaScript sin compilación ni dependencias externa
 | `scene.js` | `FireScene.create(opciones)` devuelve la ilustración SVG esquemática. `update(s)` la lleva a un estado entre 0 y 1: cómo empezó, el fuego y el combate. Solo dibuja los medios de combate que nombran las fuentes (`means` en `EVENTS`). |
 | `data/data.js` | `window.DATA`: provincias (Natural Earth), focos por provincia y mes, y celdas de 0,25° por año. |
 | `data/ev/<id>.js` | `window.EV_FOCI[id]`: focos de cada incendio por semana en celdas de 0,05°. Se cargan solo al abrir ese incendio. |
+| `img/fotos/<id>-N.jpg` | Tres fotos documentales por incendio (registro testimonial). Las atribuciones están en `app.js`. Los originales sin normalizar no se suben (ver `.gitignore`). |
 | `scripts/process.py` | Genera `data/data.js`, `data/meta.json` y `data/ev/*.js`. |
 | `scripts/events.json` | Provincias, año y meses de cada incendio para los archivos semanales. |
 

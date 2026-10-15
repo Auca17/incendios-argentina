@@ -1,7 +1,36 @@
+# Raw NASA FIRMS downloads (200+ MB, regenerable)
 data-raw/
 *.csv
 *.zip
-node_modules/
+
+# Photos: only the normalized files used by the app (<id>-N.jpg) are published
+img/fotosnuveas/
+img/fotos/*
+!img/fotos/*-[0-9].jpg
+!img/fotos/README.md
+
+# Local tooling and working notes
 .atl/
-prompt-incendios-v2.md
 odd/
+prompt-incendios-v2.md
+.claude/
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# Secrets
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
