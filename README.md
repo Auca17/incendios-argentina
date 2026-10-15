@@ -6,12 +6,6 @@ Seis incendios argentinos contados con sus fuentes y los focos de calor detectad
 
 Sitio estático: HTML, CSS y JavaScript sin compilación ni dependencias externas. Se publica con GitHub Pages desde la raíz de la rama `main`.
 
-## Autor
-
-**Augustus Rufino** · [augurufino@gmail.com](mailto:augurufino@gmail.com) · GitHub: [@Auca17](https://github.com/Auca17)
-
-Idea, investigación, verificación de fuentes y dirección del proyecto. El código se escribió con asistencia de IA bajo supervisión del autor; el detalle está en `IA-declaracion.md`.
-
 ## Cómo verlo localmente
 
 El sitio carga los datos con `<script>`, pero conviene servirlo por HTTP en lugar de abrir el archivo directamente:
