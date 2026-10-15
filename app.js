@@ -665,38 +665,8 @@
   function sources(list) {
     return '<details class="sources"><summary>Fuentes de esta pantalla</summary><ul class="plain">' + list.map(function (s) { return '<li><a href="' + s.u + '" target="_blank" rel="noopener">' + s.t + '</a></li>'; }).join('') + '</ul></details>';
   }
-  var PHOTO_DATA = {
-    cordoba: [
-      { src: 'img/fotos/cordoba-0.jpg', cap: 'Ruta Provincial 17 hacia Ongamira y Los Terrones cercada por las llamas en el monte seco.', cred: 'Archivo documental' },
-      { src: 'img/fotos/cordoba-1.jpg', cap: 'Frente de fuego de gran magnitud avanzando sobre las laderas de las Sierras de Córdoba.', cred: 'Archivo documental' },
-      { src: 'img/fotos/cordoba-2.jpg', cap: 'Brigadistas forestales con mochilas y batefuegos operando sobre el pajonal serrano bajo denso humo.', cred: 'Brigadas Forestales de Córdoba / Archivo' }
-    ],
-    delta: [
-      { src: 'img/fotos/delta-0.jpg', cap: 'Columnas de humo sobre los humedales del Delta del Río Paraná registradas desde el aire.', cred: 'Relevamiento aéreo / Archivo documental' },
-      { src: 'img/fotos/delta-1.jpg', cap: 'Frente de fuego consumiendo los pajonales y cortaderas sobre la margen de los arroyos durante la noche.', cred: 'Archivo documental' },
-      { src: 'img/fotos/delta-2.jpg', cap: 'Relevamiento con dron de las islas calcinadas y el frente de humo avanzando hacia las ciudades.', cred: 'Archivo documental' }
-    ],
-    misiones: [
-      { src: 'img/fotos/misiones-0.jpg', cap: 'Quemas perimetrales y desmonte en el límite rural de la Reserva de Biósfera Yabotí.', cred: 'Archivo documental' },
-      { src: 'img/fotos/misiones-1.jpg', cap: 'Fuego de copa en la selva: árboles de gran diámetro ardiendo por dentro en los lotes 8 y 9.', cred: 'Archivo documental' },
-      { src: 'img/fotos/misiones-2.jpg', cap: 'Bomberos forestales en caminos de tierra colorada realizando guardia de cenizas.', cred: 'Bomberos Forestales L. N. Alem / Misiones' }
-    ],
-    corrientes: [
-      { src: 'img/fotos/corrientes-0.jpg', cap: 'Ejemplar de ciervo de los pantanos huyendo ante el avance de las llamas en los pastizales del Iberá.', cred: 'Registro documental / @Chaputoba' },
-      { src: 'img/fotos/corrientes-1.jpg', cap: 'Brigadistas y rescatistas socorriendo e hidratando a un carpincho afectado por el fuego y el humo.', cred: 'Brigadistas y voluntarios / Corrientes' },
-      { src: 'img/fotos/corrientes-2.jpg', cap: 'Bombero con línea de manguera combatiendo el fuego que avanza sobre pastizales y esteros.', cred: 'Bomberos Voluntarios / Corrientes' }
-    ],
-    mendoza: [
-      { src: 'img/fotos/mendoza-0.jpg', cap: 'Relevamiento aéreo de las quebradas de la precordillera mendocina cubiertas de humo.', cred: 'Gobierno de Mendoza / PPMF' },
-      { src: 'img/fotos/mendoza-1.jpg', cap: 'El frente de fuego iluminando la noche en las laderas del piedemonte de El Challao.', cred: 'Prensa Mendoza / Archivo' },
-      { src: 'img/fotos/mendoza-2.jpg', cap: 'Cardones y vegetación xerófila calcinados tras el paso del fuego en el piedemonte.', cred: 'Archivo documental' }
-    ],
-    chubut: [
-      { src: 'img/fotos/chubut-0.jpg', cap: 'El avance del fuego sobre el bosque nativo en las laderas cordilleranas, visto desde las chacras de Epuyén.', cred: 'Pobladores de Epuyén / Archivo documental' },
-      { src: 'img/fotos/chubut-1.jpg', cap: 'Incendio forestal de copa de extrema violencia consumiendo bosque andino patagónico.', cred: 'Archivo documental' },
-      { src: 'img/fotos/chubut-2.jpg', cap: 'Autobomba y brigadistas del Servicio Provincial de Manejo del Fuego enfrentando el frente en la ruta.', cred: 'SPMF Chubut / Archivo' }
-    ]
-  };
+  /* Photos withdrawn: no verified license. Only the drawn scenes remain. */
+  var PHOTO_DATA = {};
 
   function mobPhotoHtml(ev, st) {
     var list = PHOTO_DATA[ev.id]; if (!list || !list[st]) return '';
@@ -786,17 +756,7 @@
       count($('#heronum'), ev.hero.value); readP = 0; lastWk = -1; loadFoci(ev);
       var nb = $('#nextch'); if (nb) nb.onclick = function () { show(cur + 1); focusSide(); };
       sw.innerHTML = '<div class="scenebox">' + mountScene(ev) + '</div>' +
-        '<div class="scenecap" aria-live="polite"><span class="step" id="scenecap-step">1</span><span id="scenecap-text"></span></div>' +
-        '<div class="photobox" id="photobox" aria-live="polite">' +
-          '<div class="photoframe">' +
-            '<img id="photoimg" src="" alt="" loading="lazy">' +
-            '<span class="photobadge">Registro testimonial</span>' +
-          '</div>' +
-          '<div class="photometa">' +
-            '<p id="phototext"></p>' +
-            '<span class="photosrc" id="photosrc"></span>' +
-          '</div>' +
-        '</div>';
+        '<div class="scenecap" aria-live="polite"><span class="step" id="scenecap-step">1</span><span id="scenecap-text"></span></div>';
       scn.mount($('#scenewrap svg.scene')); watchScene($('#scenewrap svg.scene')); revealBlocks(side);
       updatePhoto(ev, 0);
     } else {
