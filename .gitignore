@@ -3,11 +3,9 @@ data-raw/
 *.csv
 *.zip
 
-# Photos: only the normalized files used by the app (<id>-N.jpg) are published
-img/fotosnuveas/
-img/fotos/*
-!img/fotos/*-[0-9].jpg
-!img/fotos/README.md
+# Photos withdrawn (no verified license). See FOTOS.md; never commit them again.
+img/
+public/img/
 
 # Local tooling and working notes
 .atl/
