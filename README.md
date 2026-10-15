@@ -26,7 +26,6 @@ Después abrir `http://localhost:8000`.
 | `scene.js` | `FireScene.create(opciones)` devuelve la ilustración SVG esquemática. `update(s)` la lleva a un estado entre 0 y 1: cómo empezó, el fuego y el combate. Solo dibuja los medios de combate que nombran las fuentes (`means` en `EVENTS`). |
 | `data/data.js` | `window.DATA`: provincias (Natural Earth), focos por provincia y mes, y celdas de 0,25° por año. |
 | `data/ev/<id>.js` | `window.EV_FOCI[id]`: focos de cada incendio por semana en celdas de 0,05°. Se cargan solo al abrir ese incendio. |
-| `img/fotos/<id>-N.jpg` | Tres fotos documentales por incendio (registro testimonial). Las atribuciones están en `app.js`. Los originales sin normalizar no se suben (ver `.gitignore`). |
 | `scripts/process.py` | Genera `data/data.js`, `data/meta.json` y `data/ev/*.js`. |
 | `scripts/events.json` | Provincias, año y meses de cada incendio para los archivos semanales. |
 
