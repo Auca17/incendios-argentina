@@ -53,7 +53,7 @@
   font-weight: 800;
   line-height: 1;
   letter-spacing: -2px;
-  color: rgba(255, 200, 120, 0.3);
+  color: rgba(255, 200, 120, 0.5);
   font-variant-numeric: tabular-nums;
   pointer-events: none;
 }

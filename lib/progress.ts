@@ -18,13 +18,14 @@ export function useReadProgress(ref: RefObject<HTMLElement | null>, resetKey?: u
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const small = window.matchMedia('(max-width: 899.98px)');
     let raf = 0;
     const measure = () => {
       raf = 0;
       const top = el.scrollTop;
       const vh = el.clientHeight;
       const max = el.scrollHeight - vh;
-      const line = (window.matchMedia('(max-width: 899.98px)').matches ? LINE_MOBILE : LINE_DESKTOP) * vh;
+      const line = (small.matches ? LINE_MOBILE : LINE_DESKTOP) * vh;
       const off = el.getBoundingClientRect().top;
       const at = (id: string) => {
         const n = el.querySelector('#' + id);

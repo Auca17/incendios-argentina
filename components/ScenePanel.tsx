@@ -14,6 +14,9 @@ export default function ScenePanel({ s, stage, slide }: Props) {
   const reduced = useReducedMotion();
   const box = useRef<HTMLDivElement>(null);
   const onScreen = useRef(true);
+  const scrolling = useRef(false);
+  const applyRef = useRef<() => void>(() => {});
+  const quietTimer = useRef(0);
 
   const scene = useMemo(
     () =>
@@ -36,7 +39,9 @@ export default function ScenePanel({ s, stage, slide }: Props) {
     const svg = box.current?.querySelector('svg.scene');
     if (!scene || !svg) return;
     scene.mount(svg);
-    const apply = () => svg.classList.toggle('paused', !onScreen.current || document.hidden);
+    // ambient animation also rests while the text is being scrolled (the scene is being redrawn then anyway)
+    const apply = () => svg.classList.toggle('paused', !onScreen.current || document.hidden || scrolling.current);
+    applyRef.current = apply;
     onScreen.current = true;
     apply();
     const io = typeof IntersectionObserver !== 'undefined'
@@ -44,12 +49,23 @@ export default function ScenePanel({ s, stage, slide }: Props) {
       : null;
     io?.observe(svg);
     document.addEventListener('visibilitychange', apply);
-    return () => { io?.disconnect(); document.removeEventListener('visibilitychange', apply); };
+    return () => {
+      io?.disconnect();
+      document.removeEventListener('visibilitychange', apply);
+      window.clearTimeout(quietTimer.current);
+      scrolling.current = false;
+    };
   }, [scene]);
 
   /* reduced motion: still frames chosen so each stage shows its means */
   const sEff = reduced ? [0.18, 0.5, 0.8][stage] : s;
-  useEffect(() => { scene?.update(sEff); }, [scene, sEff]);
+  useEffect(() => {
+    scene?.update(sEff);
+    scrolling.current = true;
+    applyRef.current();
+    window.clearTimeout(quietTimer.current);
+    quietTimer.current = window.setTimeout(() => { scrolling.current = false; applyRef.current(); }, 180);
+  }, [scene, sEff]);
 
   if (!ev || !scene) return <section className={styles.scene} aria-label="Escena esquemática" />;
 
@@ -63,6 +79,10 @@ export default function ScenePanel({ s, stage, slide }: Props) {
           <b>{lead}</b>
           {rest}
         </span>
+      </div>
+      <div className={styles.means}>
+        <h2 className={styles.meansH}>Medios de combate según la fuente</h2>
+        <p>{ev.response}</p>
       </div>
     </section>
   );

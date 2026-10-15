@@ -63,6 +63,8 @@ export function formatHash(r: Route): string {
  */
 export function useHashRoute(slideCount: number, provinces?: string[]) {
   const [route, setRoute] = useState<Route>(EMPTY_ROUTE);
+  /** False until the address has been read once: before that `route` is the placeholder (screen 0), not the real one. */
+  const [ready, setReady] = useState(false);
   const ref = useRef<Route>(EMPTY_ROUTE);
 
   const apply = useCallback((next: Route, write: boolean) => {
@@ -84,7 +86,7 @@ export function useHashRoute(slideCount: number, provinces?: string[]) {
 
   useEffect(() => {
     // like legacy, the address is rewritten to the canonical form of the view that was opened
-    const read = () => apply(parseHash(window.location.hash, slideCount, provinces), true);
+    const read = () => { apply(parseHash(window.location.hash, slideCount, provinces), true); setReady(true); };
     read();
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
@@ -102,5 +104,5 @@ export function useHashRoute(slideCount: number, provinces?: string[]) {
     return () => document.removeEventListener('keydown', onKey);
   }, [go]);
 
-  return { route, setSlide, go, update };
+  return { route, ready, setSlide, go, update };
 }

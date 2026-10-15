@@ -23,6 +23,10 @@ const NO_PROVINCES: string[] = [];
 const NO_GEO: any[] = [];
 const NO_HI: string[] = [];
 
+/** Horizontal swipe on the stage: at least this far, and clearly more horizontal than vertical. */
+const SWIPE_MIN = 64;
+const SWIPE_RATIO = 1.5;
+
 const slideName = (i: number) => {
   const s = SLIDES[i];
   return s.type === 'event' ? s.ev.region : s.name;
@@ -33,7 +37,7 @@ export default function Experience() {
   const [geo, setGeo] = useState<any[]>(NO_GEO);
   // undefined until the outlines are known: the router then keeps `p` as given and validates it once they load
   const provinces = useMemo(() => (geo === NO_GEO ? undefined : geo.map((f) => f.properties.name as string)), [geo]);
-  const { route, setSlide, go, update } = useHashRoute(SLIDES.length, provinces);
+  const { route, ready, setSlide, go, update } = useHashRoute(SLIDES.length, provinces);
   const routeRef = useRef(route);
   routeRef.current = route;
   const sideRef = useRef<HTMLElement>(null);
@@ -41,7 +45,7 @@ export default function Experience() {
   const slide = SLIDES[route.slide];
   const isEvent = slide.type === 'event';
   const isMobile = useIsMobile();
-  const { nat, failed } = useNational(!isEvent);
+  const { nat, failed } = useNational(ready && !isEvent); // not before the address is read: a deep link to a fire must not fetch the national data
 
   useEffect(() => {
     let live = true;
@@ -56,6 +60,23 @@ export default function Experience() {
   const next = () => {
     setSlide(route.slide + 1);
     if (!window.matchMedia('(max-width: 899.98px)').matches) sideRef.current?.focus({ preventScroll: true });
+  };
+
+  /* ---------- swipe between chapters (touch, on the stage only) ---------- */
+  const touch = useRef<{ x: number; y: number; ok: boolean } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    // on the grid map a drag is not a chapter change (a tap there selects a province)
+    const onMap = !isEvent && (e.target as HTMLElement).tagName === 'CANVAS';
+    touch.current = e.touches.length === 1 && !onMap ? { x: t.clientX, y: t.clientY, ok: true } : null;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const st = touch.current;
+    touch.current = null;
+    if (!st || !st.ok || e.touches.length) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - st.x, dy = t.clientY - st.y;
+    if (Math.abs(dx) >= SWIPE_MIN && Math.abs(dx) > SWIPE_RATIO * Math.abs(dy)) go(dx < 0 ? 1 : -1);
   };
 
   /* ---------- explore state lives in the address (legacy format) ---------- */
@@ -101,7 +122,7 @@ export default function Experience() {
   return (
     <div className={styles.app}>
       <TopBar index={route.slide} count={SLIDES.length} name={slide.name} />
-      <div className={styles.panels}>
+      <main className={styles.panels}>
         <Sidebar
           ref={sideRef}
           index={route.slide}
@@ -114,7 +135,12 @@ export default function Experience() {
           onPickYear={onYear}
           inline={isMobile ? panel : null}
         />
-        <div className={isEvent ? styles.stage : `${styles.stage} ${styles.stageMap}`}>
+        <div
+          className={isEvent ? styles.stage : `${styles.stage} ${styles.stageMap}`}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          onTouchCancel={() => { touch.current = null; }}
+        >
           <MapPanel p={read.p} slide={slide} geo={geo} explore={explore} />
           {isEvent ? (
             <ScenePanel s={s} stage={stage} slide={slide} />
@@ -125,7 +151,7 @@ export default function Experience() {
         <div className={styles.avisoSlot}><AvisoPopover /></div>
         <ScrollCue hidden={!isEvent || read.p > 0.01} />
         <Nav index={route.slide} slides={SLIDES} onGo={setSlide} onStep={go} />
-      </div>
+      </main>
       <p className="sr-only" aria-live="polite">
         {`Pantalla ${route.slide + 1} de ${SLIDES.length}: ${slideName(route.slide)}`}
       </p>

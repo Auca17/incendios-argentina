@@ -32,6 +32,6 @@
 }
 @media (max-width: 899.98px) {
   .chapter { display: none; }
-  /* wrap instead of clipping the title */
-  .title { white-space: normal; text-overflow: clip; font-size: var(--fs-14); }
+  .bar { min-height: var(--topbar-h-m); padding: var(--s-half) var(--s-2); }
+  .title { font-size: 13px; }
 }

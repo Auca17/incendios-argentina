@@ -41,11 +41,12 @@
   height: var(--s-1);
   margin: calc(var(--s-half) * -1) 0 0 calc(var(--s-half) * -1);
   border-radius: 50%;
-  background: var(--ring);
+  background: var(--muted);
+  opacity: 0.7;
   transition: background 0.2s var(--ease), transform 0.2s var(--ease);
 }
-.dot:hover::after { background: var(--muted); }
-.on::after { background: var(--accent); transform: scale(1.5); }
+.dot:hover::after { background: var(--text); opacity: 1; }
+.on::after { opacity: 1; background: var(--accent); transform: scale(1.5); }
 
 @media (max-width: 899.98px) {
   .nav { right: auto; left: 50%; transform: translateX(-50%); bottom: var(--s-1); }

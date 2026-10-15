@@ -46,11 +46,12 @@
   }
   /* Mobile: map + scene fixed on top (~45vh), sidebar scrolls below. */
   .stage {
+    touch-action: pan-y;
     order: -1;
     flex: none;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 46fr 54fr;
+    grid-template-rows: 48fr 52fr;
     height: var(--mobile-stage-h);
     min-height: 0;
     border-bottom: 1px solid var(--ring);
@@ -58,5 +59,5 @@
   /* no scene on these screens: the map takes the whole stage and the cards move into the text column */
   .stageMap { grid-template-rows: minmax(0, 1fr); }
   /* its own row above the map, so it never hides the province; the popover opens over the stage */
-  .avisoSlot { position: relative; order: -2; flex: none; inset: auto; height: var(--s-5); }
+  .avisoSlot { position: relative; order: -2; flex: none; inset: auto; height: var(--aviso-h-m); }
 }

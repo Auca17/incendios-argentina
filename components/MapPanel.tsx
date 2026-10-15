@@ -122,6 +122,12 @@ export default function MapPanel({ p, slide, geo, explore }: Props) {
   }, []);
 
   useEffect(() => { if (!gridOn) hide(); }, [gridOn, hide]);
+  useEffect(() => {
+    if (!tip) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') hide(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [tip, hide]);
 
   const onMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const m = map.current;
