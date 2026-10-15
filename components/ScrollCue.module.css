@@ -1,31 +1,53 @@
 .cue {
   position: absolute;
   left: 0;
-  bottom: 0;
+  bottom: var(--s-3);
   width: var(--side-w);
-  z-index: 4;
-  padding: var(--s-4) 0 var(--s-3);
+  z-index: 8;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.cue span {
+  display: inline-flex;
   align-items: center;
   gap: var(--s-1);
-  pointer-events: none;
-  font-size: var(--fs-14);
-  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(14, 12, 10, 0.94);
+  border: 1px solid var(--accent);
   color: var(--accent);
-  background: linear-gradient(180deg, rgba(10, 10, 10, 0), var(--bg) 28%);
+  font-size: var(--fs-12);
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
 }
+
 .cue i {
-  width: 10px;
-  height: 10px;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
   transform: rotate(45deg);
   animation: cue 1.6s ease-in-out infinite;
+  margin-left: 2px;
 }
-@keyframes cue { 50% { transform: translateY(4px) rotate(45deg); } }
 
-@media (max-width: 899.98px) {
-  .cue { right: 0; width: auto; padding-bottom: var(--s-8); }
+@keyframes cue {
+  0%, 100% { transform: translateY(0) rotate(45deg); }
+  50% { transform: translateY(3px) rotate(45deg); }
 }
-@media (prefers-reduced-motion: reduce) { .cue i { animation: none; } }
+
+/* On mobile screens, the single-column layout scrolls naturally and the floating cue is redundant/obstructive */
+@media (max-width: 899.98px) {
+  .cue {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cue i { animation: none; }
+}

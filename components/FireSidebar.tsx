@@ -2,6 +2,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { loadProvinciaMes } from '../lib/data';
 import { ALT, CHAPTERS, STAGE_NAMES, factsFor, monthSeries, type Fact } from '../lib/fire';
+import { getStoryPhoto, type StoryPhoto } from '../lib/photos';
 import CountUp from './CountUp';
 import MonthChart from './MonthChart';
 import styles from './FireSidebar.module.css';
@@ -9,7 +10,7 @@ import styles from './FireSidebar.module.css';
 /** Sticky three-stage bar: the active stage and the progress line follow the scene position s. */
 export function StageBar({ s, stage }: { s: number; stage: number }) {
   return (
-    <div className={styles.stages} aria-label="Etapas de la ilustración">
+    <div className={styles.stages} aria-label="Etapas de la historia">
       <ol className={styles.pills}>
         {STAGE_NAMES.map((t, i) => (
           <li key={t} className={styles.pillItem}>
@@ -30,15 +31,6 @@ export function StageBar({ s, stage }: { s: number; stage: number }) {
   );
 }
 
-function More({ children }: { children: React.ReactNode }) {
-  return (
-    <details className={`${styles.more} ${styles.blk}`} data-blk>
-      <summary>Ver más</summary>
-      <div className={styles.moreBody}>{children}</div>
-    </details>
-  );
-}
-
 function Facts({ facts }: { facts: Fact[] }) {
   if (!facts.length) return null;
   return (
@@ -56,12 +48,62 @@ function Facts({ facts }: { facts: Fact[] }) {
   );
 }
 
+function PhotoCard({
+  photo,
+  stepLabel,
+  onOpen,
+}: {
+  photo: StoryPhoto;
+  stepLabel: string;
+  onOpen: (p: StoryPhoto) => void;
+}) {
+  return (
+    <figure className={`${styles.docPhoto} ${styles.blk}`} data-blk>
+      <div className={styles.photoHeader}>
+        <span className={styles.photoStepBadge}>{stepLabel}</span>
+        <button
+          type="button"
+          className={styles.photoZoomBtn}
+          onClick={() => onOpen(photo)}
+          aria-label="Ampliar fotografía documental"
+        >
+          🔍 Ampliar
+        </button>
+      </div>
+      <div className={styles.photoWrap} onClick={() => onOpen(photo)}>
+        <img
+          src={photo.src}
+          alt={photo.caption}
+          loading="lazy"
+          className={styles.photoImg}
+        />
+      </div>
+      <figcaption className={styles.photoCaption}>
+        <p className={styles.photoText}>{photo.caption}</p>
+        <div className={styles.photoMeta}>
+          <span className={styles.photoCredit}>
+            {photo.sourceUrl ? (
+              <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer">
+                {photo.credit}
+              </a>
+            ) : (
+              photo.credit
+            )}
+          </span>
+          <span className={styles.photoLicense}>· {photo.license}</span>
+        </div>
+      </figcaption>
+    </figure>
+  );
+}
+
 type BodyProps = { ev: any; index: number; total: number; nextName: string | null; onNext: () => void };
 
 /** The three chapters of one fire. Memoised: it does not re-render while p changes. */
 const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: BodyProps) {
   const root = useRef<HTMLDivElement>(null);
   const [series, setSeries] = useState<number[] | null>(null);
+  const [modalPhoto, setModalPhoto] = useState<StoryPhoto | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -87,42 +129,24 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
     return () => io.disconnect();
   }, [ev]);
 
-interface VerifiedPhoto {
-  src: string;
-  caption: string;
-  credit: string;
-  license: string;
-  sourceUrl: string;
-}
-
-const VERIFIED_PHOTOS: Record<string, VerifiedPhoto> = {
-  cordoba: {
-    src: '/img/verified/cordoba-fuego.jpg',
-    caption: 'Columnas de humo y focos activos sobre las Sierras de Córdoba registrados por el satélite Terra (MODIS).',
-    credit: 'NASA Worldview / Terra MODIS',
-    license: 'Dominio público',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Wildfires_in_Cordoba_Province,_Argentina.jpg',
-  },
-  delta: {
-    src: '/img/verified/delta-fuego.jpg',
-    caption: 'Frente de fuego sobre los pastizales y humedales del Delta del Paraná durante el operativo de combate.',
-    credit: 'Parques Nacionales / Min. de Ambiente',
-    license: 'CC BY 4.0',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Incendio_en_delta_del_paran%C3%A1_2020_-_Parques_Nacionales.jpg',
-  },
-  corrientes: {
-    src: '/img/verified/corrientes-fuego.jpg',
-    caption: 'Vista satelital (Landsat 9) de los focos de calor y cicatrices de fuego en torno a los Esteros del Iberá.',
-    credit: 'NASA Earth Observatory / USGS',
-    license: 'Dominio público',
-    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Wildfires_Ravage_Corrientes_as_seen_by_Landsat_9.jpg',
-  },
-};
+  // Close modal on Escape
+  useEffect(() => {
+    if (!modalPhoto) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setModalPhoto(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [modalPhoto]);
 
   const alt = ALT[ev.id];
-  const photo = VERIFIED_PHOTOS[ev.id];
   const unitCap = ev.hero.unit.charAt(0).toUpperCase() + ev.hero.unit.slice(1);
   const start = factsFor(ev, 0), fire = factsFor(ev, 1), fight = factsFor(ev, 2);
+
+  const photo0 = getStoryPhoto(ev.id, 0);
+  const photo1 = getStoryPhoto(ev.id, 1);
+  const photo2 = getStoryPhoto(ev.id, 2);
+
   const head = (i: number) => (
     <h3 className={styles.chh}><span aria-hidden="true">{i + 1}</span>{CHAPTERS[i]}</h3>
   );
@@ -132,66 +156,153 @@ const VERIFIED_PHOTOS: Record<string, VerifiedPhoto> = {
       <p className={styles.kicker}>{index} de {total} · {ev.region} · {ev.when}</p>
       <h2 className={styles.title}>{ev.title}</h2>
 
+      {/* Act 1: Cómo empezó */}
       <section className={styles.ch} id="ch-start">
         {head(0)}
-        <blockquote className={`${styles.quote} ${styles.blk}`} data-blk><p>{ev.cause.text}</p></blockquote>
-        {start.length > 0 && <More><Facts facts={start} /></More>}
+        <blockquote className={`${styles.quote} ${styles.blk}`} data-blk>
+          <p>{ev.cause.text}</p>
+        </blockquote>
+
+        {photo0 && (
+          <PhotoCard
+            photo={photo0}
+            stepLabel="Registro inicial · Cómo empezó"
+            onOpen={setModalPhoto}
+          />
+        )}
+
+        {start.length > 0 && (
+          <div className={`${styles.factsBlock} ${styles.blk}`} data-blk>
+            <h4 className={styles.subHead}>Claves del origen y contexto</h4>
+            <Facts facts={start} />
+          </div>
+        )}
       </section>
 
+      {/* Act 2: El fuego y su magnitud */}
       <section className={styles.ch} id="ch-fire">
         {head(1)}
-        <div className={`${styles.hero} ${styles.blk}`} data-blk>
-          <CountUp value={ev.hero.value} className={styles.num} />
-          <span className={styles.unit}>{ev.hero.unit}</span>
+        <div className={`${styles.heroCard} ${styles.blk}`} data-blk>
+          <span className={styles.heroBadge}>SUPERFICIE AFECTADA REGISTRADA</span>
+          <div className={styles.hero}>
+            <CountUp value={ev.hero.value} className={styles.num} />
+            <span className={styles.unit}>{ev.hero.unit}</span>
+          </div>
+          <p className={styles.herolabel}>
+            {unitCap} {ev.hero.label}
+          </p>
+          <div className={styles.heroSource}>
+            <span className={styles.verifiedCheck}>✓ Fuente oficial:</span> {ev.hero.src}
+          </div>
         </div>
-        <p className={`${styles.herolabel} ${styles.blk}`} data-blk>
-          {unitCap} {ev.hero.label} Según {ev.hero.src}.
-        </p>
+
         {alt && (
           <div className={`${styles.chips} ${styles.blk}`} data-blk>
             {alt.map((a) => <span key={a[0]}><b>{a[0]}</b> · {a[1]}</span>)}
           </div>
         )}
-        {photo && (
-          <figure className={`${styles.docPhoto} ${styles.blk}`} data-blk>
-            <div className={styles.photoWrap}>
-              <img src={photo.src} alt={photo.caption} loading="lazy" className={styles.photoImg} />
-            </div>
-            <figcaption className={styles.photoCaption}>
-              <span className={styles.photoText}>{photo.caption}</span>
-              <span className={styles.photoCredit}>
-                Foto documental: <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer">{photo.credit}</a> · {photo.license}
-              </span>
-            </figcaption>
-          </figure>
+
+        {photo1 && (
+          <PhotoCard
+            photo={photo1}
+            stepLabel="Punto máximo · El avance del fuego"
+            onOpen={setModalPhoto}
+          />
         )}
-        <More>
-          <p>{ev.hero.note}</p>
+
+        <div className={`${styles.factsBlock} ${styles.blk}`} data-blk>
+          <h4 className={styles.subHead}>Magnitud e impacto documentado</h4>
+          {ev.hero.note && (
+            <div className={styles.officialNote}>
+              <b>Nota de registro:</b> {ev.hero.note}
+            </div>
+          )}
           <Facts facts={fire} />
-        </More>
+        </div>
       </section>
 
+      {/* Act 3: Cómo se combatió */}
       <section className={`${styles.ch} ${styles.last}`} id="ch-fight">
         {head(2)}
         <p className={`${styles.lead} ${styles.blk}`} data-blk>{ev.response}</p>
-        {fight.length > 0 && <More><Facts facts={fight} /></More>}
+
+        {photo2 && (
+          <PhotoCard
+            photo={photo2}
+            stepLabel="Operativo de combate · En el terreno"
+            onOpen={setModalPhoto}
+          />
+        )}
+
+        {fight.length > 0 && (
+          <div className={`${styles.factsBlock} ${styles.blk}`} data-blk>
+            <h4 className={styles.subHead}>Medios y operativo de control</h4>
+            <Facts facts={fight} />
+          </div>
+        )}
+
         <div className={`${styles.chartSlot} ${styles.blk}`} data-blk>
+          <h4 className={styles.subHead}>Evolución mensual de focos de calor</h4>
           {series && (
             <MonthChart series={series} provs={ev.months.prov} year={ev.months.year} from={ev.months.from} to={ev.months.to} />
           )}
         </div>
-        <details className={`${styles.sources} ${styles.blk}`} data-blk>
-          <summary>Fuentes</summary>
-          <ul>
+
+        {/* Respaldo de fuentes verificado */}
+        <div className={`${styles.sourcesCard} ${styles.blk}`} data-blk>
+          <h4 className={styles.sourcesHead}>
+            <span className={styles.verifiedIcon}>✓</span> Fuentes de respaldo verificadas
+          </h4>
+          <ul className={styles.sourcesList}>
             {ev.sources.map((src: { t: string; u: string }) => (
-              <li key={src.u}><a href={src.u} target="_blank" rel="noopener noreferrer">{src.t}</a></li>
+              <li key={src.u}>
+                <a href={src.u} target="_blank" rel="noopener noreferrer" className={styles.sourceLink}>
+                  <span>{src.t}</span>
+                  <span className={styles.extIcon}>↗</span>
+                </a>
+              </li>
             ))}
           </ul>
-        </details>
+        </div>
+
         {nextName && (
-          <button className={`${styles.nextbtn} ${styles.blk}`} data-blk onClick={onNext}>{nextName} →</button>
+          <button className={`${styles.nextbtn} ${styles.blk}`} data-blk onClick={onNext}>
+            Siguiente historia: {nextName} →
+          </button>
         )}
       </section>
+
+      {/* Lightbox Modal */}
+      {modalPhoto && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setModalPhoto(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Fotografía en alta resolución"
+        >
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className={styles.modalClose}
+              onClick={() => setModalPhoto(null)}
+              aria-label="Cerrar fotografía"
+            >
+              ✕
+            </button>
+            <img src={modalPhoto.src} alt={modalPhoto.caption} className={styles.modalImg} />
+            <div className={styles.modalFooter}>
+              <p className={styles.modalCaption}>{modalPhoto.caption}</p>
+              <p className={styles.modalMeta}>
+                <b>Crédito:</b> {modalPhoto.credit} · <b>Licencia:</b> {modalPhoto.license}
+                {modalPhoto.sourceUrl && (
+                  <> · <a href={modalPhoto.sourceUrl} target="_blank" rel="noopener noreferrer">Ver fuente original ↗</a></>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

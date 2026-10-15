@@ -5,8 +5,9 @@ export default function ScrollCue({ hidden }: { hidden: boolean }) {
   if (hidden) return null;
   return (
     <div className={styles.cue} aria-hidden="true">
-      <span>Seguí bajando: el fuego avanza</span>
-      <i />
+      <span>
+        Seguí bajando: el fuego avanza <i />
+      </span>
     </div>
   );
 }
