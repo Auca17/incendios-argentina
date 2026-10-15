@@ -73,3 +73,70 @@ Todas las discrepancias fueron corregidas en el código (`app.js`):
 ## Textos del proyecto (no son citas)
 
 "La fuente no detalla los medios de combate" (Córdoba, Delta y Corrientes) y los textos de ilustración describen lo que contienen las fuentes del sitio. No se revisó si otras fuentes, no citadas, detallan esos medios.
+
+## Verificación de la migración a Next.js
+
+Esta sección registra las comprobaciones de la versión en Next.js (rama `next`) contra el sitio original congelado (tag `entrega-v1-2026-10-15`, conservado en `legacy/`). Cada resultado se obtuvo corriendo el comando indicado. La sección anterior (fuentes y puntos de decisión) no se modificó.
+
+### Textos de los incendios (`EVENTS`)
+
+- **Comando:** `npm run test:events`.
+- **Qué compara:** el arreglo `EVENTS` de `lib/events.ts` con el de `legacy/app.js`, extraídos y evaluados por separado, con `assert.deepStrictEqual`: cifras, causas, fuentes, atribuciones, medios de combate y marcadores de los seis incendios.
+- **Resultado:** `EVENTS OK (6 events)`. Es decir, ninguna cifra, causa ni fuente cambió en la migración.
+
+### Totales y datos
+
+- **Comando:** `npm run check:data`.
+- **Qué compara:** cada archivo de `public/data/` contra los datos originales (`legacy/data`), sin archivos de más ni de menos, y reproduce las cifras de control.
+- **Resultado:** `DATA OK (24 JSON files identical to legacy)`. Total de la portada: 2.620.568 focos, igual a la suma de los totales anuales (datos de 2012 a 2026).
+
+### Lectura de la primera semana de cada incendio (`p = 0`)
+
+Texto que muestra el mapa al abrir cada incendio, recalculado a partir de `public/data/semanas-<id>.json` con la misma cuenta que `lib/fire.ts` (primera semana con focos, focos acumulados hasta ella y fecha de su último día). Chubut sale de `npm run check:data`; los otros cinco, de un cálculo propio sobre los JSON.
+
+| Incendio | Lectura al abrir |
+|---|---|
+| Córdoba | semana 1 de 31 · 78 focos · hasta el 7 de mayo de 2020 |
+| Delta | semana 1 de 53 · 211 focos · hasta el 7 de enero de 2020 |
+| Misiones | semana 1 de 36 · 22 focos · hasta el 7 de mayo de 2020 |
+| Corrientes | semana 1 de 53 · 1.243 focos · hasta el 7 de enero de 2022 |
+| Mendoza | semana 1 de 53 · 8 focos · hasta el 7 de enero de 2023 |
+| Chubut | semana 1 de 44 · 1.122 focos · hasta el 7 de enero de 2026 |
+
+Durante la migración, las capturas automáticas de los seis incendios mostraron estas mismas lecturas que el sitio original.
+
+### Filtro por mes o trimestre
+
+El filtro es nuevo (el sitio original no lo tenía) y afecta el ranking, la tarjeta de provincia, la serie, la estacionalidad y la tabla de comparación; el mapa sigue mostrando el año completo y la pantalla lo dice. Los totales se recalcularon sumando `public/data/provincia-mes.json`:
+
+| Comprobación | Resultado |
+|---|---|
+| Formosa, 2020, todo el año | 79.143 focos |
+| Santa Fe, 2020, todo el año | 77.213 focos |
+| Corrientes, tercer trimestre de 2019 (julio a septiembre) | 13.214 focos |
+| Corrientes, tercer trimestre de 2022 | 2.541 focos |
+
+La frase de lectura de la comparación nombra la provincia con mayor cambio absoluto y toma las cifras de los datos, sin adjetivos. Ejemplo: en el tercer trimestre, de 2019 a 2022, Corrientes pasa de 13.214 a 2.541 focos (−10.673). Los años incompletos se marcan y no se extrapolan.
+
+### Contraste de color
+
+- **Comando:** `node scripts/contrast.mjs`.
+- **Resultado:** 30 de 30 pares de colores cumplen WCAG AA (texto, íconos y bordes de la interfaz, incluido el indicador de año y los puntos de navegación).
+
+### Medios de combate dibujados
+
+Las ilustraciones son esquemáticas, están hechas en código y dibujan un medio aéreo solo si la fuente citada lo nombra:
+
+| Incendio | Medios dibujados | Fundamento |
+|---|---|---|
+| Chubut | Avión, helicóptero y brigadistas | Infobae: "aviones hidrantes y anfibios, helicópteros con helibalde". |
+| Misiones | Avión y brigadistas | Misiones Online: "un avión hidrante del Plan Nacional de Manejo de Fuego". |
+| Mendoza | Solo brigadistas | La fuente dice que se solicitó un avión hidrante, no que se haya usado. |
+| Córdoba, Delta y Corrientes | Solo brigadistas | Las fuentes citadas no detallan los medios de combate. |
+
+### Otras comprobaciones y límites
+
+- `npm run build` compila y exporta el sitio sin errores.
+- En las capturas automáticas (escritorio 1440 px y móvil 390 px) no hubo errores de consola, pedidos fallidos ni desborde horizontal.
+- No se corrió una auditoría automática de accesibilidad completa; durante la revisión se comprobaron la navegación por teclado y el anuncio de cambios de pantalla (`aria-live`).
+- Los textos de la interfaz nuevos (frase de lectura, nota del mapa, aviso de años incompletos) no tienen fuente externa: describen los datos del propio sitio.

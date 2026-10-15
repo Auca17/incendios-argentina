@@ -30,6 +30,39 @@ Este documento resume cómo se usó la inteligencia artificial en este repositor
 - No agregó cifras, causas ni fuentes por su cuenta. Las cifras de cada incendio, sus fuentes y el lenguaje de atribución vienen del trabajo de la persona autora.
 - No cambió el procesamiento de `data/data.js`: el archivo regenerado es idéntico al que había generado la persona autora.
 
+## Migración a Next.js
+
+Después de la versión presentada (tag `entrega-v1-2026-10-15`), el sitio se portó a Next.js en la rama `next`. Esta migración se hizo con Claude Code (Anthropic), bajo la dirección de la persona autora. Una sesión principal con el modelo Claude Opus 5.5 coordinó el trabajo, hizo ediciones puntuales y repitió las comprobaciones; las tareas de código y de redacción las ejecutaron agentes delegados con el modelo Claude Sonnet.
+
+**Qué hicieron los agentes**
+
+- Escribieron el código de Next.js y TypeScript (componentes, estilos, enrutado por hash, carga de datos).
+- Portaron el mapa en canvas y la escena SVG del sitio original.
+- Escribieron los scripts de prueba y verificación: `test-events.mjs`, `check-totals.mjs`, `contrast.mjs` y `shots.mjs` (capturas y control de errores con Chrome, sin Playwright).
+- Escribieron las ilustraciones, todas en código (SVG y CSS).
+- Redactaron como borrador `README.md`, la sección de migración de `VERIFICACION.md`, `VIDEO.md`, `DESCRIPCION.md`, este archivo, `FOTOS.md` y `CHECKLIST-ENVIO.md`.
+
+**Qué decidió la persona autora**
+
+- El alcance de la migración, qué recortar y qué mantener.
+- Dibujar un medio aéreo solo donde las fuentes lo nombran.
+- Retirar las fotos sin licencia verificada.
+- Agregar el filtro por mes o trimestre.
+- Que la frase de lectura de la comparación no use adjetivos.
+- Retirar la cortina de fuego entre capítulos y dejar un fundido simple, según la regla que fijó de antemano para el caso de que la animación se trabara en un celular lento.
+- Fijar las dependencias en versiones publicadas con al menos dos semanas de antigüedad.
+- Revisó las capturas de pantalla de cada etapa.
+
+**Qué no se hizo**
+
+- No hay imágenes generadas por IA.
+- No hay fotos en el sitio.
+- Las cifras, causas y fuentes de `EVENTS` se copiaron sin cambios; una prueba automática lo comprueba (ver `VERIFICACION.md`).
+
 ## Alcance
 
-Este resumen cubre las sesiones de trabajo del 14 de octubre de 2026. No describe el trabajo hecho antes en el repositorio. Las páginas de referencia (649 Héroes y Milla 201) se miraron solo como inspiración de diseño; ver `INSPIRACION.md`.
+Este resumen cubre las sesiones de trabajo del 14 de octubre de 2026 y la migración a Next.js del 15 de octubre de 2026. No describe el trabajo hecho antes en el repositorio. Las páginas de referencia (649 Héroes y Milla 201) se miraron solo como inspiración de diseño; ver `INSPIRACION.md`.
+
+Firma: [seudónimo]
+
+Fecha: [fecha]
