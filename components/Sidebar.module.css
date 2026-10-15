@@ -1,16 +1,15 @@
 .side {
   overflow-y: auto;
   min-height: 0;
-  padding: var(--s-4) var(--s-3) calc(var(--s-8) * 2);
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
+  --side-pad: var(--s-3);
+  padding: 0 var(--side-pad);
   border-right: 1px solid var(--ring);
-  /* tall enough that p moves even with little text (phase A placeholder) */
   scrollbar-width: thin;
 }
 .side:focus { outline: none; }
-.side > *:last-child { margin-bottom: 60vh; }
+/* Room below the last chapter so the combat stage reaches p = 1 (and clears the nav on small screens). */
+.inner { padding-bottom: 30vh; }
+.plain { padding-top: var(--s-4); display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2); }
 
 .kicker {
   font-size: var(--fs-12);
@@ -19,19 +18,20 @@
   color: var(--accent);
 }
 .heading { font-size: var(--fs-32); line-height: 1.15; font-weight: 700; }
-.when { color: var(--muted); font-size: var(--fs-14); }
-.hero { font-size: var(--fs-20); }
-.hero b { font-size: var(--fs-32); color: var(--accent); }
-.facts { list-style: none; padding: 0; display: grid; gap: var(--s-2); color: var(--text-2); font-size: var(--fs-14); }
-.facts b { color: var(--text); }
-
-.titles ol { list-style: none; margin: var(--s-1) 0 0; padding: 0; display: grid; gap: var(--s-half); }
-.titles li { font-size: var(--fs-14); color: var(--muted); padding: var(--s-half) var(--s-1); border-radius: var(--r-1); }
-.titles li.on { color: var(--text); box-shadow: 0 0 0 1px var(--ring-strong); }
-
-.debug { font-size: var(--fs-12); color: var(--muted); font-variant-numeric: tabular-nums; }
+.nextbtn {
+  margin-top: var(--s-2);
+  padding: var(--s-1) var(--s-3);
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #1b0c04;
+  font-weight: 700;
+  cursor: pointer;
+}
 
 @media (max-width: 899.98px) {
-  .side { padding: var(--s-3) var(--s-2) calc(var(--s-8) * 2); border-right: 0; flex: 1; }
+  .side { --side-pad: var(--s-2); border-right: 0; flex: 1; }
+  /* clear the floating nav; the combat stage still gets ~400 px of scroll */
+  .inner { padding-bottom: calc(var(--s-8) + var(--s-4)); }
   .heading { font-size: var(--fs-20); }
 }

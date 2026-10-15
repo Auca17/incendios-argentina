@@ -50,7 +50,8 @@ export function formatHash(r: Route): string {
 
 /**
  * Route state synced with location.hash (replaceState, no history spam) plus chapter keys:
- * ArrowLeft/PageUp = previous, ArrowRight/PageDown = next.
+ * ArrowLeft = previous, ArrowRight = next. Space, PageUp/PageDown and the vertical arrows are left to the
+ * browser so they scroll the reading column (as in legacy).
  */
 export function useHashRoute(slideCount: number, provinces?: string[]) {
   const [route, setRoute] = useState<Route>(EMPTY_ROUTE);
@@ -85,8 +86,8 @@ export function useHashRoute(slideCount: number, provinces?: string[]) {
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       const t = e.target as HTMLElement | null;
       if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
-      if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); go(1); }
-      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(-1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);

@@ -2,7 +2,8 @@
   display: flex;
   align-items: center;
   gap: var(--s-1);
-  padding: 0 var(--s-2);
+  min-height: var(--topbar-h);
+  padding: var(--s-1) var(--s-2);
   border-bottom: 1px solid var(--ring);
   background: var(--bg);
   min-width: 0;
@@ -31,4 +32,6 @@
 }
 @media (max-width: 899.98px) {
   .chapter { display: none; }
+  /* wrap instead of clipping the title */
+  .title { white-space: normal; text-overflow: clip; font-size: var(--fs-14); }
 }

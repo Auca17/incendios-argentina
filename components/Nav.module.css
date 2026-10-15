@@ -1,8 +1,7 @@
 .nav {
   position: absolute;
-  left: 50%;
+  right: var(--s-2);
   bottom: var(--s-2);
-  transform: translateX(-50%);
   z-index: 5;
   display: flex;
   align-items: center;
@@ -49,5 +48,5 @@
 .on::after { background: var(--accent); transform: scale(1.5); }
 
 @media (max-width: 899.98px) {
-  .nav { bottom: var(--s-1); }
+  .nav { right: auto; left: 50%; transform: translateX(-50%); bottom: var(--s-1); }
 }

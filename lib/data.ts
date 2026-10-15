@@ -28,3 +28,37 @@ export const loadProvincias = () => load('provincias.json');
 export const loadProvinciaMes = () => load('provincia-mes.json');
 export const loadGrid = (year: number) => load(`grid-${year}.json`);
 export const loadWeeks = (id: string) => load(`semanas-${id}.json`);
+
+/** Weekly foci of one fire, with the cumulative count per week (`cum[w]` = foci in weeks 0..w-1) and the first week that has foci. */
+export type Foci = {
+  step: number;
+  start: string;
+  weeks: number;
+  last: string | null;
+  total: number;
+  cells: [number, number, number, number][];
+  cum: number[];
+  first: number;
+};
+
+const fociCache = new Map<string, Promise<Foci>>();
+
+/** Same derivation as legacy loadFoci: cumulative sums and the first week with foci. Cached per fire. */
+export function loadFoci(id: string): Promise<Foci> {
+  let hit = fociCache.get(id);
+  if (!hit) {
+    hit = loadWeeks(id).then((E) => {
+      const cum: number[] = new Array(E.weeks + 1).fill(0);
+      let first = E.weeks;
+      E.cells.forEach((c: number[]) => {
+        cum[c[2] + 1] += c[3];
+        if (c[2] < first) first = c[2];
+      });
+      for (let i = 1; i < cum.length; i++) cum[i] += cum[i - 1];
+      return { ...E, cum, first } as Foci;
+    });
+    hit.catch(() => fociCache.delete(id));
+    fociCache.set(id, hit);
+  }
+  return hit;
+}

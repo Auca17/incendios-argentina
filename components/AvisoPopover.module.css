@@ -1,8 +1,6 @@
 .wrap {
   position: absolute;
-  top: var(--s-2);
-  left: var(--s-2);
-  right: var(--s-2);
+  inset: var(--s-2) var(--s-2) auto var(--s-2);
   z-index: 6;
   display: flex;
   flex-direction: column;
@@ -22,6 +20,7 @@
   font-size: var(--fs-12);
   line-height: 1.5;
   text-align: left;
+  white-space: normal;
   cursor: pointer;
 }
 .capsule:hover, .capsule[aria-expanded='true'] { box-shadow: 0 0 0 1px var(--ring-strong); }
@@ -46,4 +45,8 @@
   color: var(--accent);
   font-size: var(--fs-12);
   cursor: pointer;
+}
+
+@media (max-width: 899.98px) {
+  .wrap { inset: var(--s-half) var(--s-2) auto var(--s-2); }
 }

@@ -1,17 +1,69 @@
+'use client';
+import { useEffect, useMemo, useRef } from 'react';
 import type { Slide } from '../lib/slides';
+import { createScene } from '../lib/scene';
+import { stageCaption } from '../lib/fire';
+import { useReducedMotion } from '../lib/motion';
 import styles from './ScenePanel.module.css';
 
-type Props = { p: number; slide: Slide };
+type Props = { s: number; stage: number; slide: Slide };
 
-/** Phase A placeholder. TODO(phase D): schematic scene driven by p. */
-export default function ScenePanel({ p, slide }: Props) {
+/** Schematic SVG scene: a pure function of s (lib/scene.ts) plus the stage caption. */
+export default function ScenePanel({ s, stage, slide }: Props) {
+  const ev = slide.type === 'event' ? slide.ev : null;
+  const reduced = useReducedMotion();
+  const box = useRef<HTMLDivElement>(null);
+  const onScreen = useRef(true);
+
+  const scene = useMemo(
+    () =>
+      ev
+        ? createScene({
+            still: reduced,
+            id: ev.id,
+            kind: ev.cause.kind,
+            means: ev.means || { crew: 3 },
+            hectares: ev.hero.value,
+            unit: ev.hero.unit === 'hectáreas' ? 'ha' : ev.hero.unit,
+            aria: 'Ilustración esquemática: cómo empezó, cómo creció y cómo se combatió el incendio de ' + ev.region,
+          })
+        : null,
+    [ev, reduced],
+  );
+
+  /* mount, then keep ambient motion running only while the scene is on screen and the tab is visible */
+  useEffect(() => {
+    const svg = box.current?.querySelector('svg.scene');
+    if (!scene || !svg) return;
+    scene.mount(svg);
+    const apply = () => svg.classList.toggle('paused', !onScreen.current || document.hidden);
+    onScreen.current = true;
+    apply();
+    const io = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver((es) => { onScreen.current = es[es.length - 1].isIntersecting; apply(); })
+      : null;
+    io?.observe(svg);
+    document.addEventListener('visibilitychange', apply);
+    return () => { io?.disconnect(); document.removeEventListener('visibilitychange', apply); };
+  }, [scene]);
+
+  /* reduced motion: still frames chosen so each stage shows its means */
+  const sEff = reduced ? [0.18, 0.5, 0.8][stage] : s;
+  useEffect(() => { scene?.update(sEff); }, [scene, sEff]);
+
+  if (!ev || !scene) return <section className={styles.scene} aria-label="Escena esquemática" />;
+
+  const [lead, rest] = stageCaption(ev, stage);
   return (
     <section className={styles.scene} aria-label="Escena esquemática">
-      <p className={styles.todo}>Escena: fase D</p>
-      <div className={styles.track} aria-hidden="true">
-        <i style={{ transform: `scaleX(${p})` }} />
+      <div className={styles.scenebox} ref={box} dangerouslySetInnerHTML={{ __html: scene.html }} />
+      <div className={styles.caption} aria-live="polite">
+        <span className={styles.step}>{stage + 1}</span>
+        <span>
+          <b>{lead}</b>
+          {rest}
+        </span>
       </div>
-      <span className="sr-only">{slide.name}</span>
     </section>
   );
 }

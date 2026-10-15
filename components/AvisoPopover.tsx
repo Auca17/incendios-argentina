@@ -1,31 +1,28 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './AvisoPopover.module.css';
 
-const SEEN_KEY = 'aviso-metodologico-visto';
-
-/** Capsule with the methodological notice. Opens by itself the first time, then only on click; Esc closes. */
+/** Capsule with the methodological notice. Never opens by itself: click toggles, Esc and outside click close. */
 export default function AvisoPopover() {
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(SEEN_KEY)) {
-        setOpen(true);
-        localStorage.setItem(SEEN_KEY, '1');
-      }
-    } catch { /* storage blocked: stay closed */ }
-  }, []);
+  const wrap = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const onDown = (e: PointerEvent) => {
+      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
+    };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onDown);
+    };
   }, [open]);
 
   return (
-    <div className={styles.wrap}>
+    <div className={styles.wrap} ref={wrap}>
       <button
         className={styles.capsule}
         aria-expanded={open}
