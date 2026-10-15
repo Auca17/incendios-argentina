@@ -103,6 +103,7 @@ function defs() {
     '<radialGradient id="sg-burng"><stop offset="0" stop-color="#0a0604"/><stop offset=".7" stop-color="#140a06"/><stop offset="1" stop-color="#22120a" stop-opacity="0"/></radialGradient>' +
     '<linearGradient id="sg-water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + WATER.jetTop + '" stop-opacity=".85"/><stop offset="1" stop-color="' + WATER.jetBot + '" stop-opacity="0"/></linearGradient>' +
     '<radialGradient id="sg-puff"><stop id="sg-pf0" offset="0" stop-opacity=".92"/><stop id="sg-pf1" offset=".55" stop-opacity=".55"/><stop id="sg-pf2" offset="1" stop-opacity="0"/></radialGradient>' +
+    '<radialGradient id="sg-steam-puff"><stop offset="0" stop-color="#ffffff" stop-opacity=".75"/><stop offset=".5" stop-color="#d4e6f1" stop-opacity=".4"/><stop offset="1" stop-color="#aed6f1" stop-opacity="0"/></radialGradient>' +
     '</defs>';
 }
 
@@ -324,6 +325,9 @@ function create(o) {
   s += '<g id="sg-hdrops" opacity="0">';
   for (var d = 0; d < 14; d++) s += '<circle r="' + n1(1.4 + rnd(d + 200) * 1.2) + '" fill="' + WATER.drop + '"/>';
   s += '</g>';
+  s += '<g id="sg-steam" opacity="0">';
+  for (var st = 0; st < 8; st++) s += '<circle r="12" fill="url(#sg-steam-puff)"/>';
+  s += '</g>';
 
   for (var c = 0; c < nCrew; c++) s += '<path id="sg-j' + c + '" d="M0 0" stroke="' + WATER.jet + '" stroke-width="2" fill="none" stroke-dasharray="3 5" stroke-linecap="round" opacity="0"/>';
   for (c = 0; c < nCrew; c++) s += crewSVG(c);
@@ -350,6 +354,7 @@ function create(o) {
       s0: q('sg-s0'), s1: q('sg-s1'), s2: q('sg-s2'), sun: q('sg-sun'), sunc: q('sg-sunc'), burn: q('sg-burn'), haze: q('sg-haze'), label: q('sg-label'), count: q('sg-count'),
       far: q('sg-far'), mid: q('sg-mid'), pf: [q('sg-pf0'), q('sg-pf1'), q('sg-pf2')],
       flare: q('sg-flare'), pwater: q('sg-pwater'), hdrops: q('sg-hdrops'),
+      steam: q('sg-steam'), steamPuffs: Array.prototype.slice.call(svg.querySelectorAll('#sg-steam circle')),
       heli: q('sg-heli'), hflip: q('sg-hflip'), helibody: q('sg-helibody'), rot: q('sg-rot'), trot: q('sg-trot'), hpath: q('sg-hpath'),
       rope: q('sg-rope'), bucket: q('sg-bucket'), bfill: q('sg-bfill'),
       plane: q('sg-plane'), prop: q('sg-prop'), ppath: q('sg-ppath'),
@@ -455,6 +460,7 @@ function create(o) {
       m.j.setAttribute('opacity', (on * 0.9).toFixed(2));
     });
 
+    var steamPlane = false, steamPlaneX = 0;
     /* Aerial hydrant plane */
     if (R.plane) {
       var pu = ease(seg(s, PLANE_IN, PLANE_END)), pt = R.ppath.getPointAtLength(R.plen * pu), vis = s > PLANE_IN && s < PLANE_END;
@@ -465,8 +471,11 @@ function create(o) {
       var release = vis && pt.x > 140 && pt.x < (means.heli ? 290 : 350); /* stop short of the lake when a helicopter refills there */
       R.pwater.setAttribute('opacity', release ? '0.85' : '0');
       R.pwater.setAttribute('points', [[pt.x - 2, pt.y + 9], [pt.x + 10, pt.y + 9], [pt.x - 25, GROUND - 22], [pt.x - 90, GROUND - 22]].map(function (q) { return n1(q[0]) + ',' + n1(q[1]); }).join(' '));
+      steamPlane = release;
+      steamPlaneX = pt.x - 55;
     }
 
+    var steamHeli = false, steamHeliX = 0;
     /* Aerial helicopter with helibalde */
     if (R.heli) {
       var hp = track(HELI_KEYS, s), hvis = s > HELI_KEYS[0][0];
@@ -485,6 +494,26 @@ function create(o) {
         var u = frac(s * 40 + i / R.drops.length), y0 = hp.y + rope + 10;
         el.setAttribute('cx', n1(hp.x + (rnd(i + 300) - 0.5) * 12 + u * 4)); el.setAttribute('cy', n1(y0 + u * Math.max(10, GROUND - 24 - y0)));
       });
+      steamHeli = !!drop;
+      steamHeliX = hp.x;
+    }
+
+    /* Volumetric steam/vapor billowing when water hits the fire on the ground */
+    if (R.steam) {
+      var steamOn = steamPlane || steamHeli;
+      var stX = steamPlane ? steamPlaneX : steamHeliX;
+      R.steam.setAttribute('opacity', steamOn ? '1' : '0');
+      if (steamOn) {
+        R.steamPuffs.forEach(function (el, i) {
+          var u = frac(s * 16 + i / R.steamPuffs.length);
+          var sx = stX + (rnd(i + 700) - 0.5) * 36 + (u - 0.5) * 16;
+          var sy = (GROUND - 24) - u * 32;
+          el.setAttribute('cx', n1(sx));
+          el.setAttribute('cy', n1(sy));
+          el.setAttribute('r', n1(6 + u * 16));
+          el.setAttribute('opacity', ((1 - u) * 0.75).toFixed(2));
+        });
+      }
     }
   }
 

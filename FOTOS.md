@@ -46,4 +46,6 @@ Cada foto nueva se agrega a la tabla de abajo antes de publicarla.
 
 | Archivo | Incendio | Pie | Autor | URL de origen | Licencia | Fecha de verificación |
 |---|---|---|---|---|---|---|
-| _(ninguna)_ | | | | | | |
+| `public/img/verified/cordoba-fuego.jpg` | Córdoba | Columnas de humo y focos activos sobre las Sierras de Córdoba registrados por el satélite Terra (MODIS). | NASA Worldview / Terra MODIS | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Wildfires_in_Cordoba_Province,_Argentina.jpg) | Dominio público (NASA) | 2026-10-15 |
+| `public/img/verified/delta-fuego.jpg` | Delta | Frente de fuego sobre los pastizales y humedales del Delta del Paraná durante el operativo de combate. | Parques Nacionales / Min. de Ambiente y Desarrollo Sostenible | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Incendio_en_delta_del_paran%C3%A1_2020_-_Parques_Nacionales.jpg) | CC BY 4.0 | 2026-10-15 |
+| `public/img/verified/corrientes-fuego.jpg` | Corrientes | Vista satelital de alta resolución (Landsat 9) de los focos de calor y cicatrices de fuego en torno a los Esteros del Iberá. | Lauren Dauphin / NASA Earth Observatory & USGS | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Wildfires_Ravage_Corrientes_as_seen_by_Landsat_9.jpg) | Dominio público (NASA/USGS) | 2026-10-15 |

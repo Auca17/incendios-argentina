@@ -17,7 +17,7 @@ import MethodPanel from './MethodPanel';
 import ScrollCue from './ScrollCue';
 import AvisoPopover from './AvisoPopover';
 import Nav from './Nav';
-import ChapterFade from './ChapterFade';
+import ChapterTransition from './ChapterTransition';
 import styles from './Experience.module.css';
 
 const NO_PROVINCES: string[] = [];
@@ -151,7 +151,7 @@ export default function Experience() {
         </div>
         <div className={styles.avisoSlot}><AvisoPopover /></div>
         <ScrollCue hidden={!isEvent || read.p > 0.01} />
-        <ChapterFade index={route.slide} />
+        <ChapterTransition index={route.slide} />
         <Nav index={route.slide} slides={SLIDES} onGo={setSlide} onStep={go} />
       </main>
       <p className="sr-only" aria-live="polite">

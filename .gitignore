@@ -3,14 +3,17 @@ data-raw/
 *.csv
 *.zip
 
-# Photos withdrawn (no verified license). See FOTOS.md; never commit them again.
-img/
-public/img/
+# Photos withdrawn (no verified license). See FOTOS.md; never commit unverified photos.
+/img/
+public/img/*
+!public/img/verified/
+!public/img/verified/**
 
 # Local tooling and working notes
 .atl/
 odd/
 prompt-incendios-v2.md
+shots/
 .claude/
 .vscode/
 .idea/

@@ -1,0 +1,71 @@
+.wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Base cooling veil */
+.veil {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(14, 116, 144, 0.4), rgba(10, 10, 10, 0.95) 75%);
+  opacity: 0;
+  will-change: opacity;
+}
+
+/* Sweeping water wave */
+.wave {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: -40%;
+  width: 60%;
+  background: linear-gradient(
+    90deg,
+    rgba(2, 132, 199, 0) 0%,
+    rgba(56, 189, 248, 0.25) 30%,
+    rgba(186, 230, 253, 0.85) 60%,
+    rgba(255, 255, 255, 0.95) 75%,
+    rgba(224, 242, 254, 0.4) 90%,
+    rgba(2, 132, 199, 0) 100%
+  );
+  filter: blur(12px);
+  transform: translate3d(-100%, 0, 0) skewX(-12deg);
+  will-change: transform, opacity;
+}
+
+/* Secondary steam / mist veil */
+.mist {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 60% 50%, rgba(240, 249, 255, 0.6) 0%, rgba(186, 230, 253, 0.2) 40%, transparent 80%);
+  filter: blur(20px);
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+/* Droplets & spray canvas overlay */
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  will-change: opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave, .canvas {
+    display: none !important;
+  }
+}

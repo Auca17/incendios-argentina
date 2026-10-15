@@ -87,7 +87,40 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
     return () => io.disconnect();
   }, [ev]);
 
+interface VerifiedPhoto {
+  src: string;
+  caption: string;
+  credit: string;
+  license: string;
+  sourceUrl: string;
+}
+
+const VERIFIED_PHOTOS: Record<string, VerifiedPhoto> = {
+  cordoba: {
+    src: '/img/verified/cordoba-fuego.jpg',
+    caption: 'Columnas de humo y focos activos sobre las Sierras de Córdoba registrados por el satélite Terra (MODIS).',
+    credit: 'NASA Worldview / Terra MODIS',
+    license: 'Dominio público',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Wildfires_in_Cordoba_Province,_Argentina.jpg',
+  },
+  delta: {
+    src: '/img/verified/delta-fuego.jpg',
+    caption: 'Frente de fuego sobre los pastizales y humedales del Delta del Paraná durante el operativo de combate.',
+    credit: 'Parques Nacionales / Min. de Ambiente',
+    license: 'CC BY 4.0',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Incendio_en_delta_del_paran%C3%A1_2020_-_Parques_Nacionales.jpg',
+  },
+  corrientes: {
+    src: '/img/verified/corrientes-fuego.jpg',
+    caption: 'Vista satelital (Landsat 9) de los focos de calor y cicatrices de fuego en torno a los Esteros del Iberá.',
+    credit: 'NASA Earth Observatory / USGS',
+    license: 'Dominio público',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Wildfires_Ravage_Corrientes_as_seen_by_Landsat_9.jpg',
+  },
+};
+
   const alt = ALT[ev.id];
+  const photo = VERIFIED_PHOTOS[ev.id];
   const unitCap = ev.hero.unit.charAt(0).toUpperCase() + ev.hero.unit.slice(1);
   const start = factsFor(ev, 0), fire = factsFor(ev, 1), fight = factsFor(ev, 2);
   const head = (i: number) => (
@@ -118,6 +151,19 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
           <div className={`${styles.chips} ${styles.blk}`} data-blk>
             {alt.map((a) => <span key={a[0]}><b>{a[0]}</b> · {a[1]}</span>)}
           </div>
+        )}
+        {photo && (
+          <figure className={`${styles.docPhoto} ${styles.blk}`} data-blk>
+            <div className={styles.photoWrap}>
+              <img src={photo.src} alt={photo.caption} loading="lazy" className={styles.photoImg} />
+            </div>
+            <figcaption className={styles.photoCaption}>
+              <span className={styles.photoText}>{photo.caption}</span>
+              <span className={styles.photoCredit}>
+                Foto documental: <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer">{photo.credit}</a> · {photo.license}
+              </span>
+            </figcaption>
+          </figure>
         )}
         <More>
           <p>{ev.hero.note}</p>
