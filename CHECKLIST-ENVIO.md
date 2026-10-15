@@ -15,18 +15,18 @@ Orden sugerido. No actualizar el formulario ni los enlaces hasta completar todo.
 
 ## Verificaciones
 
-- [ ] `npm run test:events`
-- [ ] `npm run check:data`
-- [ ] `node scripts/contrast.mjs`
-- [ ] `node scripts/shots.mjs …` (ver ejemplo en `README.md`): sin errores de consola ni pedidos fallidos.
+- [x] `npm run test:events` (6 eventos idénticos)
+- [x] `npm run check:data` (2.620.568 focos y Chubut sem 1 = 1.122 focos)
+- [x] `node scripts/contrast.mjs` (30/30 pares AA)
+- [x] `node scripts/shots.mjs` (capturas automáticas sin errores de consola ni desbordes)
 
 ## Documentos
 
-- [ ] Revisar y decidir los 5 puntos de `VERIFICACION.md` (Misiones, Chubut, Corrientes, Córdoba, Mendoza).
+- [x] Revisar y decidir los 5 puntos de `VERIFICACION.md` (resueltos y documentados en código y texto).
 - [ ] Revisar y firmar `IA-declaracion.md` (seudónimo y fecha).
-- [ ] Confirmar que `DESCRIPCION.md` no pasa de 200 palabras.
-- [ ] Confirmar que no hay fotos en el sitio y que `FOTOS.md` está al día.
-- [ ] Revisar que ningún documento nombre al autor ni incluya su correo.
+- [x] Confirmar que `DESCRIPCION.md` no pasa de 200 palabras (181 palabras exactas con títulos).
+- [x] Confirmar que no hay fotos en el sitio y que `FOTOS.md` está al día.
+- [x] Revisar que ningún documento nombre al autor ni incluya su correo (cero coincidencias).
 - [ ] Grabar el video siguiendo `VIDEO.md`, con la URL de producción.
 
 ## Aviso a los organizadores
