@@ -69,6 +69,7 @@ export default function Experience() {
     [update],
   );
   const onProv = useCallback((p: string | null) => update({ p }), [update]);
+  const onPeriod = useCallback((m: string | null) => update({ m }), [update]);
   // clicking a province on the map opens the explore screen on it (legacy selectProv)
   const onSelect = useCallback((p: string) => update({ p, slide: 0 }), [update]);
 
@@ -90,7 +91,7 @@ export default function Experience() {
     slide.type === 'intro' ? (
       <ExplorePanel
         nat={nat} failed={failed} provinces={provinces ?? NO_PROVINCES}
-        year={year} cmp={cmp} prov={prov}
+        year={year} cmp={cmp} prov={prov} period={route.m} onPeriod={onPeriod}
         onYear={onYear} onCompare={onCompare} onProv={onProv}
       />
     ) : slide.type === 'method' ? (

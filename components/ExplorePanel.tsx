@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 import { YEARS, type Compare, type CompareView } from '../lib/router';
 import { fmt } from '../lib/fire';
 import {
-  DIFF_MIN, LAST_YEAR, compareRows, monthRangeText, partialNote, provYear, ranking, signed, totalYear,
+  DIFF_MIN, LAST_YEAR, compareRows, largestChange, monthRangeText, noData, partialNote, periodLabel, periodRange,
+  provRange, ranking, signed, totalYear, yearCaveat,
   type National,
 } from '../lib/explore';
+import { MESES_L } from '../lib/fire';
 import { ProvSeason, ProvYears } from './Charts';
 import styles from './ExplorePanel.module.css';
 
@@ -16,6 +18,8 @@ type Props = {
   year: number;
   cmp: Compare | null;
   prov: string | null;
+  period: string | null;
+  onPeriod: (m: string | null) => void;
   onYear: (y: number) => void;
   onCompare: (c: Compare | null) => void;
   onProv: (p: string | null) => void;
@@ -24,7 +28,7 @@ type Props = {
 const PLAY_MS = 1100;
 
 /** Year player, one-year / two-year switch, ranking or comparison table, province card and how to read the map. */
-export default function ExplorePanel({ nat, failed, provinces, year, cmp, prov, onYear, onCompare, onProv }: Props) {
+export default function ExplorePanel({ nat, failed, provinces, year, cmp, prov, period, onPeriod, onYear, onCompare, onProv }: Props) {
   const [playing, setPlaying] = useState(false);
   const [draft, setDraft] = useState({ a: cmp ? cmp.a : 2019, b: cmp ? cmp.b : 2020 });
   const view0 = useRef<CompareView>(cmp ? cmp.view : 'd');
@@ -57,6 +61,9 @@ export default function ExplorePanel({ nat, failed, provinces, year, cmp, prov, 
   const compareOf = (a: number, b: number, view: CompareView): Compare => ({ a, b, view });
 
   const ready = !!nat && provinces.length > 0;
+  const [pf, pt] = periodRange(period);
+  const cr = ready && cmp ? compareRows(nat.pm, provinces, cmp.a, cmp.b, pf, pt) : null;
+  const biggest = cr && !cr.empty ? largestChange(cr.rows, cmp!.a, cmp!.b, period) : '';
 
   return (
     <div className={styles.stack}>
@@ -112,9 +119,30 @@ export default function ExplorePanel({ nat, failed, provinces, year, cmp, prov, 
               {cmp.view === 'd'
                 ? `Cada celda muestra los focos de ${cmp.b} menos los de ${cmp.a}. Escala simétrica y logarítmica; no se pintan las celdas con menos de ${DIFF_MIN} focos de diferencia.`
                 : 'Los dos años usan la misma escala de color, para que se puedan comparar.'}
+              {biggest && ` ${biggest}`}
             </p>
             <p className={styles.warn} id="cwarn" role="status">{partialNote(cmp.a, cmp.b)}</p>
           </div>
+        )}
+      </div>
+
+      <div className={styles.card}>
+        <label className={styles.period}>
+          <span>Período del ranking y de la serie</span>
+          <select id="period" value={period ?? 'all'} onChange={(e) => onPeriod(e.target.value === 'all' ? null : e.target.value)}>
+            <option value="all">Todo el año</option>
+            <optgroup label="Trimestres">
+              {['t1', 't2', 't3', 't4'].map((k) => <option key={k} value={k}>{periodLabel(k)}</option>)}
+            </optgroup>
+            <optgroup label="Meses">
+              {MESES_L.map((m, i) => <option key={m} value={String(i + 1)}>{m}</option>)}
+            </optgroup>
+          </select>
+        </label>
+        {period && (
+          <p className={styles.warn} id="mapnote" role="status">
+            El mapa muestra el año completo: los datos por celda no tienen mes.
+          </p>
         )}
       </div>
 
@@ -125,11 +153,11 @@ export default function ExplorePanel({ nat, failed, provinces, year, cmp, prov, 
           </div>
         ) : (
           <>
-            {prov && <ProvCard nat={nat} provinces={provinces} prov={prov} year={year} onYear={pickYear} onClose={() => onProv(null)} />}
+            {prov && <ProvCard nat={nat} provinces={provinces} prov={prov} year={year} period={period} onYear={pickYear} onClose={() => onProv(null)} />}
             {cmp ? (
-              <CompareCard nat={nat} provinces={provinces} cmp={cmp} prov={prov} onProv={onProv} />
+              <CompareCard cr={cr!} cmp={cmp} period={period} prov={prov} onProv={onProv} />
             ) : (
-              <RankCard nat={nat} provinces={provinces} year={year} prov={prov} onProv={onProv} />
+              <RankCard nat={nat} provinces={provinces} year={year} period={period} prov={prov} onProv={onProv} />
             )}
           </>
         )}
@@ -147,34 +175,46 @@ export default function ExplorePanel({ nat, failed, provinces, year, cmp, prov, 
 
 type Shared = { nat: National; provinces: string[] };
 
-function ProvCard({ nat, provinces, prov, year, onYear, onClose }: Shared & { prov: string; year: number; onYear: (y: number) => void; onClose: () => void }) {
-  const rk = ranking(nat.pm, provinces, year);
+function ProvCard({ nat, provinces, prov, year, period, onYear, onClose }: Shared & { prov: string; year: number; period: string | null; onYear: (y: number) => void; onClose: () => void }) {
+  const [f, t] = periodRange(period);
+  const rk = ranking(nat.pm, provinces, year, f, t);
   const pos = rk.findIndex((r) => r.n === prov) + 1;
-  const v = provYear(nat.pm, prov, year), tot = totalYear(nat.meta, year);
+  const v = provRange(nat.pm, prov, year, f, t);
+  const tot = period ? rk.reduce((s, r) => s + r.v, 0) : totalYear(nat.meta, year);
+  const none = noData(year, f, t);
+  const caveats = period ? [2012, 2026].map((y) => yearCaveat(y, f, t)).filter(Boolean).join('; ') : '';
   return (
     <div className={`${styles.card} ${styles.pcard}`}>
       <div className={styles.phead}>
         <h3>{prov}</h3>
         <button className={styles.x} id="pclose" aria-label="Quitar la selección de provincia" onClick={onClose}>×</button>
       </div>
+      {none ? (
+        <p className={styles.pkpi}>{year} · {periodLabel(period)}: sin datos para este período.</p>
+      ) : (
       <p className={styles.pkpi}>
-        <b>{fmt(v)}</b> focos en {year}{year === 2026 ? ' (hasta el 14/10)' : ''} · puesto <b>{pos}</b> de {provinces.length} ·{' '}
+        <b>{fmt(v)}</b> focos en {year}{year === 2026 ? ' (hasta el 14/10)' : ''}{period ? ` · ${periodLabel(period)}` : ''} · puesto <b>{pos}</b> de {provinces.length} ·{' '}
         {tot ? ((v / tot) * 100).toFixed(1).replace('.', ',') : '0'} % del país
       </p>
-      <h4>Serie anual (click en un año para verlo en el mapa)</h4>
-      <div id="pyrs"><ProvYears pm={nat.pm} prov={prov} year={year} onPick={onYear} /></div>
-      <h4>Estacionalidad: focos por mes</h4>
-      <ProvSeason pm={nat.pm} prov={prov} year={year} />
+      )}
+      <h4>Serie anual{period ? ` · ${periodLabel(period)}` : ''} (click en un año para verlo en el mapa)</h4>
+      <div id="pyrs"><ProvYears pm={nat.pm} prov={prov} year={year} onPick={onYear} f={f} t={t} /></div>
+      {caveats && <p className={styles.small}>{caveats}.</p>}
+      <h4>Estacionalidad: focos por mes{period ? ` · ${periodLabel(period)}` : ''}</h4>
+      <ProvSeason pm={nat.pm} prov={prov} year={year} f={f} t={t} />
     </div>
   );
 }
 
-function RankCard({ nat, provinces, year, prov, onProv }: Shared & { year: number; prov: string | null; onProv: (p: string | null) => void }) {
-  const rk = ranking(nat.pm, provinces, year);
+function RankCard({ nat, provinces, year, period, prov, onProv }: Shared & { year: number; period: string | null; prov: string | null; onProv: (p: string | null) => void }) {
+  const [f, t] = periodRange(period);
+  const rk = ranking(nat.pm, provinces, year, f, t);
   const mx = rk[0].v || 1;
+  const caveat = period ? yearCaveat(year, f, t) : '';
   return (
     <div className={styles.card}>
-      <h3>Ranking de provincias · {year}</h3>
+      <h3>Ranking de provincias · {year}{period ? ` · ${periodLabel(period)}` : ''}</h3>
+      {caveat && <p className={styles.warn} role="status">{caveat}.</p>}
       <ol className={styles.rank}>
         {rk.map((r, i) => (
           <li key={r.n}>
@@ -192,15 +232,22 @@ function RankCard({ nat, provinces, year, prov, onProv }: Shared & { year: numbe
   );
 }
 
-function CompareCard({ nat, provinces, cmp, prov, onProv }: Shared & { cmp: Compare; prov: string | null; onProv: (p: string | null) => void }) {
-  const { rows, from, to, full } = compareRows(nat.pm, provinces, cmp.a, cmp.b);
+function CompareCard({ cr, cmp, period, prov, onProv }: { cr: ReturnType<typeof compareRows>; cmp: Compare; period: string | null; prov: string | null; onProv: (p: string | null) => void }) {
+  const { rows, from, to, full, empty } = cr;
+  const [pf, pt] = periodRange(period);
+  const narrowed = from !== pf || to !== pt;
   return (
     <div className={styles.card}>
-      <h3>Cambio por provincia · {cmp.a} → {cmp.b}</h3>
+      <h3>Cambio por provincia · {cmp.a} → {cmp.b}{period ? ` · ${periodLabel(period)}` : ''}</h3>
       <p className={styles.small}>
-        {full ? 'Años completos.' : `Solo meses completos en común: ${monthRangeText(from, to)}.`} Ordenado de mayor aumento a mayor baja.
+        {empty
+          ? 'Sin datos para este período: no hay meses completos en común entre los dos años.'
+          : <>
+              {period && !narrowed ? '' : full ? 'Años completos.' : `Solo meses completos en común: ${monthRangeText(from, to)}.`}
+              {' '}Ordenado de mayor aumento a mayor baja.
+            </>}
       </p>
-      <table className={styles.cmpt}>
+      {!empty && <table className={styles.cmpt}>
         <thead>
           <tr><th scope="col">Provincia</th><th scope="col">{cmp.a}</th><th scope="col">{cmp.b}</th><th scope="col">Cambio</th></tr>
         </thead>
@@ -220,7 +267,7 @@ function CompareCard({ nat, provinces, cmp, prov, onProv }: Shared & { cmp: Comp
             );
           })}
         </tbody>
-      </table>
+      </table>}
     </div>
   );
 }

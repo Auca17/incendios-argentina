@@ -165,3 +165,17 @@
 @media (max-width: 899.98px) {
   .rank { max-height: none; }
 }
+
+/* period filter (month / quarter) */
+.period { display: grid; gap: var(--s-1); font-size: var(--fs-14); color: var(--muted); }
+.period select {
+  min-height: var(--s-5);
+  padding: var(--s-half) var(--s-1);
+  border-radius: var(--r-1);
+  border: 1px solid var(--ring);
+  background: #1a1a1a;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-14);
+  width: 100%;
+}

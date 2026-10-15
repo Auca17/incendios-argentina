@@ -2,7 +2,7 @@
  * Pure logic of the explore screen (home) and the cumulative map (method). Ported from legacy/app.js:
  * colour scales, grid views, ranking, province series, two-year comparison. No React, no DOM.
  */
-import { MESES, MESES_L } from './fire';
+import { MESES, MESES_L, fmt as fmtN } from './fire';
 import { YEARS, type Compare } from './router';
 
 export type Cell = [number, number, number];
@@ -157,9 +157,37 @@ export function provRange(pm: Pm, p: string, y: number, f: number, t: number): n
   return s;
 }
 
-export function ranking(pm: Pm, provs: string[], y: number) {
-  return provs.map((n) => ({ n, v: provYear(pm, n, y) })).sort((a, b) => b.v - a.v);
+/** Province ranking for months f..t of year y (default: the whole year, as before). */
+export function ranking(pm: Pm, provs: string[], y: number, f = 1, t = 12) {
+  return provs.map((n) => ({ n, v: provRange(pm, n, y, f, t) })).sort((a, b) => b.v - a.v);
 }
+
+/* ---------- period filter (month / quarter) ---------- */
+
+/** First and last month (1-12) of a period key; null = the whole year. */
+export function periodRange(m: string | null): [number, number] {
+  if (!m) return [1, 12];
+  if (m[0] === 't') { const q = +m.slice(1); return [(q - 1) * 3 + 1, q * 3]; }
+  return [+m, +m];
+}
+
+/** Label of a period: "T3 (jul–sep)" or "agosto"; null = whole year. */
+export function periodLabel(m: string | null): string {
+  if (!m) return 'Todo el año';
+  const [f, t] = periodRange(m);
+  return m[0] === 't' ? 'T' + m.slice(1) + ' (' + MESES[f - 1] + '–' + MESES[t - 1] + ')' : MESES_L[f - 1];
+}
+
+/** Honest data caveat of year y for months f..t: 2012 starts on 20 Jan, 2026 ends on 14 Oct (no Nov/Dec). */
+export function yearCaveat(y: number, f: number, t: number): string {
+  if (y === 2012 && f === 1) return '2012 empieza el 20/01';
+  if (y === 2026 && f > 10) return '2026 no tiene datos para este período';
+  if (y === 2026 && t >= 10) return '2026 llega hasta el 14/10';
+  return '';
+}
+
+/** True when a year has no data at all in months f..t. */
+export const noData = (y: number, f: number, t: number) => y === 2026 && f > 10;
 
 /** Monthly average over the complete years and the selected year (null = no data yet, 2026 after October). */
 export function provSeason(pm: Pm, p: string, y: number) {
@@ -193,13 +221,28 @@ export function partialNote(a: number, b: number): string {
   return 'Atención: ' + L.join(' y ') + '. El mapa compara años completos, así que la diferencia está sesgada; el ranking usa solo los meses completos en común (' + MESES[cm[0] - 1] + '–' + MESES[cm[1] - 1] + ').';
 }
 
-export function compareRows(pm: Pm, provs: string[], a: number, b: number) {
+/** Rows of the two-year table over the complete months in common, narrowed to months f0..t0 when a period is chosen. */
+export function compareRows(pm: Pm, provs: string[], a: number, b: number, f0 = 1, t0 = 12) {
   const cm = commonMonths(a, b);
+  const from = Math.max(cm[0], f0), to = Math.min(cm[1], t0);
+  const empty = from > to;
   const rows = provs.map((n) => {
-    const va = provRange(pm, n, a, cm[0], cm[1]), vb = provRange(pm, n, b, cm[0], cm[1]);
+    const va = empty ? 0 : provRange(pm, n, a, from, to), vb = empty ? 0 : provRange(pm, n, b, from, to);
     return { n, a: va, b: vb, d: vb - va };
   }).sort((p, q) => q.d - p.d);
-  return { rows, from: cm[0], to: cm[1], full: cm[0] === 1 && cm[1] === 12 };
+  return { rows, from, to, empty, full: from === 1 && to === 12 };
+}
+
+export type CompareRow = ReturnType<typeof compareRows>['rows'][number];
+
+/** One-line reading addition: the province with the largest absolute change, figures from the table, no adjectives. */
+export function largestChange(rows: CompareRow[], a: number, b: number, period: string | null): string {
+  let top: CompareRow | null = null;
+  rows.forEach((r) => { if (r.d !== 0 && (!top || Math.abs(r.d) > Math.abs(top.d))) top = r; });
+  if (!top) return '';
+  const r: CompareRow = top;
+  const lead = period ? 'En ' + periodLabel(period) + ', la' : 'La';
+  return `${lead} provincia con mayor cambio fue ${r.n}: ${fmtN(r.a)} focos en ${a} y ${fmtN(r.b)} en ${b} (${signed(r.d)}${fmtN(Math.abs(r.d))}).`;
 }
 
 export const monthRangeText = (f: number, t: number) => MESES_L[f - 1] + ' a ' + MESES_L[t - 1];
