@@ -12,6 +12,9 @@ Uso:
 Requiere: pandas, numpy, shapely>=2.
 Filtro: archivo type==0 (fuego de vegetación); se descartan puntos de confianza baja ('l').
 Salida: data.js (window.DATA = {prov, pm, grid, meta}) y meta.json.
+Además escribe los mismos datos como JSON en <repo>/public/data/ para el sitio Next.js
+(meta.json, provincias.json, provincia-mes.json, grid-<año>.json, semanas-<id>.json);
+scripts/to-json.mjs produce el mismo contenido a partir de legacy/data.
 
 Si existe scripts/events.json, también genera ev/<id>.js por incendio: focos de sus provincias
 en su rango de meses, agrupados en celdas de 0,05° por semana, para mostrarlos acumulándose
@@ -66,6 +69,17 @@ data = {"prov": prov_geo, "pm": pm, "grid": {"step": STEP, "anios": grid}, "meta
 open(os.path.join(out, "data.js"), "w", encoding="utf-8").write("window.DATA=" + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";")
 print("OK", len(ins), "focos ->", out)
 
+# ---- JSON for the Next.js site (same content as scripts/to-json.mjs) ----
+PUB = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public", "data")
+os.makedirs(PUB, exist_ok=True)
+def write_pub(name, obj):
+    open(os.path.join(PUB, name), "w", encoding="utf-8").write(json.dumps(obj, separators=(",", ":"), ensure_ascii=False))
+write_pub("meta.json", meta)
+write_pub("provincias.json", prov_geo)
+write_pub("provincia-mes.json", pm)
+for y, cells in grid.items():
+    write_pub("grid-" + y + ".json", {"step": STEP, "year": int(y), "cells": cells})
+
 # ---- per-fire weekly foci (optional) ----
 ev_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "events.json")
 if os.path.exists(ev_path):
@@ -88,4 +102,5 @@ if os.path.exists(ev_path):
                    "cells": [[float(r.ex), float(r.ey), int(r.week), int(r.n)] for r in c.itertuples()]}
         js = "window.EV_FOCI=window.EV_FOCI||{};window.EV_FOCI[" + json.dumps(ev["id"]) + "]=" + json.dumps(payload, separators=(",", ":")) + ";"
         open(os.path.join(ev_out, ev["id"] + ".js"), "w", encoding="utf-8").write(js)
+        write_pub("semanas-" + ev["id"] + ".json", payload)
         print("  ev", ev["id"], len(sel), "focos,", len(c), "celdas-semana")

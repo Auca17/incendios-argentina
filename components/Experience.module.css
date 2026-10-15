@@ -1,0 +1,32 @@
+.app {
+  display: grid;
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+  height: 100dvh;
+}
+
+.panels {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--side-w) minmax(0, 1fr) var(--scene-w);
+  min-height: 0;
+}
+
+/* Desktop: the stage wrapper is transparent, so map and scene are grid columns 2 and 3. */
+.stage { display: contents; }
+
+@media (max-width: 899.98px) {
+  .panels {
+    display: flex;
+    flex-direction: column;
+  }
+  /* Mobile: map + scene fixed on top (~45vh), sidebar scrolls below. */
+  .stage {
+    order: -1;
+    flex: none;
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    height: var(--mobile-stage-h);
+    min-height: 0;
+    border-bottom: 1px solid var(--ring);
+  }
+}
