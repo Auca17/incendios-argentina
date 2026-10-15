@@ -172,7 +172,7 @@ async function main() {
     const wide = [];
     document.querySelectorAll('body *').forEach((e) => {
       const r = e.getBoundingClientRect();
-      if (r.width && (r.right > iw + 1 || r.left < -1) && !e.closest('svg') && wide.length < 5) wide.push(e.tagName.toLowerCase() + '.' + String(e.className).slice(0, 40) + ' [' + Math.round(r.left) + ',' + Math.round(r.right) + ']');
+      if (r.width && (r.right > iw + 1 || r.left < -1) && !e.closest('svg') && getComputedStyle(e).visibility !== 'hidden' && wide.length < 5) wide.push(e.tagName.toLowerCase() + '.' + String(e.className).slice(0, 40) + ' [' + Math.round(r.left) + ',' + Math.round(r.right) + ']');
     });
     return { out, overflowX: sw > iw + 1 ? sw + ' > ' + iw : null, wide };
   })()`);

@@ -1,0 +1,8 @@
+.fade {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  background: var(--bg);
+  opacity: 0;
+}

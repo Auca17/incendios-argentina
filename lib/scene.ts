@@ -330,9 +330,9 @@ function create(o) {
   if (means.plane) s += '<path id="sg-ppath" d="' + (means.heli ? PLANE_PATH_HELI : PLANE_PATH) + '" stroke="rgba(255,240,220,.28)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + PLANE;
   if (means.heli) s += '<path id="sg-hpath" d="M' + HELI_KEYS.map(function (k) { return k[1] + ' ' + k[2]; }).join('L') + '" stroke="rgba(255,240,220,.22)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + HELI;
 
-  /* Sleek minimal HUD badge */
+  /* Sleek minimal HUD badge, bottom-centre: the top band and the right edge are cropped by the slice rule on narrow boxes, the bottom centre never is */
   if (o.label !== false) {
-    s += '<g id="sg-label" opacity="0" transform="translate(386 16)">' +
+    s += '<g id="sg-label" opacity="0" transform="translate(252 276)">' +
       '<rect id="sg-badge-bg" x="-104" y="0" width="104" height="22" rx="11" fill="rgba(14,9,7,0.92)" stroke="rgba(200,130,60,0.38)" stroke-width="1"/>' +
       '<circle cx="-93" cy="11" r="3.2" fill="' + FIRE.mid + '"/>' +
       '<text id="sg-count" x="-82" y="14.8" font-size="10" fill="#f4eae3" font-weight="700" font-family="system-ui, sans-serif">0 ' + (o.unit || 'ha') + '</text></g>';
