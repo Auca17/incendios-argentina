@@ -1,7 +1,9 @@
 .wrap {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 50;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
   pointer-events: none;
   overflow: hidden;
   opacity: 0;
@@ -15,79 +17,13 @@
 
 /* Background heat flash that illuminates the whole screen when fire sweeps */
 .heatFlash {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  background: radial-gradient(circle at 50% 50%, rgba(255, 120, 20, 0.55) 0%, rgba(180, 40, 0, 0.35) 60%, rgba(10, 6, 4, 0.85) 90%);
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 120, 20, 0.5) 0%, rgba(180, 40, 0, 0.3) 60%, rgba(10, 6, 4, 0.8) 90%);
   opacity: 0;
   will-change: opacity;
   mix-blend-mode: screen;
-}
-
-/* Central sweeping wall of roaring fire */
-.fireWall {
-  position: absolute;
-  top: -15%;
-  bottom: -15%;
-  left: -80vw;
-  width: 90vw;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 30, 0, 0) 0%,
-    rgba(220, 50, 0, 0.75) 15%,
-    rgba(255, 100, 0, 0.95) 35%,
-    rgba(255, 180, 20, 1) 50%,
-    rgba(255, 245, 180, 1) 56%,
-    rgba(255, 180, 20, 1) 62%,
-    rgba(255, 90, 0, 0.95) 75%,
-    rgba(200, 30, 0, 0.7) 90%,
-    rgba(140, 10, 0, 0) 100%
-  );
-  box-shadow: 0 0 80px rgba(255, 120, 0, 0.9), 0 0 160px rgba(255, 50, 0, 0.6);
-  transform: translate3d(-100%, 0, 0) skewX(-14deg);
-  will-change: transform, opacity;
-  filter: drop-shadow(0 0 35px #ff7700);
-}
-
-/* Flaming borders (top and bottom) that burst into the screen like the reference image */
-.borderFlamesTop,
-.borderFlamesBottom {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 180px;
-  background-repeat: repeat-x;
-  background-size: 320px 180px;
   pointer-events: none;
-  opacity: 0;
-  will-change: transform, opacity;
-  mix-blend-mode: screen;
-}
-
-.borderFlamesTop {
-  top: 0;
-  background-image: radial-gradient(ellipse 65% 100% at 50% 0%, rgba(255, 220, 100, 0.95) 0%, rgba(255, 120, 0, 0.8) 45%, rgba(200, 30, 0, 0.5) 70%, transparent 100%);
-  transform-origin: top center;
-}
-
-.borderFlamesBottom {
-  bottom: 0;
-  background-image: radial-gradient(ellipse 65% 100% at 50% 100%, rgba(255, 220, 100, 0.95) 0%, rgba(255, 120, 0, 0.8) 45%, rgba(200, 30, 0, 0.5) 70%, transparent 100%);
-  transform-origin: bottom center;
-}
-
-/* Ember sparks container */
-.sparks {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: 0;
-  will-change: opacity, transform;
-}
-
-.spark {
-  position: absolute;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 8px 3px rgba(255, 180, 50, 0.95), 0 0 16px 6px rgba(255, 80, 0, 0.7);
 }

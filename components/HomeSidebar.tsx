@@ -12,12 +12,13 @@ const SOURCES = [
 type Props = {
   year: number | null;
   onPickYear: (y: number) => void;
+  onStart?: () => void;
   /** Explore controls, rendered between the intro and the year bars on small screens. */
   children?: React.ReactNode;
 };
 
 /** Intro screen text (legacy 'intro' slide). The controls and the ranking live in ExplorePanel. */
-export default function HomeSidebar({ year, onPickYear, children }: Props) {
+export default function HomeSidebar({ year, onPickYear, onStart, children }: Props) {
   return (
     <div className={styles.text}>
       <p className={styles.kicker}>Argentina · 2012–2026</p>
@@ -26,6 +27,11 @@ export default function HomeSidebar({ year, onPickYear, children }: Props) {
         Seis historias. Entre 2012 y 2026, un satélite de la NASA detectó <b>{fmt(meta.total_focos)} focos de calor</b> dentro
         del territorio argentino. Cada punto del mapa es uno de ellos.
       </p>
+      {onStart && (
+        <button type="button" className={styles.startBtn} onClick={onStart}>
+          Comenzar el recorrido: Chubut 2015 →
+        </button>
+      )}
       <p>Elegí un año con el reproductor, o avanzá con <b>→</b> para ver seis incendios con sus cifras, sus causas y lo que dicen las fuentes.</p>
       {children && <div className={styles.slot}>{children}</div>}
       <h3 className={styles.h}>Focos de calor por año</h3>

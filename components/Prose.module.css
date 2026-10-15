@@ -37,8 +37,29 @@
 .sources { margin-top: var(--s-3); font-size: var(--fs-14); color: var(--muted); }
 .sources summary { cursor: pointer; color: var(--text-2); }
 .sources ul { margin: var(--s-1) 0 0; padding-left: var(--s-3); }
-.sources li { margin: var(--s-half) 0; color: var(--text-2); }
 .slot { margin: var(--s-3) 0; }
+
+.startBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-1);
+  margin: var(--s-2) 0 var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border: 0;
+  border-radius: var(--r-1);
+  background: var(--accent);
+  color: #1b0c04;
+  font-size: var(--fs-14);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s var(--ease);
+  width: 100%;
+  text-align: center;
+}
+.startBtn:hover {
+  background: #ffc864;
+}
 
 @media (max-width: 899.98px) {
   .title { font-size: var(--fs-20); }

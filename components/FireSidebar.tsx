@@ -65,7 +65,7 @@ function PhotoCard({
           type="button"
           className={styles.photoZoomBtn}
           onClick={() => onOpen(photo)}
-          aria-label="Ampliar fotografía documental"
+          aria-label="Ampliar fotografía"
         >
           🔍 Ampliar
         </button>
@@ -80,18 +80,13 @@ function PhotoCard({
       </div>
       <figcaption className={styles.photoCaption}>
         <p className={styles.photoText}>{photo.caption}</p>
-        <div className={styles.photoMeta}>
-          <span className={styles.photoCredit}>
-            {photo.sourceUrl ? (
-              <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer">
-                {photo.credit}
-              </a>
-            ) : (
-              photo.credit
-            )}
-          </span>
-          <span className={styles.photoLicense}>· {photo.license}</span>
-        </div>
+        <p className={styles.photoCredit}>
+          Fuente: {photo.sourceUrl ? (
+            <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer">{photo.credit}</a>
+          ) : (
+            photo.credit
+          )}
+        </p>
       </figcaption>
     </figure>
   );
@@ -159,21 +154,23 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
       {/* Act 1: Cómo empezó */}
       <section className={styles.ch} id="ch-start">
         {head(0)}
-        <blockquote className={`${styles.quote} ${styles.blk}`} data-blk>
-          <p>{ev.cause.text}</p>
-        </blockquote>
 
         {photo0 && (
           <PhotoCard
             photo={photo0}
-            stepLabel="Registro inicial · Cómo empezó"
+            stepLabel="Registro inicial"
             onOpen={setModalPhoto}
           />
         )}
 
+        <blockquote className={`${styles.quote} ${styles.blk}`} data-blk>
+          <p>{ev.cause.text}</p>
+        </blockquote>
+
+        {/* Textual facts at the bottom of the section */}
         {start.length > 0 && (
-          <div className={`${styles.factsBlock} ${styles.blk}`} data-blk>
-            <h4 className={styles.subHead}>Claves del origen y contexto</h4>
+          <div className={`${styles.factsBottom} ${styles.blk}`} data-blk>
+            <h4 className={styles.subHead}>Detalles del hecho</h4>
             <Facts facts={start} />
           </div>
         )}
@@ -182,18 +179,15 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
       {/* Act 2: El fuego y su magnitud */}
       <section className={styles.ch} id="ch-fire">
         {head(1)}
+
         <div className={`${styles.heroCard} ${styles.blk}`} data-blk>
-          <span className={styles.heroBadge}>SUPERFICIE AFECTADA REGISTRADA</span>
           <div className={styles.hero}>
             <CountUp value={ev.hero.value} className={styles.num} />
             <span className={styles.unit}>{ev.hero.unit}</span>
           </div>
           <p className={styles.herolabel}>
-            {unitCap} {ev.hero.label}
+            {unitCap} {ev.hero.label} Según {ev.hero.src}.
           </p>
-          <div className={styles.heroSource}>
-            <span className={styles.verifiedCheck}>✓ Fuente oficial:</span> {ev.hero.src}
-          </div>
         </div>
 
         {alt && (
@@ -205,16 +199,17 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
         {photo1 && (
           <PhotoCard
             photo={photo1}
-            stepLabel="Punto máximo · El avance del fuego"
+            stepLabel="Punto máximo"
             onOpen={setModalPhoto}
           />
         )}
 
-        <div className={`${styles.factsBlock} ${styles.blk}`} data-blk>
-          <h4 className={styles.subHead}>Magnitud e impacto documentado</h4>
+        {/* Textual facts and notes at the bottom */}
+        <div className={`${styles.factsBottom} ${styles.blk}`} data-blk>
+          <h4 className={styles.subHead}>Detalles del hecho</h4>
           {ev.hero.note && (
             <div className={styles.officialNote}>
-              <b>Nota de registro:</b> {ev.hero.note}
+              {ev.hero.note}
             </div>
           )}
           <Facts facts={fire} />
@@ -224,35 +219,35 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
       {/* Act 3: Cómo se combatió */}
       <section className={`${styles.ch} ${styles.last}`} id="ch-fight">
         {head(2)}
-        <p className={`${styles.lead} ${styles.blk}`} data-blk>{ev.response}</p>
 
         {photo2 && (
           <PhotoCard
             photo={photo2}
-            stepLabel="Operativo de combate · En el terreno"
+            stepLabel="Operativo de combate"
             onOpen={setModalPhoto}
           />
         )}
 
-        {fight.length > 0 && (
-          <div className={`${styles.factsBlock} ${styles.blk}`} data-blk>
-            <h4 className={styles.subHead}>Medios y operativo de control</h4>
-            <Facts facts={fight} />
-          </div>
-        )}
+        <p className={`${styles.lead} ${styles.blk}`} data-blk>{ev.response}</p>
 
         <div className={`${styles.chartSlot} ${styles.blk}`} data-blk>
-          <h4 className={styles.subHead}>Evolución mensual de focos de calor</h4>
+          <h4 className={styles.subHead}>Focos de calor por mes</h4>
           {series && (
             <MonthChart series={series} provs={ev.months.prov} year={ev.months.year} from={ev.months.from} to={ev.months.to} />
           )}
         </div>
 
-        {/* Respaldo de fuentes verificado */}
+        {/* Textual facts at the bottom */}
+        {fight.length > 0 && (
+          <div className={`${styles.factsBottom} ${styles.blk}`} data-blk>
+            <h4 className={styles.subHead}>Detalles del operativo</h4>
+            <Facts facts={fight} />
+          </div>
+        )}
+
+        {/* Fuentes al fondo */}
         <div className={`${styles.sourcesCard} ${styles.blk}`} data-blk>
-          <h4 className={styles.sourcesHead}>
-            <span className={styles.verifiedIcon}>✓</span> Fuentes de respaldo verificadas
-          </h4>
+          <h4 className={styles.sourcesHead}>Fuentes</h4>
           <ul className={styles.sourcesList}>
             {ev.sources.map((src: { t: string; u: string }) => (
               <li key={src.u}>
@@ -267,7 +262,7 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
 
         {nextName && (
           <button className={`${styles.nextbtn} ${styles.blk}`} data-blk onClick={onNext}>
-            Siguiente historia: {nextName} →
+            {index === total ? `Ver balance metodológico: ${nextName} →` : `Siguiente historia: ${nextName} →`}
           </button>
         )}
       </section>
@@ -294,9 +289,10 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
             <div className={styles.modalFooter}>
               <p className={styles.modalCaption}>{modalPhoto.caption}</p>
               <p className={styles.modalMeta}>
-                <b>Crédito:</b> {modalPhoto.credit} · <b>Licencia:</b> {modalPhoto.license}
-                {modalPhoto.sourceUrl && (
-                  <> · <a href={modalPhoto.sourceUrl} target="_blank" rel="noopener noreferrer">Ver fuente original ↗</a></>
+                Fuente: {modalPhoto.sourceUrl ? (
+                  <a href={modalPhoto.sourceUrl} target="_blank" rel="noopener noreferrer">{modalPhoto.credit}</a>
+                ) : (
+                  modalPhoto.credit
                 )}
               </p>
             </div>

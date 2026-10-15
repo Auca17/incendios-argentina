@@ -34,7 +34,7 @@ const Sidebar = forwardRef<HTMLElement, Props>(function Sidebar(
             <FireBody ev={slide.ev} index={index} total={EVENTS.length} nextName={nextName} onNext={onNext} />
           </>
         ) : slide.type === 'intro' ? (
-          <HomeSidebar year={year} onPickYear={onPickYear}>{inline}</HomeSidebar>
+          <HomeSidebar year={year} onPickYear={onPickYear} onStart={onNext}>{inline}</HomeSidebar>
         ) : (
           <MethodSidebar>{inline}</MethodSidebar>
         )}

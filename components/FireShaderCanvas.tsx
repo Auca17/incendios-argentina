@@ -13,6 +13,7 @@ precision highp float;
 uniform vec2 u_resolution;
 uniform float u_time;
 uniform float u_progress; // 0.0 to 1.0
+uniform float u_direction; // +1.0 = Left-to-Right (forward), -1.0 = Right-to-Left (backward)
 
 // Fast 2D hash
 float hash(vec2 p) {
@@ -46,18 +47,18 @@ float fbm(vec2 p) {
   return v;
 }
 
-// Fire color palette: charred ember black -> deep ruby red -> blazing orange -> radiant gold -> intense core
+// Fire color palette: charred ember black -> deep ruby red -> blazing orange -> radiant gold -> core flame
 vec3 firePalette(float t) {
-  vec3 c0 = vec3(0.08, 0.02, 0.01); // charred smoke/ember
-  vec3 c1 = vec3(0.82, 0.10, 0.01); // deep ruby fire
-  vec3 c2 = vec3(1.0, 0.38, 0.02);  // blazing orange
-  vec3 c3 = vec3(1.0, 0.82, 0.16);  // radiant gold
-  vec3 c4 = vec3(1.0, 0.95, 0.82);  // core incandescent flame
+  vec3 c0 = vec3(0.06, 0.015, 0.01); // charred dark smoke
+  vec3 c1 = vec3(0.85, 0.12, 0.01);  // deep ruby embers
+  vec3 c2 = vec3(1.0, 0.40, 0.02);   // blazing flame orange
+  vec3 c3 = vec3(1.0, 0.84, 0.18);   // radiant gold
+  vec3 c4 = vec3(1.0, 0.98, 0.85);   // white incandescent core
 
-  if (t < 0.20) return mix(c0, c1, t / 0.20);
-  if (t < 0.50) return mix(c1, c2, (t - 0.20) / 0.30);
-  if (t < 0.82) return mix(c2, c3, (t - 0.50) / 0.32);
-  return mix(c3, c4, clamp((t - 0.82) / 0.18, 0.0, 1.0));
+  if (t < 0.18) return mix(c0, c1, t / 0.18);
+  if (t < 0.48) return mix(c1, c2, (t - 0.18) / 0.30);
+  if (t < 0.80) return mix(c2, c3, (t - 0.48) / 0.32);
+  return mix(c3, c4, clamp((t - 0.80) / 0.20, 0.0, 1.0));
 }
 
 void main() {
@@ -66,63 +67,71 @@ void main() {
   vec2 p = uv;
   p.x *= aspect;
 
-  // Sweep progresses from left to right
-  float totalSpan = aspect + 1.8;
-  float sweep = u_progress * totalSpan - 0.9;
-  float dist = p.x - sweep;
+  // Total horizontal span to sweep across with generous offscreen margins
+  float totalSpan = aspect + 2.2;
+  float sweep;
 
-  // Upward convective heat motion
-  vec2 flameUv = p * 3.8;
-  flameUv.y -= u_time * 5.8;
+  if (u_direction > 0.0) {
+    // Forward: sweeps from Left to Right
+    sweep = u_progress * totalSpan - 1.1;
+  } else {
+    // Backward: sweeps from Right to Left
+    sweep = (1.0 - u_progress) * totalSpan - 1.1;
+  }
+
+  // Upward convective heat motion and aerodynamic drift in sweep direction
+  vec2 flameUv = p * 3.5;
+  flameUv.y -= u_time * 6.5;
+  flameUv.x -= u_direction * u_time * 2.2;
 
   // Dual-layer swirling flame turbulence
   float n1 = fbm(flameUv);
-  float n2 = fbm(flameUv * 1.7 + vec2(u_time * 2.2, -u_time * 4.0));
+  float n2 = fbm(flameUv * 1.8 + vec2(u_time * 2.5, -u_time * 4.5));
   float flameNoise = n1 * 0.65 + n2 * 0.35;
 
   // Licking flame front
-  float front = dist + (flameNoise - 0.5) * 0.75;
+  float front = (p.x - sweep) + (flameNoise - 0.5) * 0.85;
 
-  // Center fullness: swells as it crosses the viewport center
+  // Center fullness: swells dramatically as it crosses viewport center
   float fullness = sin(u_progress * 3.14159265);
-  float halfWidth = 0.45 + fullness * 0.55;
+  float halfWidth = 0.55 + fullness * 0.65;
 
   // Base flame shape
   float wall = 1.0 - smoothstep(0.0, halfWidth, abs(front));
-  float intensity = wall * (1.1 + fullness * 1.4);
+  float intensity = wall * (1.2 + fullness * 1.6);
 
-  // Border flames: intense fiery tongues licking in from top and bottom edges (as in reference image)
-  float borderDist = min(uv.y, 1.0 - uv.y) * 2.8;
+  // Border licking flames along top and bottom edges
+  float borderDist = min(uv.y, 1.0 - uv.y) * 3.0;
   float borderFlame = 1.0 - smoothstep(0.0, 1.0, borderDist);
   if (borderFlame > 0.0) {
-    float borderNoise = fbm(vec2(p.x * 5.0 + u_time * 2.5, uv.y * 6.0));
-    intensity += borderFlame * borderNoise * fullness * 1.1;
+    float borderNoise = fbm(vec2(p.x * 4.5 + u_time * 3.0, uv.y * 6.0));
+    intensity += borderFlame * borderNoise * fullness * 1.2;
   }
 
-  // Roaring central core during screen transition apex (fullness > 0.78)
-  if (fullness > 0.78) {
-    float centerEngulf = (fullness - 0.78) * 3.2;
-    float centerNoise = fbm(flameUv * 2.0 + vec2(u_time * 3.0, -u_time * 5.0));
-    intensity = max(intensity, centerEngulf * (0.65 + 0.35 * centerNoise));
+  // Central blazing engulf apex when fire crosses center
+  if (fullness > 0.75) {
+    float centerEngulf = (fullness - 0.75) * 3.6;
+    float centerNoise = fbm(flameUv * 2.2 + vec2(u_time * 3.0, -u_time * 5.0));
+    intensity = max(intensity, centerEngulf * (0.75 + 0.35 * centerNoise));
   }
 
-  // Flying fiery ember sparks dancing across the front
-  vec2 sparkGrid = floor(vec2(p.x * 28.0 + u_time * 16.0, p.y * 28.0 + u_time * 10.0));
+  // Blazing flying sparks and embers traveling along the wave
+  vec2 sparkGrid = floor(vec2(p.x * 32.0 + u_direction * u_time * 20.0, p.y * 32.0 + u_time * 12.0));
   float sparkVal = hash(sparkGrid);
-  if (sparkVal > 0.94 && abs(front) < (halfWidth + 0.35)) {
-    intensity += 0.75 * (1.0 + fullness);
+  if (sparkVal > 0.93 && abs(front) < (halfWidth + 0.45)) {
+    intensity += 0.85 * (1.0 + fullness);
   }
 
   // Map intensity into fire palette
   vec3 col = firePalette(clamp(intensity, 0.0, 1.0));
 
-  // Alpha computation: solid and roaring in the fire body, smooth falloff on the edges
-  float alpha = smoothstep(0.08, 0.32, intensity);
+  // Alpha computation: solid and roaring in fire body, smooth falloff on edges
+  float alpha = smoothstep(0.06, 0.28, intensity);
 
-  // Subtle dark charred smoke edge around outer flame silhouettes
-  if (intensity > 0.05 && intensity < 0.22) {
-    col = mix(vec3(0.06, 0.02, 0.01), col, (intensity - 0.05) / 0.17);
-    alpha = min(alpha, 0.85);
+  // Soft charred smoke edge around flame silhouettes
+  if (intensity > 0.03 && intensity < 0.22) {
+    col = mix(vec3(0.05, 0.02, 0.01), col, (intensity - 0.03) / 0.19);
+    alpha = min(alpha, 0.90);
   }
 
   gl_FragColor = vec4(col, alpha);
@@ -159,18 +168,28 @@ function createProgram(
 }
 
 interface FireShaderCanvasProps {
-  onFinish: () => void;
+  direction?: 'forward' | 'backward';
   duration?: number;
+  onFinish: () => void;
 }
 
-export default function FireShaderCanvas({ onFinish, duration = 820 }: FireShaderCanvasProps) {
+export default function FireShaderCanvas({
+  direction = 'forward',
+  duration = 850,
+  onFinish,
+}: FireShaderCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext('webgl', { alpha: true, antialias: false, depth: false });
+    const gl = canvas.getContext('webgl', {
+      alpha: true,
+      antialias: false,
+      depth: false,
+      premultipliedAlpha: false,
+    });
     if (!gl) {
       onFinish();
       return;
@@ -207,6 +226,7 @@ export default function FireShaderCanvas({ onFinish, duration = 820 }: FireShade
     const uResolution = gl.getUniformLocation(program, 'u_resolution');
     const uTime = gl.getUniformLocation(program, 'u_time');
     const uProgress = gl.getUniformLocation(program, 'u_progress');
+    const uDirection = gl.getUniformLocation(program, 'u_direction');
 
     // High performance DPR: 1.25 gives crisp anti-aliased look with rock-solid 60 FPS
     const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
@@ -216,9 +236,9 @@ export default function FireShaderCanvas({ onFinish, duration = 820 }: FireShade
       canvas.width = Math.floor(w * dpr);
       canvas.height = Math.floor(h * dpr);
       gl.viewport(0, 0, canvas.width, canvas.height);
-      if (uResolution) gl.uniform2f(uResolution, canvas.width, canvas.height);
     };
     resize();
+    window.addEventListener('resize', resize);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -237,8 +257,11 @@ export default function FireShaderCanvas({ onFinish, duration = 820 }: FireShade
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
+      gl.useProgram(program);
+      if (uResolution) gl.uniform2f(uResolution, canvas.width, canvas.height);
       if (uTime) gl.uniform1f(uTime, elapsed * 0.001);
       if (uProgress) gl.uniform1f(uProgress, p);
+      if (uDirection) gl.uniform1f(uDirection, direction === 'forward' ? 1.0 : -1.0);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
@@ -252,24 +275,27 @@ export default function FireShaderCanvas({ onFinish, duration = 820 }: FireShade
     animId = requestAnimationFrame(render);
 
     return () => {
+      window.removeEventListener('resize', resize);
       cancelAnimationFrame(animId);
       gl.deleteBuffer(positionBuffer);
       gl.deleteShader(vert);
       gl.deleteShader(frag);
       gl.deleteProgram(program);
+      const ext = gl.getExtension('WEBGL_lose_context');
+      ext?.loseContext();
     };
-  }, [onFinish, duration]);
+  }, [direction, duration, onFinish]);
 
   return (
     <canvas
       ref={canvasRef}
       style={{
-        position: 'absolute',
+        position: 'fixed',
         inset: 0,
-        width: '100%',
-        height: '100%',
+        width: '100vw',
+        height: '100vh',
         pointerEvents: 'none',
-        zIndex: 60,
+        zIndex: 99999,
       }}
     />
   );
