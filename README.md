@@ -2,11 +2,13 @@
 
 Seis incendios argentinos contados con sus fuentes y los focos de calor detectados por satélite (NASA FIRMS, VIIRS S-NPP) entre 2012 y 2026, con un mapa para explorar los datos.
 
+**Sitio:** [auca17.github.io/incendios-argentina](https://auca17.github.io/incendios-argentina/)
+
 Sitio estático: HTML, CSS y JavaScript sin compilación ni dependencias externas. Se publica con GitHub Pages desde la raíz de la rama `main`.
 
 ## Autor
 
-**Augustus Rufino** · GitHub: [@Auca17](https://github.com/Auca17)
+**Augustus Rufino** · [augurufino@gmail.com](mailto:augurufino@gmail.com) · GitHub: [@Auca17](https://github.com/Auca17)
 
 Idea, investigación, verificación de fuentes y dirección del proyecto. El código se escribió con asistencia de IA bajo supervisión del autor; el detalle está en `IA-declaracion.md`.
 
