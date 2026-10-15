@@ -36,21 +36,6 @@
 }
 .caption b { color: var(--text); }
 .caption { font-size: var(--fs-16); }
-.means {
-  padding: var(--s-2);
-  border-radius: var(--r-1);
-  background: rgba(255, 255, 255, 0.04);
-  font-size: var(--fs-14);
-  color: var(--text-2);
-}
-.meansH {
-  margin: 0 0 var(--s-half);
-  font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
 .step {
   flex: none;
   display: grid;
@@ -101,5 +86,5 @@
     border-top: 1px solid var(--ring);
   }
   .scenebox { flex: 1; min-height: 0; aspect-ratio: auto; border-radius: var(--r-1); }
-  .caption, .means { display: none; }
+  .caption { display: none; }
 }

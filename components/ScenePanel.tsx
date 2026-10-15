@@ -80,10 +80,6 @@ export default function ScenePanel({ s, stage, slide }: Props) {
           {rest}
         </span>
       </div>
-      <div className={styles.means}>
-        <h2 className={styles.meansH}>Medios de combate según la fuente</h2>
-        <p>{ev.response}</p>
-      </div>
     </section>
   );
 }
