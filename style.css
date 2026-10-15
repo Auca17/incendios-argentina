@@ -81,8 +81,9 @@ ul.plain li{margin:.35em 0;font-size:14.5px;color:#e4d6cc}
 .yrbars rect:hover{opacity:.8}
 
 /* scene */
-.scenebox{border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#0b0706;box-shadow:0 12px 40px rgba(0,0,0,.45)}
-svg.scene{display:block;width:100%;height:auto}
+/* the box may shrink to fit the column; the SVG fills it and slices from the top, so the sky is cropped, never the ground */
+.scenebox{display:flex;flex:0 1 auto;aspect-ratio:4/3;min-height:200px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#0b0706;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+svg.scene{display:block;width:100%;height:100%}
 .scenecap{display:flex;align-items:center;gap:12px;font-size:15px;color:#ecdccf;min-height:48px}
 .scenecap .step{flex:none;width:30px;height:30px;border-radius:50%;background:var(--fire);color:#1b0c04;font-weight:800;
   display:grid;place-items:center}
@@ -229,6 +230,30 @@ details.more .body p{margin:0 0 var(--s-2);font-size:14.5px;color:var(--text-2)}
 .nextbtn:hover{background:var(--gold)}
 body.ev #side{padding-bottom:30vh}
 
+/* sources panel */
+.src-group{display:grid;gap:10px;margin-top:10px}
+.src-item{padding:10px 14px;background:#100b08;border:1px solid var(--line);border-radius:10px}
+.src-item h4{margin:0 0 3px;font-size:13px;color:var(--gold);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.src-item p{margin:0 0 6px;font-size:12px;color:var(--text-2);line-height:1.45}
+.src-item a{font-size:11.5px;color:var(--fire);text-decoration:none;word-break:break-all}
+.src-item a:hover{text-decoration:underline}
+.src-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#24160f;color:var(--fire);letter-spacing:.03em;text-transform:uppercase}
+
+/* documentary photo card (under scene in desktop, inline in mobile) */
+.photobox{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(0,0,0,.4);transition:border-color .2s}
+.photobox:hover{border-color:var(--line-strong)}
+.photoframe{position:relative;width:100%;height:185px;background:#0d0907;overflow:hidden}
+.photoframe img{width:100%;height:100%;object-fit:cover;display:block;opacity:1;transition:opacity .25s var(--ease)}
+.photobadge{position:absolute;top:8px;left:10px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  background:rgba(20,13,10,.88);backdrop-filter:blur(4px);color:var(--gold);border:1px solid var(--line-strong);border-radius:999px;padding:3px 8px}
+.photometa{padding:9px 12px 10px;background:#140d0a}
+.photometa p{margin:0 0 3px;font-size:12.5px;color:var(--text-2);line-height:1.4}
+.photometa .photosrc{font-size:11px;color:var(--muted);display:block}
+
+/* mobile inline photo */
+.mobphoto{display:none}
+
 @media (max-width:900px){
   html,body{height:auto}
   #app{display:flex;flex-direction:column;height:auto}
@@ -248,9 +273,12 @@ body.ev #side{padding-bottom:30vh}
     grid-template-columns:1fr;grid-template-rows:46% 54%;background:var(--bg);border-bottom:1px solid var(--line)}
   body.ev #mapwrap{order:0;height:auto;min-height:0}
   body.ev #scenewrap{order:1;height:auto;min-height:0;padding:4px 12px 8px;gap:0;justify-content:center;overflow:hidden}
-  body.ev .scenebox{flex:1;min-height:0;border-radius:12px;display:flex}
+  body.ev .scenebox{flex:1;min-height:0;aspect-ratio:auto;border-radius:12px;display:flex}
   body.ev svg.scene{height:100%}
   body.ev .scenecap{display:none}
+  body.ev .photobox{display:none}
+  .mobphoto{display:block;margin:var(--s-4) 0;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
+  .mobphoto .photoframe{height:200px}
   body.ev #yearbadge.ev{left:8px;right:8px;bottom:4px;padding:3px 8px;font-size:11.5px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   body.ev #yearbadge.ev .key{display:none}
   body.ev #yearbadge.ev .where{display:none}

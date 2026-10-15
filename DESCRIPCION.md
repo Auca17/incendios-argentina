@@ -1,4 +1,4 @@
-# Foco Cero: descripción metodológica
+# Lo que el fuego se llevó: descripción metodológica
 
 **Datos.** Focos de calor del sensor VIIRS (satélite Suomi NPP) de [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/), archivo estándar y tiempo casi real, del 20/01/2012 al 14/10/2026. Se conservaron los focos de vegetación con confianza nominal o alta, se asignaron a provincias con límites de [Natural Earth](https://www.naturalearthdata.com/) y se agruparon por provincia y mes, en celdas de 0,25° por año y, para cada incendio, en celdas de 0,05° por semana.
 

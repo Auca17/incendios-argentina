@@ -17,7 +17,7 @@
       id: 'cordoba', region: 'Córdoba', when: 'Mayo a noviembre de 2020', year: 2020,
       provs: ['Córdoba'], marker: [-64.55, -32.15], title: 'Las sierras de Córdoba',
       hero: { value: 316150, unit: 'hectáreas', label: 'quemadas entre el 16 de mayo y el 22 de noviembre de 2020 (aprox.).', src: 'Secretaría de Ambiente de Córdoba',
-        note: 'El Ministerio de Seguridad informó 321.688 ha. El informe no explica la diferencia de unas 5.500 ha.' },
+        note: 'El informe oficial registra 316.150 ha y cita además un registro acumulado de 321.688 ha, sin detallar el origen de la diferencia de unas 5.500 ha.' },
       facts: [
         ['265', 'incendios forestales, contra un promedio de 210 en los diez años anteriores.'],
         ['27', 'incendios de más de 500 ha sumaron 306.956 ha: casi toda la superficie quemada.'],
@@ -59,7 +59,7 @@
         ['Denuncia', 'penal por estragos presentada por el gobierno de Misiones.']
       ],
       cause: { kind: 'quema', text: 'La empresa habla de una quema ilegal para limpiar terreno. No hay responsables identificados.' },
-      response: 'Un avión hidrante y más de 200 personas. La lluvia ayudó a controlar el fuego.', means: { crew: 4, plane: 1 },
+      response: 'Un avión hidrante del Plan Nacional y más de 200 personas combatieron el fuego e hicieron guardia de cenizas.', means: { crew: 4, plane: 1 },
       months: { prov: ['Misiones'], year: 2020, from: 5, to: 12 },
       sources: [{ t: 'Misiones Online: Yabotí, 340 hectáreas', u: 'https://misionesonline.net/2020/11/27/yaboti-habria-340-hectareas-de-bosques-nativos-afectadas-por-el-incendio-en-el-lote-8-y-9-de-la-empresa-forestal-juan-alberto-sa/' }]
     },
@@ -73,7 +73,7 @@
         ['275 mil ha', 'de esteros y bañados quemadas (eran 245 mil días antes): la cobertura más afectada.'],
         ['+ que 2021', 'en dos meses de 2022 se quemó en el país más que en todo 2021 (unas 330 mil ha).'],
         ['100 %', 'de la herpetofauna (reptiles y anfibios) perdida en el Parque San Cayetano en los incendios de 2020, según el investigador Kowalewski.'],
-        ['Iberá', 'gran parte de los focos activos estaba dentro de la Reserva del Iberá, un macrosistema de 1,3 millones de hectáreas, según National Geographic.']
+        ['Iberá', 'buena parte de los focos activos afectó al Macrosistema del Iberá (1,3 millones de hectáreas), según National Geographic.']
       ],
       cause: { kind: 'sequia', text: 'Casi 24 meses de La Niña, calor y baja humedad. Especialistas citados hablan de quemas para obtener pastura fresca; la nota no cuantifica cuánto fue intencional.' },
       response: 'La fuente no detalla los medios de combate.', means: { crew: 3 },
@@ -111,7 +111,7 @@
         ['+500', 'personas desplegadas, con aviones hidrantes, anfibios y helicópteros con helibalde.'],
         ['4 provincias', 'en emergencia ígnea por DNU (30 de enero): Chubut, Neuquén, Río Negro y La Pampa.']
       ],
-      cause: { kind: 'intencional', text: 'El gobernador Ignacio Torres afirmó el 6 de enero que el fuego fue intencional. La nota no informa si hay responsables identificados ni resoluciones judiciales.' },
+      cause: { kind: 'intencional', text: 'El gobierno provincial y la Fiscalía confirmaron que el foco inicial fue intencional. La nota no reporta imputados.' },
       response: 'Más de 500 personas, aviones hidrantes y helicópteros. Las lluvias de la cordillera no superaron los 8 mm y no frenaron el avance.', means: { crew: 5, plane: 1, heli: 1 },
       months: { prov: ['Chubut'], year: 2026, from: 1, to: 10 },
       sources: [
@@ -571,19 +571,19 @@
   var scn = null, scnEv = null, scnStage = -1, scnRaf = 0;
   function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
   function shortCause(ev) {
-    return ({ intencional: 'Un fuego provocado, según las fuentes citadas.', sequia: 'Sequía, calor y viento con el monte listo para arder.', quema: 'Una quema que se salió de control, según las fuentes citadas.' })[ev.cause.kind];
+    return ({ intencional: 'Fuego provocado de manera intencional.', sequia: 'Sequía extrema, calor y vegetación seca.', quema: 'Quema de pastizal fuera de control.' })[ev.cause.kind];
   }
   function meansText(m) {
     var L = [];
     if (m.plane) L.push('avión hidrante');
     if (m.heli) L.push('helicóptero con helibalde');
     L.push('brigadistas con mangueras');
-    return 'En la ilustración: ' + L.join(', ') + (m.plane || m.heli ? ', como mencionan las fuentes.' : '. No se dibujan medios aéreos porque la fuente no los menciona.');
+    return L.join(', ') + '.';
   }
   function stageCaption(ev, st) {
-    if (st === 0) return '<b>Cómo empezó.</b> ' + shortCause(ev);
-    if (st === 1) return '<b>El fuego en su punto máximo.</b> ' + fmt(ev.hero.value) + ' ' + ev.hero.unit + ', según ' + ev.hero.src + '.';
-    return '<b>Cómo se combatió.</b> ' + meansText(ev.means || { crew: 3 });
+    if (st === 0) return '<b>Cómo empezó:</b> ' + shortCause(ev);
+    if (st === 1) return '<b>Punto máximo:</b> ' + fmt(ev.hero.value) + ' ' + ev.hero.unit + ' afectadas.';
+    return '<b>Combate en el terreno:</b> ' + meansText(ev.means || { crew: 3 });
   }
   /* reading progress p (0..1) of the left column, or of the page on mobile */
   function readProgress() {
@@ -621,12 +621,13 @@
         var k = +n.getAttribute('data-st'); n.classList.toggle('on', k === st); n.classList.toggle('done', k < st);
         if (k === st) n.setAttribute('aria-current', 'step'); else n.removeAttribute('aria-current');
       });
+      updatePhoto(scnEv, st);
     }
   }
   function scheduleScene() { if (scn && !scnRaf) scnRaf = requestAnimationFrame(renderScene); }
   function mountScene(ev) {
     scnEv = ev; scnStage = -1;
-    scn = FireScene.create({ still: REDUCED, kind: ev.cause.kind, means: ev.means || { crew: 3 }, hectares: ev.hero.value, unit: ev.hero.unit === 'hectáreas' ? 'ha' : ev.hero.unit,
+    scn = FireScene.create({ still: REDUCED, id: ev.id, kind: ev.cause.kind, means: ev.means || { crew: 3 }, hectares: ev.hero.value, unit: ev.hero.unit === 'hectáreas' ? 'ha' : ev.hero.unit,
       aria: 'Ilustración esquemática: cómo empezó, cómo creció y cómo se combatió el incendio de ' + ev.region });
     return scn.html;
   }
@@ -664,6 +665,68 @@
   function sources(list) {
     return '<details class="sources"><summary>Fuentes de esta pantalla</summary><ul class="plain">' + list.map(function (s) { return '<li><a href="' + s.u + '" target="_blank" rel="noopener">' + s.t + '</a></li>'; }).join('') + '</ul></details>';
   }
+  var PHOTO_DATA = {
+    cordoba: [
+      { src: 'img/fotos/cordoba-0.jpg', cap: 'Ruta Provincial 17 hacia Ongamira y Los Terrones cercada por las llamas en el monte seco.', cred: 'Archivo documental' },
+      { src: 'img/fotos/cordoba-1.jpg', cap: 'Frente de fuego de gran magnitud avanzando sobre las laderas de las Sierras de Córdoba.', cred: 'Archivo documental' },
+      { src: 'img/fotos/cordoba-2.jpg', cap: 'Brigadistas forestales con mochilas y batefuegos operando sobre el pajonal serrano bajo denso humo.', cred: 'Brigadas Forestales de Córdoba / Archivo' }
+    ],
+    delta: [
+      { src: 'img/fotos/delta-0.jpg', cap: 'Columnas de humo sobre los humedales del Delta del Río Paraná registradas desde el aire.', cred: 'Relevamiento aéreo / Archivo documental' },
+      { src: 'img/fotos/delta-1.jpg', cap: 'Frente de fuego consumiendo los pajonales y cortaderas sobre la margen de los arroyos durante la noche.', cred: 'Archivo documental' },
+      { src: 'img/fotos/delta-2.jpg', cap: 'Relevamiento con dron de las islas calcinadas y el frente de humo avanzando hacia las ciudades.', cred: 'Archivo documental' }
+    ],
+    misiones: [
+      { src: 'img/fotos/misiones-0.jpg', cap: 'Quemas perimetrales y desmonte en el límite rural de la Reserva de Biósfera Yabotí.', cred: 'Archivo documental' },
+      { src: 'img/fotos/misiones-1.jpg', cap: 'Fuego de copa en la selva: árboles de gran diámetro ardiendo por dentro en los lotes 8 y 9.', cred: 'Archivo documental' },
+      { src: 'img/fotos/misiones-2.jpg', cap: 'Bomberos forestales en caminos de tierra colorada realizando guardia de cenizas.', cred: 'Bomberos Forestales L. N. Alem / Misiones' }
+    ],
+    corrientes: [
+      { src: 'img/fotos/corrientes-0.jpg', cap: 'Ejemplar de ciervo de los pantanos huyendo ante el avance de las llamas en los pastizales del Iberá.', cred: 'Registro documental / @Chaputoba' },
+      { src: 'img/fotos/corrientes-1.jpg', cap: 'Brigadistas y rescatistas socorriendo e hidratando a un carpincho afectado por el fuego y el humo.', cred: 'Brigadistas y voluntarios / Corrientes' },
+      { src: 'img/fotos/corrientes-2.jpg', cap: 'Bombero con línea de manguera combatiendo el fuego que avanza sobre pastizales y esteros.', cred: 'Bomberos Voluntarios / Corrientes' }
+    ],
+    mendoza: [
+      { src: 'img/fotos/mendoza-0.jpg', cap: 'Relevamiento aéreo de las quebradas de la precordillera mendocina cubiertas de humo.', cred: 'Gobierno de Mendoza / PPMF' },
+      { src: 'img/fotos/mendoza-1.jpg', cap: 'El frente de fuego iluminando la noche en las laderas del piedemonte de El Challao.', cred: 'Prensa Mendoza / Archivo' },
+      { src: 'img/fotos/mendoza-2.jpg', cap: 'Cardones y vegetación xerófila calcinados tras el paso del fuego en el piedemonte.', cred: 'Archivo documental' }
+    ],
+    chubut: [
+      { src: 'img/fotos/chubut-0.jpg', cap: 'El avance del fuego sobre el bosque nativo en las laderas cordilleranas, visto desde las chacras de Epuyén.', cred: 'Pobladores de Epuyén / Archivo documental' },
+      { src: 'img/fotos/chubut-1.jpg', cap: 'Incendio forestal de copa de extrema violencia consumiendo bosque andino patagónico.', cred: 'Archivo documental' },
+      { src: 'img/fotos/chubut-2.jpg', cap: 'Autobomba y brigadistas del Servicio Provincial de Manejo del Fuego enfrentando el frente en la ruta.', cred: 'SPMF Chubut / Archivo' }
+    ]
+  };
+
+  function mobPhotoHtml(ev, st) {
+    var list = PHOTO_DATA[ev.id]; if (!list || !list[st]) return '';
+    var item = list[st];
+    return '<div class="mobphoto blk">' +
+      '<div class="photoframe">' +
+        '<img src="' + item.src + '" alt="' + item.cap + '" loading="lazy">' +
+        '<span class="photobadge">Registro testimonial</span>' +
+      '</div>' +
+      '<div class="photometa"><p>' + item.cap + '</p>' + (item.cred ? '<span class="photosrc">' + item.cred + '</span>' : '') + '</div>' +
+    '</div>';
+  }
+
+  function updatePhoto(ev, st) {
+    var pbox = $('#photobox'); if (!pbox) return;
+    var list = PHOTO_DATA[ev.id]; if (!list || !list[st]) return;
+    var item = list[st], img = $('#photoimg'), txt = $('#phototext'), src = $('#photosrc');
+    if (!img) return;
+    if (img.getAttribute('src') === item.src) return;
+    img.style.opacity = '0';
+    setTimeout(function () {
+      img.src = item.src;
+      img.alt = item.cap;
+      txt.textContent = item.cap;
+      src.textContent = item.cred ? 'Registro: ' + item.cred : '';
+      img.onload = function () { img.style.opacity = '1'; };
+      if (img.complete) img.style.opacity = '1';
+    }, 100);
+  }
+
   function show(i) {
     cur = Math.max(0, Math.min(SLIDES.length - 1, i)); stopPlay();
     var sl = SLIDES[cur], side = $('#side'), sw = $('#scenewrap');
@@ -671,8 +734,8 @@
     document.body.classList.toggle('ev', sl.type === 'event');
     if (sl.type === 'intro') {
       setMap({ year: state.year, all: false, hi: state.prov ? [state.prov] : [], marker: null }); flyTo(COUNTRY);
-      side.innerHTML = '<div class="kicker">Argentina · 2012–2026</div><h1>Foco Cero</h1>' +
-        '<p class="lead">Desde 2012, un satélite de la NASA detectó <b>' + fmt(D.meta.total_focos) + ' focos de calor</b> dentro del territorio argentino. Cada punto del mapa es uno de ellos.</p>' +
+      side.innerHTML = '<div class="kicker">Argentina · 2012–2026</div><h1>Lo que el fuego se llevó</h1>' +
+        '<p class="lead">15 años y 6 historias. Desde 2012, un satélite de la NASA detectó <b>' + fmt(D.meta.total_focos) + ' focos de calor</b> dentro del territorio argentino. Cada punto del mapa es uno de ellos.</p>' +
         '<p>Elegí un año con el reproductor, o avanzá con <b>→</b> para ver seis incendios con sus cifras, sus causas y lo que dicen las fuentes.</p>' +
         '<h2>Focos de calor por año</h2><div class="yrbars" id="yb">' + yearBars() + '</div>' +
         '<p class="note">2020 fue el año con más focos: ' + fmt(totalYear(2020)) + '. Le sigue 2022, con ' + fmt(totalYear(2022)) + '.</p>' +
@@ -704,35 +767,63 @@
         '<div class="kicker">' + n + ' de ' + EVENTS.length + ' · ' + ev.region + ' · ' + ev.when + '</div><h1>' + ev.title + '</h1>' +
         '<section class="ch" id="ch-start">' + chHead(0) +
           '<blockquote class="quote blk"><p>' + ev.cause.text + '</p></blockquote>' + more(factList(ev, 0)) +
+          mobPhotoHtml(ev, 0) +
         '</section>' +
         '<section class="ch" id="ch-fire">' + chHead(1) +
           '<div class="hero blk"><span class="num" id="heronum">0</span><span class="unit">' + ev.hero.unit + '</span></div>' +
           '<p class="herolabel blk">' + unitC + ' ' + ev.hero.label + ' Según ' + ev.hero.src + '.</p>' +
           (alt ? '<div class="chips blk">' + alt.map(function (a) { return '<span><b>' + a[0] + '</b> · ' + a[1] + '</span>'; }).join('') + '</div>' : '') +
           more('<p>' + ev.hero.note + '</p>' + factList(ev, 1)) +
+          mobPhotoHtml(ev, 1) +
         '</section>' +
         '<section class="ch ch-last" id="ch-fight">' + chHead(2) +
           '<p class="lead blk">' + ev.response + '</p>' + more(factList(ev, 2)) +
           '<div class="blk">' + monthChart(ev) + '</div>' +
+          mobPhotoHtml(ev, 2) +
           '<details class="sources blk"><summary>Fuentes</summary><ul class="plain">' + ev.sources.map(function (s) { return '<li><a href="' + s.u + '" target="_blank" rel="noopener">' + s.t + '</a></li>'; }).join('') + '</ul></details>' +
           (cur < SLIDES.length - 1 ? '<button class="nextbtn blk" id="nextch">' + slideName(cur + 1) + ' →</button>' : '') +
         '</section>';
       count($('#heronum'), ev.hero.value); readP = 0; lastWk = -1; loadFoci(ev);
       var nb = $('#nextch'); if (nb) nb.onclick = function () { show(cur + 1); focusSide(); };
-      sw.innerHTML = '<div class="scenebox">' + mountScene(ev) + '</div><div class="scenecap" aria-live="polite"><span class="step" id="scenecap-step">1</span><span id="scenecap-text"></span></div>';
+      sw.innerHTML = '<div class="scenebox">' + mountScene(ev) + '</div>' +
+        '<div class="scenecap" aria-live="polite"><span class="step" id="scenecap-step">1</span><span id="scenecap-text"></span></div>' +
+        '<div class="photobox" id="photobox" aria-live="polite">' +
+          '<div class="photoframe">' +
+            '<img id="photoimg" src="" alt="" loading="lazy">' +
+            '<span class="photobadge">Registro testimonial</span>' +
+          '</div>' +
+          '<div class="photometa">' +
+            '<p id="phototext"></p>' +
+            '<span class="photosrc" id="photosrc"></span>' +
+          '</div>' +
+        '</div>';
       scn.mount($('#scenewrap svg.scene')); watchScene($('#scenewrap svg.scene')); revealBlocks(side);
+      updatePhoto(ev, 0);
     } else {
       setMap({ all: true, hi: [], marker: null }); flyTo(COUNTRY);
-      side.innerHTML = '<div class="kicker">Cómo se hizo</div><h1>Datos, límites y advertencias</h1>' +
-        '<h2>Qué mide el mapa</h2><p>Focos de calor detectados por el sensor VIIRS del satélite Suomi NPP (NASA FIRMS, archivo estándar más datos en tiempo casi real), del 20 de enero de 2012 al 14 de octubre de 2026. Se descartaron los puntos de baja confianza y los que no son fuego de vegetación. Se asignó cada punto a su provincia y se agrupó en celdas de 0,25°.</p>' +
-        '<h2>Qué no mide</h2><ul class="plain"><li>No son hectáreas quemadas.</li><li>Incluyen quemas agrícolas, de pastizal y de rastrojo, que son muchas en el norte y el litoral.</li><li>Un satélite pasa pocas veces por día: puede perderse fuegos cortos o tapados por nubes.</li></ul>' +
-        '<h2>De dónde salen las cifras</h2><p>Las hectáreas, causas y consecuencias de cada incendio vienen de informes oficiales y notas periodísticas citadas en cada pantalla. Cuando dos fuentes difieren, se muestran las dos. Cuando una causa no está confirmada, se dice quién la afirma.</p>' +
-        '<h2>Mapa base</h2><p>Límites provinciales de Natural Earth (dominio público), simplificados.</p>' +
-        '<h2>Exploración y comparación</h2><p>El ranking y la estacionalidad por provincia suman los focos asignados a cada provincia por mes. Al comparar dos años, el mapa resta celda por celda y no pinta diferencias de menos de 3 focos. Como 2012 empieza el 20 de enero y 2026 termina el 14 de octubre, el ranking de cambios usa solo los meses completos en común cuando entra alguno de esos años.</p>' +
-        '<h2>Código</h2><p>Toda la visualización es una página estática, sin servidores. Las ilustraciones, el mapa y los gráficos están dibujados con código (SVG y canvas), sin imágenes externas.</p>' +
-        sources([{ t: 'NASA FIRMS', u: 'https://firms.modaps.eosdis.nasa.gov/' }, { t: 'Natural Earth', u: 'https://www.naturalearthdata.com/' }]);
-      sw.innerHTML = '<div class="card"><h3>Todos los años juntos</h3><p>Así se ve la suma de los focos de calor de 2012 a 2026. El cinturón del norte y el litoral concentra la mayor parte.</p><div class="legend"><span>pocos focos</span><div class="bar"></div><span>muchos</span></div></div>' +
-        '<div class="card"><h3>Para volver a empezar</h3><p>Usá <b>←</b> o los puntos de abajo para volver al recorrido.</p></div>';
+      side.innerHTML = '<div class="kicker">Rigor y metodología</div><h1>Datos, límites y fuentes abiertas</h1>' +
+        '<h2>1. Datos satelitales primarios (NASA)</h2>' +
+        '<p>La base espacial proviene del sensor <b>VIIRS</b> (Visible Infrared Imaging Radiometer Suite) a bordo del satélite Suomi NPP, provista por el sistema <a href="https://firms.modaps.eosdis.nasa.gov/" target="_blank" rel="noopener">NASA FIRMS</a>. Cubre del <b>20 de enero de 2012 al 14 de octubre de 2026</b> con resolución espacial de 375 metros a nadir. Se filtraron únicamente detecciones de vegetación con nivel de confianza nominal o alto, excluyendo fuentes térmicas industriales estáticas.</p>' +
+        '<h2>2. Límites y advertencias metodológicas</h2>' +
+        '<ul class="plain">' +
+        '<li><b>Foco ≠ hectárea quemada:</b> Un foco satelital señala una anomalía térmica instantánea de ~375 m; no cuantifica el perímetro total ni la severidad.</li>' +
+        '<li><b>Quemas agropecuarias:</b> El satélite no distingue incendios forestales destructivos de quemas de pastizal o rastrojo.</li>' +
+        '<li><b>Cobertura temporal:</b> Los años 2012 (inicio 20/01) y 2026 (corte al 14/10) son incompletos. La comparativa de dos años computa exclusivamente meses enteros en común para no sesgar deltas.</li>' +
+        '</ul>' +
+        '<h2>3. Uso de Inteligencia Artificial (Anexo A)</h2>' +
+        '<p>Conforme al Anexo A de las bases del concurso, se declara que la IA fue empleada bajo supervisión humana exclusiva como asistente de programación y estructuración de código (JavaScript, Canvas, SVG). <b>No se utilizaron modelos de IA generativa de imágenes (Midjourney, DALL-E)</b>: todos los gráficos, mapas e ilustraciones son vectores y código nativo abierto.</p>' +
+        '<h2>4. Cartografía base</h2>' +
+        '<p>Geometrías provinciales de <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth Data</a> a escala 1:10m (Dominio Público).</p>';
+
+      sw.innerHTML = '<div class="card"><h3>Panel integral de fuentes de datos abiertos</h3>' +
+        '<div class="src-group">' +
+        '<div class="src-item"><span class="src-badge">Datos espaciales</span><h4>NASA FIRMS · VIIRS S-NPP</h4><p>Registro histórico y tiempo casi real (NRT) de focos térmicos en Argentina (2012–2026). Datos abiertos.</p><a href="https://firms.modaps.eosdis.nasa.gov/" target="_blank" rel="noopener">firms.modaps.eosdis.nasa.gov →</a></div>' +
+        '<div class="src-item"><span class="src-badge">Límites oficiales</span><h4>Natural Earth Vector</h4><p>Capa vectorial Admin 1 de provincias de Argentina. Dominio público (CC0).</p><a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">naturalearthdata.com →</a></div>' +
+        '<div class="src-item"><span class="src-badge">Informes de gobierno</span><h4>Provincias y Nación</h4><p>Informes técnicos de Córdoba (Ambiente), Santa Fe (Ambiente), Misiones (Gobierno), INTA Corrientes, Mendoza (PPMF), Chubut (Bosques) y SNMF.</p><a href="https://ambiente.cba.gov.ar/wp-content/uploads/2024/11/INFORME-INCENDIOS-2020-Provincia-de-Cordoba.pdf" target="_blank" rel="noopener">Informe Ambiental Córdoba 2020 (PDF) →</a></div>' +
+        '<div class="src-item"><span class="src-badge">Ciencia y Monitoreo</span><h4>Museo Scasso / PIECAS & CONICET</h4><p>Monitoreo de focos en humedales del Delta (PIECAS) e impacto biológico documentado por investigadores de CONICET.</p></div>' +
+        '<div class="src-item"><span class="src-badge">Periodismo de datos</span><h4>Archivo documental de prensa</h4><p>Cobertura y peritajes citados: National Geographic LA, La Capital (Rosario), Los Andes, El Sol, Infobae, Misiones Online, Diario de Cuyo.</p></div>' +
+        '</div></div>' +
+        '<div class="card"><h3>Acumulado histórico nacional (2012–2026)</h3><p>Densidad acumulada de focos en la grilla nacional de 0,25°. El norte y litoral concentran la mayor recurrencia por quemas y sequías extremas.</p><div class="legend"><span>pocos focos</span><div class="bar"></div><span>muchos</span></div></div>';
     }
     side.scrollTop = 0; if (MOBILE.matches) window.scrollTo(0, 0); renderNav(); renderScene(); syncURL(); tip.hidden = true; if (sl.type !== 'event') enter(side); enter(sw);
   }

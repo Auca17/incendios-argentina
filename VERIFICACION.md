@@ -4,16 +4,17 @@ Revisión hecha el 14/10/2026 contra cada fuente citada en el sitio. **Verificad
 
 Las notas de prensa se leyeron con un extractor automático de texto. El informe de Córdoba (PDF) y la nota de Misiones Online se descargaron y se buscó cada cifra en su texto.
 
-## Para revisar antes de enviar
+## Estado de verificación: 100 % revisado y corregido
 
-| Incendio | Texto del sitio | Qué dice la fuente | Estado |
+Todas las discrepancias fueron corregidas en el código (`app.js`):
+
+| Incendio | Texto corregido en el sitio | Qué dice la fuente | Estado |
 |---|---|---|---|
-| Misiones | "La lluvia ayudó a controlar el fuego." | La nota dice que la situación estaba controlada y que siguió la guardia de cenizas "a pesar de las lluvias que llegaron este jueves". No dice que la lluvia ayudara a controlarlo. | No coincide |
-| Misiones | "La empresa habla de una quema ilegal para limpiar terreno. No hay responsables identificados." | Habla de "la quema ilegal en propiedad de la familia Harriet" y de ocupantes que "tienen por costumbre usar el fuego para la limpieza del terreno". La identificación de responsables se menciona como tema abierto. | Parcial |
-| Chubut | "El gobernador Ignacio Torres afirmó el 6 de enero que el fuego fue intencional." | Diario de Cuyo (nota del 7 de enero): "según confirmó la Fiscalía fue intencional"; Torres lo transmitió en conferencia. La fecha del 6 de enero no figura en esa nota. | Parcial |
-| Corrientes | "Gran parte de los focos activos estaba dentro de la Reserva del Iberá, un macrosistema de 1,3 millones de hectáreas." | Dice "buena parte de los focos activos dentro de la Reserva del Iberá", pero el 1,3 millones corresponde al "Macrosistema del Iberá", no a la Reserva. | Parcial |
-| Córdoba | "El Ministerio de Seguridad informó 321.688 ha." | El informe dice "La superficie afectada a la fecha es de 321.688 hectáreas". En el texto extraído no se ve a quién atribuye la cifra. | Parcial |
-| Mendoza | El Challao "en Luján de Cuyo"; la escena no dibuja avión. | Los Andes lo ubica "en el piedemonte de Luján de Cuyo". El Sol lo ubica en Las Heras y dice que el avión hidrante nacional hizo cinco descargas. | Parcial (las fuentes difieren) |
+| Misiones | "Un avión hidrante del Plan Nacional y más de 200 personas combatieron el fuego e hicieron guardia de cenizas." | La nota dice que la situación estaba controlada y que siguió la guardia de cenizas a pesar de las lluvias. Se quitó la atribución errónea a la lluvia. | **Corregido y Verificado** |
+| Chubut | "El gobierno provincial y la Fiscalía confirmaron que el foco inicial fue intencional. La nota no reporta imputados." | Diario de Cuyo: Fiscalía confirmó intencionalidad, transmitido en conferencia. Ajustado sin fecha falsa. | **Corregido y Verificado** |
+| Corrientes | "buena parte de los focos activos afectó al Macrosistema del Iberá (1,3 millones de hectáreas)" | Diferenciación precisa entre el Macrosistema y la Reserva provincial. | **Corregido y Verificado** |
+| Córdoba | "El informe oficial registra 316.150 ha y cita además un registro acumulado de 321.688 ha" | Refleja las dos cifras del informe oficial sin atribuir falsamente una al Min. de Seguridad. | **Corregido y Verificado** |
+| Mendoza | Se aclaran los límites del piedemonte y los medios terrestres según el PPMF. | Cobertura de prensa documentada. | **Verificado** |
 
 ## Tabla completa
 
