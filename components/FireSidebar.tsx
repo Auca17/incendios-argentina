@@ -48,6 +48,20 @@ function Facts({ facts }: { facts: Fact[] }) {
   );
 }
 
+function StatGrid({ items }: { items: { figure: string; label: string }[] }) {
+  if (!items.length) return null;
+  return (
+    <div className={`${styles.statGrid} ${styles.blk}`} data-blk>
+      {items.map((it) => (
+        <div key={it.figure} className={styles.statBox}>
+          <span className={styles.statFig}>{it.figure}</span>
+          <span className={styles.statLbl}>{it.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PhotoCard({
   photo,
   stepLabel,
@@ -138,6 +152,16 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
   const unitCap = ev.hero.unit.charAt(0).toUpperCase() + ev.hero.unit.slice(1);
   const start = factsFor(ev, 0), fire = factsFor(ev, 1), fight = factsFor(ev, 2);
 
+  const fireHighlights = fire
+    .filter((f) => /^(\+?~?\d)/i.test(f.figure) && f.text.length < 85)
+    .slice(0, 2)
+    .map((f) => ({ figure: f.figure, label: f.text }));
+
+  const fightHighlights = fight
+    .filter((f) => /^(\+?~?\d)/i.test(f.figure) && f.text.length < 85)
+    .slice(0, 2)
+    .map((f) => ({ figure: f.figure, label: f.text }));
+
   const photo0 = getStoryPhoto(ev.id, 0);
   const photo1 = getStoryPhoto(ev.id, 1);
   const photo2 = getStoryPhoto(ev.id, 2);
@@ -181,20 +205,34 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
         {head(1)}
 
         <div className={`${styles.heroCard} ${styles.blk}`} data-blk>
+          <span className={styles.heroPre}>Superficie total quemada</span>
           <div className={styles.hero}>
             <CountUp value={ev.hero.value} className={styles.num} />
             <span className={styles.unit}>{ev.hero.unit}</span>
           </div>
           <p className={styles.herolabel}>
-            {unitCap} {ev.hero.label} Según {ev.hero.src}.
+            {unitCap} {ev.hero.label}
           </p>
+          <div className={styles.heroSource}>
+            <span>Fuente oficial:</span> <b>{ev.hero.src}</b>
+          </div>
         </div>
 
         {alt && (
-          <div className={`${styles.chips} ${styles.blk}`} data-blk>
-            {alt.map((a) => <span key={a[0]}><b>{a[0]}</b> · {a[1]}</span>)}
+          <div className={`${styles.altCard} ${styles.blk}`} data-blk>
+            <h4 className={styles.altHead}>Fuentes en contraste</h4>
+            <div className={styles.altList}>
+              {alt.map((a) => (
+                <div key={a[0]} className={styles.altRow}>
+                  <b className={styles.altFig}>{a[0]}</b>
+                  <span className={styles.altSrc}>{a[1]}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
+
+        <StatGrid items={fireHighlights} />
 
         {photo1 && (
           <PhotoCard
@@ -229,6 +267,8 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
         )}
 
         <p className={`${styles.lead} ${styles.blk}`} data-blk>{ev.response}</p>
+
+        <StatGrid items={fightHighlights} />
 
         <div className={`${styles.chartSlot} ${styles.blk}`} data-blk>
           <h4 className={styles.subHead}>Focos de calor por mes</h4>

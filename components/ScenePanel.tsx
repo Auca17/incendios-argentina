@@ -4,6 +4,7 @@ import type { Slide } from '../lib/slides';
 import { createScene } from '../lib/scene';
 import { stageCaption } from '../lib/fire';
 import { useReducedMotion } from '../lib/motion';
+import StageHeatPulse from './StageHeatPulse';
 import styles from './ScenePanel.module.css';
 
 type Props = { s: number; stage: number; slide: Slide };
@@ -72,6 +73,7 @@ export default function ScenePanel({ s, stage, slide }: Props) {
   const [lead, rest] = stageCaption(ev, stage);
   return (
     <section className={styles.scene} aria-label="Escena esquemática">
+      <StageHeatPulse stage={stage} />
       <div className={styles.scenebox} ref={box} dangerouslySetInnerHTML={{ __html: scene.html }} />
       <div className={styles.caption} aria-live="polite">
         <span className={styles.step}>{stage + 1}</span>

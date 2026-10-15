@@ -1,0 +1,72 @@
+.pulseWrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.thermalWave {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 140, 0, 0) 0%,
+    rgba(255, 90, 0, 0.28) 45%,
+    rgba(255, 200, 30, 0.45) 55%,
+    rgba(200, 30, 0, 0.15) 85%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  transform: translateY(100%);
+  animation: sweepUp 550ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.emberShimmer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 60%,
+    rgba(255, 210, 80, 0.4) 0%,
+    rgba(255, 100, 20, 0.2) 50%,
+    transparent 80%
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: flareFlash 550ms ease-out forwards;
+}
+
+@keyframes sweepUp {
+  0% {
+    opacity: 0;
+    transform: translateY(60%) scaleY(0.6);
+  }
+  35% {
+    opacity: 0.85;
+    transform: translateY(0%) scaleY(1);
+  }
+  75% {
+    opacity: 0.5;
+    transform: translateY(-30%) scaleY(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-80%) scaleY(0.8);
+  }
+}
+
+@keyframes flareFlash {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  30% {
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
