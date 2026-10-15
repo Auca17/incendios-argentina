@@ -245,6 +245,8 @@ function crewSVG(i) {
     '<path d="M-1-23L-9-20" stroke="#e0601e" stroke-width="2.6" stroke-linecap="round"/><path d="M-8-20L-14-21" stroke="#2a2a2a" stroke-width="2.2"/></g>';
 }
 
+/* Same drop over the fire, but a steeper climb-out that clears the helicopter refilling at the lake. */
+var PLANE_PATH_HELI = 'M-80 128C40 140 140 166 240 164S370 30 520 -30';
 var PLANE_PATH = 'M-80 128C40 140 140 166 240 164S420 118 520 70', PLANE_IN = S_FIGHT, PLANE_OUT = 0.9;
 var HELI_KEYS = [[0.69, 450, 60], [0.74, 355, 174], [0.77, 355, 174], [0.83, 246, 116], [0.86, 232, 114], [0.91, 355, 174], [0.935, 355, 174], [0.985, 204, 114], [1, 196, 112]];
 var HELI_DIPS = [[0.74, 0.77], [0.91, 0.935]], HELI_DROPS = [[0.83, 0.865], [0.985, 1.01]];
@@ -300,7 +302,7 @@ function create(o) {
 
   for (var c = 0; c < nCrew; c++) s += '<path id="sg-j' + c + '" d="M0 0" stroke="#9fd8ff" stroke-width="2" fill="none" stroke-dasharray="3 5" stroke-linecap="round" opacity="0"/>';
   for (c = 0; c < nCrew; c++) s += crewSVG(c);
-  if (means.plane) s += '<path id="sg-ppath" d="' + PLANE_PATH + '" stroke="rgba(255,240,220,.28)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + PLANE;
+  if (means.plane) s += '<path id="sg-ppath" d="' + (means.heli ? PLANE_PATH_HELI : PLANE_PATH) + '" stroke="rgba(255,240,220,.28)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + PLANE;
   if (means.heli) s += '<path id="sg-hpath" d="M' + HELI_KEYS.map(function (k) { return k[1] + ' ' + k[2]; }).join('L') + '" stroke="rgba(255,240,220,.22)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + HELI;
 
   /* Sleek minimal HUD badge */
@@ -334,7 +336,10 @@ function create(o) {
     R.plen = R.ppath ? R.ppath.getTotalLength() : 0;
   }
 
-  function planeAt(x) { return PLANE_IN + (PLANE_OUT - PLANE_IN) * clamp((x + 80) / 600, 0, 1); }
+  /* With a helicopter on scene the plane finishes its pass earlier, so its drop happens while the
+     helicopter is still filling the bucket at the lake and the two never overlap. */
+  var PLANE_END = means.heli ? 0.8 : PLANE_OUT;
+  function planeAt(x) { return PLANE_IN + (PLANE_END - PLANE_IN) * clamp((x + 80) / 600, 0, 1); }
 
   function flameK(f, s) {
     var lit = ease(seg(s, f.t, f.t + 0.16));
@@ -423,12 +428,12 @@ function create(o) {
 
     /* Aerial hydrant plane */
     if (R.plane) {
-      var pu = ease(seg(s, PLANE_IN, PLANE_OUT)), pt = R.ppath.getPointAtLength(R.plen * pu), vis = s > PLANE_IN && s < PLANE_OUT;
+      var pu = ease(seg(s, PLANE_IN, PLANE_END)), pt = R.ppath.getPointAtLength(R.plen * pu), vis = s > PLANE_IN && s < PLANE_END;
       var pt2 = R.ppath.getPointAtLength(Math.min(R.plen, R.plen * pu + 2)), ang = Math.atan2(pt2.y - pt.y, pt2.x - pt.x) * 180 / Math.PI;
-      R.plane.setAttribute('opacity', vis ? '1' : '0'); R.ppath.setAttribute('opacity', (seg(s, PLANE_IN - 0.03, PLANE_IN) * (1 - seg(s, PLANE_OUT, PLANE_OUT + 0.03))).toFixed(2));
+      R.plane.setAttribute('opacity', vis ? '1' : '0'); R.ppath.setAttribute('opacity', (seg(s, PLANE_IN - 0.03, PLANE_IN) * (1 - seg(s, PLANE_END, PLANE_END + 0.03))).toFixed(2));
       R.plane.setAttribute('transform', 'translate(' + n1(pt.x) + ' ' + n1(pt.y) + ') rotate(' + n1(ang) + ')');
       R.prop.setAttribute('ry', n1(9 * Math.abs(Math.cos(s * 400))));
-      var release = vis && pt.x > 140 && pt.x < 350;
+      var release = vis && pt.x > 140 && pt.x < (means.heli ? 290 : 350); /* stop short of the lake when a helicopter refills there */
       R.pwater.setAttribute('opacity', release ? '0.85' : '0');
       R.pwater.setAttribute('points', [[pt.x - 2, pt.y + 9], [pt.x + 10, pt.y + 9], [pt.x - 25, GROUND - 22], [pt.x - 90, GROUND - 22]].map(function (q) { return n1(q[0]) + ',' + n1(q[1]); }).join(' '));
     }

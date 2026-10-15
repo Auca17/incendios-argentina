@@ -99,7 +99,7 @@ export const EVENTS: any[] = [
       ['4 provincias', 'en emergencia ígnea por DNU (30 de enero): Chubut, Neuquén, Río Negro y La Pampa.']
     ],
     cause: { kind: 'intencional', text: 'El gobierno provincial y la Fiscalía confirmaron que el foco inicial fue intencional. La nota no reporta imputados.' },
-    response: 'Más de 500 personas, aviones hidrantes y helicópteros. Las lluvias de la cordillera no superaron los 8 mm y no frenaron el avance.', means: { crew: 5, heli: 1 },
+    response: 'Más de 500 personas, aviones hidrantes y helicópteros. Las lluvias de la cordillera no superaron los 8 mm y no frenaron el avance.', means: { crew: 5, plane: 1, heli: 1 },
     months: { prov: ['Chubut'], year: 2026, from: 1, to: 10 },
     sources: [
       { t: 'Infobae: un mes de los incendios en Chubut', u: 'https://www.infobae.com/sociedad/2026/02/05/un-mes-de-los-incendios-en-chubut-la-cronologia-de-la-catastrofe-ambiental-que-ya-arraso-con-mas-de-50-mil-hectareas/' },

@@ -9,7 +9,7 @@ export default function TopBar({ index, count, name }: Props) {
       <span className={styles.dot} aria-hidden="true" />
       <h1 className={styles.title}>{SITE_TITLE}</h1>
       <span className={styles.chapter}>
-        {index + 1}/{count} · {name}
+        {name}
       </span>
     </header>
   );
