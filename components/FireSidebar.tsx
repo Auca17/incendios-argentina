@@ -5,6 +5,7 @@ import { ALT, CHAPTERS, STAGE_NAMES, factsFor, monthSeries, type Fact } from '..
 import { getStoryPhoto, type StoryPhoto } from '../lib/photos';
 import CountUp from './CountUp';
 import MonthChart from './MonthChart';
+import BiodiversityCard from './BiodiversityCard';
 import styles from './FireSidebar.module.css';
 
 /** Sticky three-stage bar: the active stage and the progress line follow the scene position s. */
@@ -241,6 +242,8 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
             onOpen={setModalPhoto}
           />
         )}
+
+        <BiodiversityCard storyId={ev.id} />
 
         {/* Textual facts and notes at the bottom */}
         <div className={`${styles.factsBottom} ${styles.blk}`} data-blk>
