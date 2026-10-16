@@ -1,14 +1,24 @@
 .scene {
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
   min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  justify-content: safe center;
+  justify-content: flex-start;
   gap: var(--s-2);
   padding: var(--s-3) var(--s-3) calc(var(--s-8) + var(--s-3)) var(--s-3);
   background: var(--bg);
+}
+
+.bioSlot {
+  width: 100%;
+  margin-top: var(--s-1);
+}
+
+@media (max-width: 899.98px) {
+  .bioSlot { display: none; }
 }
 
 /*

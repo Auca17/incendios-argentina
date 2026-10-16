@@ -243,7 +243,9 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
           />
         )}
 
-        <BiodiversityCard storyId={ev.id} />
+        <div className={styles.bioMobileOnly}>
+          <BiodiversityCard storyId={ev.id} />
+        </div>
 
         {/* Textual facts and notes at the bottom */}
         <div className={`${styles.factsBottom} ${styles.blk}`} data-blk>

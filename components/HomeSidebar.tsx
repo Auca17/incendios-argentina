@@ -28,9 +28,15 @@ export default function HomeSidebar({ year, onPickYear, onStart, children }: Pro
         del territorio argentino. Cada punto del mapa es uno de ellos.
       </p>
       {onStart && (
-        <button type="button" className={styles.startBtn} onClick={onStart}>
-          Comenzar el recorrido: Chubut 2015 →
-        </button>
+        <div className={styles.tourPromptBox}>
+          <button type="button" className={styles.tourPromptBtn} onClick={onStart}>
+            <span className={styles.tourPromptLabel}>Recorrido guiado</span>
+            <span className={styles.tourPromptTarget}>
+              <b>Capítulo 1: Chubut 2015</b>
+              <span className={styles.tourPromptArrow} aria-hidden="true">→</span>
+            </span>
+          </button>
+        </div>
       )}
       <p>Elegí un año con el reproductor, o avanzá con <b>→</b> para ver seis incendios con sus cifras, sus causas y lo que dicen las fuentes.</p>
       {children && <div className={styles.slot}>{children}</div>}

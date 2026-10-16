@@ -4,6 +4,7 @@ import type { Slide } from '../lib/slides';
 import { createScene } from '../lib/scene';
 import { stageCaption } from '../lib/fire';
 import { useReducedMotion } from '../lib/motion';
+import BiodiversityCard from './BiodiversityCard';
 import styles from './ScenePanel.module.css';
 
 type Props = { s: number; stage: number; slide: Slide };
@@ -79,6 +80,9 @@ export default function ScenePanel({ s, stage, slide }: Props) {
           <b>{lead}</b>
           {rest}
         </span>
+      </div>
+      <div className={styles.bioSlot}>
+        <BiodiversityCard storyId={ev.id} />
       </div>
     </section>
   );

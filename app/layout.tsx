@@ -5,14 +5,14 @@ import './globals.css';
 const chakraPetch = Chakra_Petch({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-display',
+  variable: '--font-chakra',
   display: 'swap',
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
-  variable: '--font-mono',
+  variable: '--font-jetbrains',
   display: 'swap',
 });
 
