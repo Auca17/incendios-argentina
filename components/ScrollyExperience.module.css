@@ -1,226 +1,177 @@
-.app {
+.appRoot {
   position: relative;
   min-height: 100vh;
-  background: #000;
+  background: #0a0807;
   color: var(--text);
+  overflow-x: hidden;
 }
 
-/* ================= 1. GLOBAL WINDOW SCROLL SPACER ================= */
-.scrollSpacer {
-  height: 750vh;
+/* ================= 1. FIXED CARTOGRAPHIC STAGE ================= */
+.fixedMapStage {
+  position: fixed;
+  top: 48px;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 5;
+  background: #0a0807;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* On desktop, keep the map full-bleed behind the content, visually centered */
+@media (min-width: 900px) {
+  .fixedMapStage {
+    left: clamp(480px, 40vw, 620px);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* ================= 2. NARRATIVE STREAM ================= */
+.narrativeTrack {
+  position: relative;
+  z-index: 20;
+  width: 100%;
+  pointer-events: auto;
+}
+
+/* Opening spacer: allows the user to scroll through the cloud parting */
+.openingSpacer {
+  height: 90vh;
   width: 100%;
   pointer-events: none;
 }
 
-/* ================= 2. FIXED STAGE WRAPPER (RIGHT / BACKGROUND) ================= */
-.fixedStageWrapper {
-  position: fixed;
-  top: 48px;
-  right: 0;
-  left: clamp(460px, 36vw, 540px);
-  bottom: 0;
-  z-index: 5;
+/* Each story section */
+.storySectionWrap {
+  min-height: 105vh;
+  padding: var(--s-8) var(--s-4);
   display: flex;
-  background: #000;
-  overflow: hidden;
-  border-left: 1px solid var(--ring-ui);
+  align-items: center;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-.panelCol {
-  width: clamp(280px, 24vw, 360px);
-  min-width: 0;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: var(--s-3);
-  border-left: 1px solid var(--ring-ui);
-  background: rgba(14, 11, 9, 0.95);
-  backdrop-filter: blur(12px);
-  scrollbar-width: thin;
-  z-index: 10;
+@media (min-width: 900px) {
+  .storySectionWrap {
+    width: clamp(480px, 40vw, 620px);
+    padding-left: clamp(24px, 4vw, 56px);
+  }
 }
 
-/* ================= 3. FIXED NARRATIVE WRAPPER (LEFT) ================= */
-.fixedNarrativeWrapper {
-  position: fixed;
-  top: 48px;
-  left: 0;
-  width: clamp(460px, 36vw, 540px);
-  bottom: 0;
-  z-index: 20;
-  pointer-events: none;
-  background: rgba(12, 10, 8, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid var(--ring-ui);
-  box-shadow: 12px 0 40px rgba(0, 0, 0, 0.65);
-}
-
-.narrativeSection {
-  position: absolute;
-  inset: 0;
-  padding: var(--s-4) var(--s-3) var(--s-8) var(--s-4);
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  transition: opacity 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-.sectionActive {
+.storyActive {
   opacity: 1;
-  pointer-events: auto;
   transform: translateY(0);
 }
 
-.sectionHidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(16px);
+.storyDormant {
+  opacity: 0.85;
 }
 
-.introCardWrap,
-.methodCardWrap {
-  background: rgba(18, 14, 12, 0.85);
-  border: 1px solid var(--ring-ui);
-  border-radius: var(--r-2);
-  padding: var(--s-4);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
-
-/* Aviso Popover Slot */
-.avisoSlot {
-  position: fixed;
-  top: 48px;
-  left: clamp(460px, 36vw, 540px);
-  right: 0;
-  height: 48px;
-  z-index: 25;
+/* Wide shot spacer: user contemplates all 6 burned provinces before clouds close */
+.wideShotSpacer {
+  height: 80vh;
+  width: 100%;
   pointer-events: none;
 }
 
-/* ================= 4. HIGH-RES PHOTO LIGHTBOX MODAL ================= */
-.modalOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--s-4);
-  animation: fadeIn 0.2s ease;
-}
-
-.modalContent {
+/* Epilogue wrap */
+.epilogueWrap {
   position: relative;
-  max-width: 90vw;
-  max-height: 90vh;
+  z-index: 50;
+  width: 100%;
+  background: rgba(10, 8, 7, 0.96);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ================= 3. DISCRETE RIGHT TIMELINE HUD ================= */
+.timelineHud {
+  position: fixed;
+  right: clamp(12px, 2vw, 24px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 35;
+  pointer-events: auto;
+}
+
+.timelineTrack {
   display: flex;
   flex-direction: column;
-  background: #14110f;
-  border: 1px solid var(--ring-ui);
-  border-radius: var(--r-2);
-  overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+  gap: var(--s-3);
+  position: relative;
 }
 
-.modalCloseBtn {
+.timelineTrack::before {
+  content: '';
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.7);
-  border: 1px solid var(--ring-ui);
-  color: var(--text);
-  font-size: 16px;
+  top: 6px;
+  bottom: 6px;
+  left: 5px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  z-index: 1;
+}
+
+.hudNode {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
+  background: transparent;
+  border: none;
+  padding: 0;
   cursor: pointer;
-  z-index: 10;
+  text-align: left;
+}
+
+.hudDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2a2420;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.25s ease;
+}
+
+.hudLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  opacity: 0;
+  transform: translateX(-4px);
   transition: all 0.2s ease;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-.modalCloseBtn:hover {
+.hudNode:hover .hudLabel,
+.hudActive .hudLabel {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.hudActive .hudDot {
   background: var(--accent);
-  color: #000;
+  border-color: #fff;
+  box-shadow: 0 0 12px rgba(255, 176, 58, 0.85);
+  transform: scale(1.25);
 }
 
-.modalImgWrap {
-  max-height: 70vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-  overflow: hidden;
-}
-
-.modalImg {
-  max-width: 100%;
-  max-height: 70vh;
-  object-fit: contain;
-}
-
-.modalMeta {
-  padding: var(--s-3) var(--s-4);
-  background: #14110f;
-  border-top: 1px solid var(--ring-ui);
-}
-
-.modalCaption {
-  margin: 0 0 6px;
-  font-size: var(--fs-13);
+.hudActive .hudLabel {
   color: var(--text);
-  line-height: 1.45;
+  font-weight: 700;
 }
 
-.modalCredit {
-  margin: 0;
-  font-size: var(--fs-11);
-  color: var(--text-muted);
+.hudPassed .hudDot {
+  background: var(--accent-burnt);
+  border-color: var(--accent);
 }
 
-.modalCredit a {
-  color: var(--accent);
-  text-decoration: underline;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* ================= 5. MOBILE RESPONSIVE (< 900px) ================= */
-@media (max-width: 899.98px) {
-  .fixedStageWrapper {
-    position: fixed;
-    top: 48px;
-    left: 0;
-    right: 0;
-    height: 42vh;
-    border-left: none;
-    border-bottom: 1px solid var(--ring);
-  }
-
-  .panelCol {
-    display: none;
-  }
-
-  .fixedNarrativeWrapper {
-    position: fixed;
-    top: calc(48px + 42vh);
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    border-right: none;
-  }
-
-  .avisoSlot {
+@media (max-width: 768px) {
+  .timelineHud {
     display: none;
   }
 }
