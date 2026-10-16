@@ -1,7 +1,6 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { SLIDES } from '../lib/slides';
-import { EVENTS } from '../lib/events';
+import { SLIDES, GEOGRAPHIC_EVENTS } from '../lib/slides';
 import { loadProvincias } from '../lib/data';
 import { useNational } from '../lib/useNational';
 import { useIsMobile } from '../lib/useMediaQuery';
@@ -56,7 +55,7 @@ export default function ScrollyExperience() {
     if (!isNaN(num) && num >= 0 && num < SLIDES.length) {
       setActiveSlide(num);
       setTimeout(() => {
-        const targetId = num === 0 ? 'story-intro' : num === 7 ? 'story-method' : `story-${EVENTS[num - 1].id}`;
+        const targetId = num === 0 ? 'story-intro' : num === 7 ? 'story-method' : `story-${GEOGRAPHIC_EVENTS[num - 1].id}`;
         document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
       }, 300);
     }
@@ -120,7 +119,7 @@ export default function ScrollyExperience() {
         ? 'story-intro'
         : index === 7
         ? 'story-method'
-        : `story-${EVENTS[index - 1].id}`;
+        : `story-${GEOGRAPHIC_EVENTS[index - 1].id}`;
     const el = document.getElementById(targetId);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -183,13 +182,13 @@ export default function ScrollyExperience() {
             </div>
           </section>
 
-          {/* Sections 1 to 6: The Six Fire Stories */}
-          {EVENTS.map((ev, evIdx) => (
+          {/* Sections 1 to 6: The Six Fire Stories from North to South */}
+          {GEOGRAPHIC_EVENTS.map((ev, evIdx) => (
             <StoryActSection
               key={ev.id}
               ev={ev}
               index={evIdx + 1}
-              total={EVENTS.length}
+              total={GEOGRAPHIC_EVENTS.length}
               onOpenPhoto={(photo) => setModalPhoto(photo)}
             />
           ))}

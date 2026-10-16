@@ -5,10 +5,20 @@ export type Slide =
   | { type: 'event'; name: string; ev: any }
   | { type: 'method'; name: string };
 
-/** Screens in order: intro, the six fires, method. Same order as legacy app.js. */
+/**
+ * Geographic descent (North to South):
+ * Misiones (-27.0°) -> Corrientes (-28.5°) -> Córdoba (-32.15°) -> Delta (-32.7°) -> Mendoza (-32.8°) -> Chubut (-42.2°)
+ */
+const NORTH_TO_SOUTH_IDS = ['misiones', 'corrientes', 'cordoba', 'delta', 'mendoza', 'chubut'];
+
+export const GEOGRAPHIC_EVENTS = [...EVENTS].sort(
+  (a, b) => NORTH_TO_SOUTH_IDS.indexOf(a.id) - NORTH_TO_SOUTH_IDS.indexOf(b.id)
+);
+
+/** Screens in geographic descent order: intro, the six fires from North to South, method. */
 export const SLIDES: Slide[] = [
   { type: 'intro', name: 'Inicio' },
-  ...EVENTS.map((ev): Slide => ({ type: 'event', name: ev.region, ev })),
+  ...GEOGRAPHIC_EVENTS.map((ev): Slide => ({ type: 'event', name: ev.region, ev })),
   { type: 'method', name: 'Cómo se hizo' },
 ];
 

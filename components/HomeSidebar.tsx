@@ -32,7 +32,7 @@ export default function HomeSidebar({ year, onPickYear, onStart, children }: Pro
           <button type="button" className={styles.tourPromptBtn} onClick={onStart}>
             <span className={styles.tourPromptLabel}>Recorrido guiado</span>
             <span className={styles.tourPromptTarget}>
-              <b>Capítulo 1: Chubut 2015</b>
+              <b>Capítulo 1: Misiones 2020</b>
               <span className={styles.tourPromptArrow} aria-hidden="true">→</span>
             </span>
           </button>
