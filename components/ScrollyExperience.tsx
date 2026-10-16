@@ -7,8 +7,8 @@ import { useIsMobile } from '../lib/useMediaQuery';
 import { buildView, type ViewSpec } from '../lib/explore';
 import type { StoryPhoto } from '../lib/photos';
 import TopBar from './TopBar';
-import MapPanel, { type ExploreMap } from './MapPanel';
-import ScenePanel from './ScenePanel';
+import InteractiveStage from './InteractiveStage';
+import type { ExploreMap } from './MapPanel';
 import ExplorePanel from './ExplorePanel';
 import MethodPanel from './MethodPanel';
 import MethodSidebar from './MethodSidebar';
@@ -22,6 +22,18 @@ const NO_PROVINCES: string[] = [];
 const NO_GEO: any[] = [];
 const NO_HI: string[] = [];
 
+// Ranges for 8 milestones along the continuous 0 to 1 window scroll
+const MILESTONES = [
+  { id: 'intro', start: 0.00, end: 0.12 },
+  { id: 'misiones', start: 0.12, end: 0.26 },
+  { id: 'corrientes', start: 0.26, end: 0.40 },
+  { id: 'cordoba', start: 0.40, end: 0.54 },
+  { id: 'delta', start: 0.54, end: 0.68 },
+  { id: 'mendoza', start: 0.68, end: 0.82 },
+  { id: 'chubut', start: 0.82, end: 0.94 },
+  { id: 'method', start: 0.94, end: 1.00 },
+];
+
 export default function ScrollyExperience() {
   const [geo, setGeo] = useState<any[]>(NO_GEO);
   const provinces = useMemo(
@@ -30,8 +42,7 @@ export default function ScrollyExperience() {
   );
 
   const isMobile = useIsMobile();
-  const [activeSlide, setActiveSlide] = useState(0);
-  const [activeAct, setActiveAct] = useState(0);
+  const [totalProgress, setTotalProgress] = useState(0);
   const [year, setYear] = useState<number>(2020);
   const [prov, setProv] = useState<string | null>(null);
   const [modalPhoto, setModalPhoto] = useState<StoryPhoto | null>(null);
@@ -48,17 +59,24 @@ export default function ScrollyExperience() {
     return () => { live = false; };
   }, []);
 
-  // Sync initial hash on mount
+  // Global window scroll listener (passive & 60 FPS)
   useEffect(() => {
-    const hash = window.location.hash.replace('#', '');
-    const num = parseInt(hash, 10);
-    if (!isNaN(num) && num >= 0 && num < SLIDES.length) {
-      setActiveSlide(num);
-      setTimeout(() => {
-        const targetId = num === 0 ? 'story-intro' : num === 7 ? 'story-method' : `story-${GEOGRAPHIC_EVENTS[num - 1].id}`;
-        document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
-      }, 300);
-    }
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+          const p = Math.min(1, Math.max(0, scrollY / maxScroll));
+          setTotalProgress(p);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   // Close modal on Escape
@@ -71,59 +89,45 @@ export default function ScrollyExperience() {
     return () => window.removeEventListener('keydown', onKey);
   }, [modalPhoto]);
 
-  // IntersectionObserver to track scroll progress
+  // Determine active slide index and local progress
+  let activeSlide = 0;
+  let localProgress = 0;
+
+  for (let i = 0; i < MILESTONES.length; i++) {
+    const m = MILESTONES[i];
+    if (totalProgress >= m.start && totalProgress <= m.end) {
+      activeSlide = i;
+      localProgress = (totalProgress - m.start) / Math.max(1e-5, m.end - m.start);
+      break;
+    }
+  }
+
+  if (totalProgress > MILESTONES[MILESTONES.length - 1].end) {
+    activeSlide = MILESTONES.length - 1;
+    localProgress = 1;
+  }
+
+  // Update URL hash smoothly without jitter
   useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') return;
+    const hashVal = activeSlide === 0 ? '' : `#${activeSlide}`;
+    if (window.location.hash !== hashVal) {
+      window.history.replaceState(null, '', hashVal || window.location.pathname);
+    }
+  }, [activeSlide]);
 
-    const cards = document.querySelectorAll('[data-slide-index]');
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const slideIdx = parseInt(entry.target.getAttribute('data-slide-index') || '0', 10);
-            const actAttr = entry.target.getAttribute('data-act-index');
-            const actIdx = actAttr !== null ? parseInt(actAttr, 10) : 0;
-
-            setActiveSlide(slideIdx);
-            setActiveAct(actIdx);
-
-            const hashVal = slideIdx === 0 ? '' : `#${slideIdx}`;
-            if (window.location.hash !== hashVal) {
-              window.history.replaceState(null, '', hashVal || window.location.pathname);
-            }
-          }
-        });
-      },
-      {
-        rootMargin: '-25% 0px -35% 0px',
-        threshold: 0.1,
-      }
-    );
-
-    cards.forEach((c) => io.observe(c));
-    return () => io.disconnect();
-  }, []);
-
-  // Compute current slide and its derived progress parameters
   const currentSlide = SLIDES[activeSlide] || SLIDES[0];
-  const isEvent = currentSlide.type === 'event';
 
-  // Derived progress values for scene and map
-  const s = activeAct === 0 ? 0.15 : activeAct === 1 ? 0.50 : 0.85;
-  const p = activeAct === 0 ? 0.20 : activeAct === 1 ? 0.60 : 1.00;
-  const stage = activeAct;
+  // Derived continuous progress for stage, map, and scene
+  const introProgress = activeSlide === 0 ? Math.min(1, localProgress * 1.4) : 1;
+  const p = Math.max(0, Math.min(1, localProgress));
+  const s = Math.max(0, Math.min(1, localProgress));
+  const stage = localProgress < 0.33 ? 0 : localProgress < 0.66 ? 1 : 2;
 
   const scrollToSlide = useCallback((index: number) => {
-    const targetId =
-      index === 0
-        ? 'story-intro'
-        : index === 7
-        ? 'story-method'
-        : `story-${GEOGRAPHIC_EVENTS[index - 1].id}`;
-    const el = document.getElementById(targetId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    const m = MILESTONES[index] || MILESTONES[0];
+    const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    const targetY = m.start * maxScroll + 10;
+    window.scrollTo({ top: targetY, behavior: 'smooth' });
   }, []);
 
   // Explore panel callbacks
@@ -133,13 +137,13 @@ export default function ScrollyExperience() {
 
   const kind = currentSlide.type === 'method' ? 'all' : 'year';
   const view = useMemo(() => {
-    if (!nat || isEvent) return null;
+    if (!nat || currentSlide.type === 'event') return null;
     const spec: ViewSpec = kind === 'all' ? { kind: 'all' } : { kind: 'year', year };
     return buildView(nat, spec);
-  }, [nat, isEvent, kind, year]);
+  }, [nat, currentSlide.type, kind, year]);
 
   const hi = useMemo(() => (prov ? [prov] : NO_HI), [prov]);
-  const explore: ExploreMap | null = isEvent
+  const explore: ExploreMap | null = currentSlide.type === 'event'
     ? null
     : { kind, year, cmp: null, nat, view, hi, onSelect };
 
@@ -166,69 +170,95 @@ export default function ScrollyExperience() {
     <div className={styles.app}>
       <TopBar index={activeSlide} count={SLIDES.length} name={currentSlide.name} />
 
-      <main className={styles.scrollyContainer}>
-        {/* ================= LEFT COLUMN: SCROLLING NARRATIVE STREAM ================= */}
-        <div className={styles.scrollTrack}>
-          {/* Section 0: Intro */}
-          <section id="story-intro" className={styles.introSection} data-slide-index="0">
-            <div className={styles.introCardWrap}>
-              <HomeSidebar
-                year={year}
-                onPickYear={onYear}
-                onStart={() => scrollToSlide(1)}
-              >
-                {isMobile && panel}
-              </HomeSidebar>
-            </div>
-          </section>
-
-          {/* Sections 1 to 6: The Six Fire Stories from North to South */}
-          {GEOGRAPHIC_EVENTS.map((ev, evIdx) => (
-            <StoryActSection
-              key={ev.id}
-              ev={ev}
-              index={evIdx + 1}
-              total={GEOGRAPHIC_EVENTS.length}
-              onOpenPhoto={(photo) => setModalPhoto(photo)}
-            />
-          ))}
-
-          {/* Section 7: Method and Open Data */}
-          <section id="story-method" className={styles.methodSection} data-slide-index="7">
-            <div className={styles.methodCardWrap}>
-              <MethodSidebar>
-                {isMobile && <MethodPanel />}
-              </MethodSidebar>
-            </div>
-          </section>
-        </div>
-
-        {/* ================= RIGHT COLUMN: STICKY INTERACTIVE STAGE ================= */}
-        <div className={isEvent ? styles.stickyStage : `${styles.stickyStage} ${styles.stageMap}`}>
-          <MapPanel p={p} slide={currentSlide} geo={geo} explore={explore} />
-          {isEvent ? (
-            <ScenePanel s={s} stage={stage} slide={currentSlide} />
-          ) : (
-            !isMobile && (
-              <section className={styles.panelCol} aria-label="Exploración">
-                {panel}
-              </section>
-            )
-          )}
-        </div>
-
-        {/* ================= FLOATING VERTICAL TIMELINE HUD ================= */}
-        <VerticalTimelineHud
-          activeSlide={activeSlide}
-          slides={SLIDES}
-          onSelect={scrollToSlide}
+      {/* ================= FIXED STAGE (RIGHT / BACKGROUND) ================= */}
+      <div className={styles.fixedStageWrapper}>
+        <InteractiveStage
+          slide={currentSlide}
+          slideIndex={activeSlide}
+          p={p}
+          s={s}
+          stage={stage}
+          geo={geo}
+          explore={explore}
+          introProgress={introProgress}
         />
+        {/* National explore panel on intro desktop */}
+        {currentSlide.type === 'intro' && !isMobile && (
+          <aside className={styles.panelCol} aria-label="Exploración">
+            {panel}
+          </aside>
+        )}
+        {/* Method panel on method desktop */}
+        {currentSlide.type === 'method' && !isMobile && (
+          <aside className={styles.panelCol} aria-label="Fuentes y método">
+            <MethodPanel />
+          </aside>
+        )}
+      </div>
 
-        {/* Aviso popover overlay */}
-        <div className={styles.avisoSlot}>
-          <AvisoPopover />
+      {/* ================= FLOATING NARRATIVE STREAM (LEFT) ================= */}
+      <div className={styles.fixedNarrativeWrapper}>
+        {/* Intro Card */}
+        <div
+          className={`${styles.narrativeSection} ${activeSlide === 0 ? styles.sectionActive : styles.sectionHidden}`}
+        >
+          <div className={styles.introCardWrap}>
+            <HomeSidebar
+              year={year}
+              onPickYear={onYear}
+              onStart={() => scrollToSlide(1)}
+            >
+              {isMobile && panel}
+            </HomeSidebar>
+          </div>
         </div>
-      </main>
+
+        {/* 6 Event Story Cards (North to South) */}
+        {GEOGRAPHIC_EVENTS.map((ev, evIdx) => {
+          const slideIdx = evIdx + 1;
+          const isActive = activeSlide === slideIdx;
+
+          return (
+            <div
+              key={ev.id}
+              className={`${styles.narrativeSection} ${isActive ? styles.sectionActive : styles.sectionHidden}`}
+            >
+              <StoryActSection
+                ev={ev}
+                index={slideIdx}
+                total={GEOGRAPHIC_EVENTS.length}
+                onOpenPhoto={(photo) => setModalPhoto(photo)}
+              />
+            </div>
+          );
+        })}
+
+        {/* Method Card */}
+        <div
+          className={`${styles.narrativeSection} ${activeSlide === 7 ? styles.sectionActive : styles.sectionHidden}`}
+        >
+          <div className={styles.methodCardWrap}>
+            <MethodSidebar>
+              {isMobile && <MethodPanel />}
+            </MethodSidebar>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= GLOBAL SCROLL SPACER (NATIVE 800vh SCROLL) ================= */}
+      <div className={styles.scrollSpacer} aria-hidden="true" />
+
+      {/* ================= FLOATING VERTICAL TIMELINE HUD ================= */}
+      <VerticalTimelineHud
+        activeSlide={activeSlide}
+        slides={SLIDES}
+        onSelect={scrollToSlide}
+      />
+
+      {/* Aviso popover overlay */}
+      <div className={styles.avisoSlot}>
+        <AvisoPopover />
+      </div>
 
       {/* High-res Photo Lightbox Modal */}
       {modalPhoto && (

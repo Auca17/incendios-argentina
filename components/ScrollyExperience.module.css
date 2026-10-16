@@ -1,106 +1,104 @@
 .app {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  height: 100dvh;
-  overflow: hidden;
-  background: var(--bg);
+  position: relative;
+  min-height: 100vh;
+  background: #000;
   color: var(--text);
 }
 
-.scrollyContainer {
-  position: relative;
-  display: grid;
-  grid-template-columns: clamp(380px, 32vw, 440px) minmax(0, 1fr);
-  min-height: 0;
-  height: 100%;
-  overflow: hidden;
+/* ================= 1. GLOBAL WINDOW SCROLL SPACER ================= */
+.scrollSpacer {
+  height: 750vh;
+  width: 100%;
+  pointer-events: none;
 }
 
-/* ================= LEFT COLUMN: SCROLLING NARRATIVE ================= */
-.scrollTrack {
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: var(--s-4) var(--s-3) 40vh var(--s-4);
-  scrollbar-width: thin;
-  scroll-behavior: smooth;
-  z-index: 10;
-  border-right: 1px solid var(--ring);
-  background: #0d0a08;
-}
-
-.introSection {
-  min-height: 90vh;
+/* ================= 2. FIXED STAGE WRAPPER (RIGHT / BACKGROUND) ================= */
+.fixedStageWrapper {
+  position: fixed;
+  top: 48px;
+  right: 0;
+  left: clamp(380px, 32vw, 440px);
+  bottom: 0;
+  z-index: 5;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  margin-bottom: var(--s-10);
-}
-
-.introCardWrap {
-  background: rgba(18, 14, 12, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--ring-ui);
-  border-radius: var(--r-2);
-  padding: var(--s-4);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
-
-.methodSection {
-  min-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  margin-top: var(--s-8);
-}
-
-.methodCardWrap {
-  background: rgba(18, 14, 12, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--ring-ui);
-  border-radius: var(--r-2);
-  padding: var(--s-4);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
-
-/* ================= RIGHT COLUMN: STICKY STAGE ================= */
-.stickyStage {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--scene-w);
-  height: 100%;
-  min-height: 0;
+  background: #000;
   overflow: hidden;
-  background: var(--bg);
-}
-
-.stageMap {
-  grid-template-columns: minmax(0, 1fr) var(--scene-w);
+  border-left: 1px solid var(--ring);
 }
 
 .panelCol {
+  width: clamp(280px, 24vw, 360px);
   min-width: 0;
-  min-height: 0;
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--s-3) var(--s-3) calc(var(--s-8) + var(--s-6)) var(--s-2);
+  padding: var(--s-3);
   border-left: 1px solid var(--ring);
-  background: var(--bg);
+  background: rgba(14, 11, 9, 0.95);
+  backdrop-filter: blur(12px);
   scrollbar-width: thin;
+  z-index: 10;
 }
 
-/* Notice Popover Slot */
-.avisoSlot {
-  position: absolute;
-  top: 0;
+/* ================= 3. FIXED NARRATIVE WRAPPER (LEFT) ================= */
+.fixedNarrativeWrapper {
+  position: fixed;
+  top: 48px;
+  left: 0;
+  width: clamp(380px, 32vw, 440px);
   bottom: 0;
+  z-index: 20;
+  pointer-events: none;
+  background: rgba(10, 8, 7, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid var(--ring);
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.6);
+}
+
+.narrativeSection {
+  position: absolute;
+  inset: 0;
+  padding: var(--s-4) var(--s-3) var(--s-8) var(--s-4);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  transition: opacity 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.sectionActive {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.sectionHidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(16px);
+}
+
+.introCardWrap,
+.methodCardWrap {
+  background: rgba(18, 14, 12, 0.85);
+  border: 1px solid var(--ring-ui);
+  border-radius: var(--r-2);
+  padding: var(--s-4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Aviso Popover Slot */
+.avisoSlot {
+  position: fixed;
+  top: 48px;
   left: clamp(380px, 32vw, 440px);
-  right: var(--scene-w);
+  right: 0;
+  height: 48px;
   z-index: 25;
   pointer-events: none;
 }
 
-/* ================= HIGH-RES PHOTO MODAL LIGHTBOX ================= */
+/* ================= 4. HIGH-RES PHOTO LIGHTBOX MODAL ================= */
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -196,35 +194,30 @@
   to { opacity: 1; }
 }
 
-/* ================= MOBILE LAYOUT (< 900px) ================= */
+/* ================= 5. MOBILE RESPONSIVE (< 900px) ================= */
 @media (max-width: 899.98px) {
-  .scrollyContainer {
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-  }
-
-  .scrollTrack {
-    height: auto;
-    overflow-y: visible;
-    padding: var(--s-3) var(--s-2) 20vh;
-    border-right: none;
-  }
-
-  .stickyStage {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    height: 44vh;
-    min-height: 280px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 48fr 52fr;
+  .fixedStageWrapper {
+    position: fixed;
+    top: 48px;
+    left: 0;
+    right: 0;
+    height: 42vh;
+    border-left: none;
     border-bottom: 1px solid var(--ring);
   }
 
-  .stageMap {
-    grid-template-rows: minmax(0, 1fr);
+  .panelCol {
+    display: none;
+  }
+
+  .fixedNarrativeWrapper {
+    position: fixed;
+    top: calc(48px + 42vh);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    border-right: none;
   }
 
   .avisoSlot {
