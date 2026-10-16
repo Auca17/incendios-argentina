@@ -1,5 +1,5 @@
-import Experience from '../components/Experience';
+import ScrollyExperience from '../components/ScrollyExperience';
 
 export default function Page() {
-  return <Experience />;
+  return <ScrollyExperience />;
 }

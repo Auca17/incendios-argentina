@@ -1,0 +1,449 @@
+.storySection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-8);
+  margin-bottom: var(--s-10);
+}
+
+.actCard {
+  position: relative;
+  min-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: rgba(16, 13, 11, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--ring-ui);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-2);
+  padding: var(--s-4) var(--s-4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.actCard:focus-within {
+  border-color: var(--accent);
+}
+
+.cardHeader {
+  margin-bottom: var(--s-3);
+}
+
+.kickerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  color: var(--accent-light);
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.actBadge {
+  font-family: var(--font-display);
+  font-size: var(--fs-10);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.actBadge1 {
+  background: rgba(204, 136, 0, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(204, 136, 0, 0.4);
+}
+
+.actBadge2 {
+  background: rgba(197, 82, 33, 0.2);
+  color: #ff7733;
+  border: 1px solid rgba(197, 82, 33, 0.5);
+}
+
+.actBadge3 {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(var(--fs-20), 2.2vw, var(--fs-28));
+  line-height: 1.15;
+  color: var(--text);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Quote */
+.causeQuote {
+  margin: var(--s-2) 0 var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-left: 3px solid var(--accent);
+  background: rgba(204, 136, 0, 0.06);
+  border-radius: 0 var(--r-1) var(--r-1) 0;
+  font-size: var(--fs-13);
+  line-height: 1.5;
+  color: var(--text-2);
+  font-style: italic;
+}
+
+.causeQuote p {
+  margin: 0;
+}
+
+/* Details and Facts */
+.detailsBlock {
+  margin-top: var(--s-3);
+}
+
+.subHead {
+  font-family: var(--font-display);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--s-2);
+  font-weight: 600;
+}
+
+.facts {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.facts li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s-2);
+  background: #14110f;
+  border: 1px solid var(--ring-ui);
+  border-radius: var(--r-1);
+}
+
+.facts b {
+  font-family: var(--font-mono);
+  font-size: var(--fs-13);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.facts span {
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  line-height: 1.4;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--accent-light);
+  font-style: normal;
+  background: rgba(204, 136, 0, 0.12);
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
+/* Hero card in Act 2 */
+.heroCard {
+  background: #181310;
+  border: 1px solid var(--ring-ui);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--r-1);
+  padding: var(--s-3);
+  margin-bottom: var(--s-3);
+}
+
+.heroPre {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--fs-11);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.heroNumRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+
+.heroNum {
+  font-family: var(--font-mono);
+  font-size: clamp(var(--fs-28), 3.5vw, 42px);
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+
+.heroUnit {
+  font-family: var(--font-display);
+  font-size: var(--fs-14);
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.heroLabel {
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  line-height: 1.4;
+  margin: var(--s-1) 0 var(--s-2);
+}
+
+.heroSource {
+  font-size: var(--fs-11);
+  color: var(--text-muted);
+  border-top: 1px dashed var(--ring-ui);
+  padding-top: var(--s-1);
+}
+
+.heroSource b {
+  color: var(--text-2);
+}
+
+/* Standout Stat Grid */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2);
+  margin: var(--s-2) 0 var(--s-3);
+  min-width: 0;
+}
+
+.statBox {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-1);
+  background: #14110f;
+  border: 1px solid var(--ring-ui);
+  border-left: 3px solid var(--accent-burnt);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statFig {
+  font-family: var(--font-mono);
+  font-size: var(--fs-16);
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.1;
+}
+
+.statLbl {
+  font-size: var(--fs-11);
+  color: var(--text-2);
+  line-height: 1.35;
+}
+
+/* Alt card */
+.altCard {
+  background: #14110f;
+  border: 1px solid var(--ring-ui);
+  border-radius: var(--r-1);
+  padding: var(--s-2) var(--s-3);
+  margin-bottom: var(--s-3);
+}
+
+.altHead {
+  font-family: var(--font-display);
+  font-size: var(--fs-11);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: var(--s-2);
+}
+
+.altList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.altRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding-bottom: 4px;
+}
+
+.altRow:last-child {
+  border-bottom: none;
+}
+
+.altFig {
+  font-family: var(--font-mono);
+  font-size: var(--fs-13);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.altSrc {
+  font-size: var(--fs-11);
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* Biodiversity wrapper */
+.biodiversityWrap {
+  margin: var(--s-3) 0;
+}
+
+/* Official note */
+.officialNote {
+  background: rgba(197, 82, 33, 0.08);
+  border-left: 3px solid var(--accent-burnt);
+  padding: var(--s-2) var(--s-3);
+  border-radius: 0 var(--r-1) var(--r-1) 0;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  margin-bottom: var(--s-3);
+  line-height: 1.4;
+}
+
+/* Lead in Act 3 */
+.lead {
+  font-size: var(--fs-13);
+  line-height: 1.55;
+  color: var(--text);
+  margin: var(--s-2) 0 var(--s-3);
+}
+
+/* Chart Slot */
+.chartSlot {
+  margin: var(--s-3) 0;
+  background: #14110f;
+  border: 1px solid var(--ring-ui);
+  border-radius: var(--r-1);
+  padding: var(--s-3);
+}
+
+/* Photo card */
+.docPhoto {
+  margin: var(--s-2) 0 var(--s-3);
+  background: #14110f;
+  border: 1px solid var(--ring-ui);
+  border-radius: var(--r-1);
+  overflow: hidden;
+}
+
+.photoHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid var(--ring-ui);
+}
+
+.photoStepBadge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.photoZoomBtn {
+  background: transparent;
+  border: 1px solid var(--ring-ui);
+  color: var(--text-2);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.photoZoomBtn:hover {
+  background: var(--ring-ui);
+  color: var(--text);
+}
+
+.photoWrap {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  cursor: pointer;
+  background: #000;
+}
+
+.photoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.photoWrap:hover .photoImg {
+  transform: scale(1.03);
+}
+
+.photoCaption {
+  padding: 8px 10px;
+  font-size: var(--fs-11);
+  color: var(--text-2);
+  line-height: 1.4;
+}
+
+.photoText {
+  margin: 0 0 4px;
+}
+
+.photoCredit {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.photoCredit a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* Down prompt indicator */
+.scrollDownPrompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-1);
+  margin-top: var(--s-4);
+  padding: var(--s-1) 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-10);
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.arrowIcon {
+  color: var(--accent);
+  animation: bounce 1.8s infinite ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
