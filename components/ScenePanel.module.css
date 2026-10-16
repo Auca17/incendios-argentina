@@ -8,7 +8,6 @@
   justify-content: safe center;
   gap: var(--s-2);
   padding: var(--s-3) var(--s-3) calc(var(--s-8) + var(--s-3)) var(--s-3);
-  border-left: 1px solid var(--ring);
   background: var(--bg);
 }
 

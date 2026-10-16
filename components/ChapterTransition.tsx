@@ -8,17 +8,21 @@ interface ChapterTransitionProps {
 }
 
 /**
- * ChapterTransition: Cinematic bidirectional fire sweep transition between stories.
- * Renders an impossible-to-miss, roaring procedural flame wall with aerodynamic licking tongues,
- * flying incandescent embers, and a sweeping thermal wave directly across the entire viewport.
+ * ChapterTransition: Hierarchical fire sweep transition between stories.
  *
- * Direction:
- * - Forward (index > prev): sweeps Left-to-Right
- * - Backward (index < prev): sweeps Right-to-Left
+ * - Heroic Mode (850ms, 100% opaque central occlusion):
+ *   Triggered when entering stories from Portada (0 -> 1) and when concluding to the methodology closure (6 -> 7).
+ *   At its apex, it creates an opaque solid wall of fire and dense smoke so the background slide change is 100% hidden.
+ *
+ * - Agile Mode (380ms, sleek, no full blackout):
+ *   Between intermediate stories (1 -> 2 -> 3 -> 4 -> 5 -> 6) to prevent visual fatigue while keeping the directional
+ *   sweep (LTR forward, RTL backward).
  */
 export default function ChapterTransition({ index }: ChapterTransitionProps) {
   const prev = useRef<number | null>(null);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
+  const [mode, setMode] = useState<'heroic' | 'agile'>('heroic');
+  const [duration, setDuration] = useState(850);
   const [active, setActive] = useState(false);
 
   useEffect(() => {
@@ -30,9 +34,15 @@ export default function ChapterTransition({ index }: ChapterTransitionProps) {
 
     if (prev.current === index) return;
 
-    const isForward = index > prev.current;
+    const prevIndex = prev.current;
+    const isForward = index > prevIndex;
+    // Heroic transition when entering from Portada (0) or concluding to Cierre (7)
+    const isHeroic = prevIndex === 0 || index === 0 || prevIndex === 7 || index === 7;
+
     prev.current = index;
     setDirection(isForward ? 'forward' : 'backward');
+    setMode(isHeroic ? 'heroic' : 'agile');
+    setDuration(isHeroic ? 850 : 380);
     setActive(true);
   }, [index]);
 
@@ -45,9 +55,10 @@ export default function ChapterTransition({ index }: ChapterTransitionProps) {
   return (
     <div className={styles.wrap} aria-hidden="true">
       <FireCurtain
-        key={`fire-${index}-${direction}`}
+        key={`fire-${index}-${direction}-${mode}`}
         direction={direction}
-        duration={850}
+        mode={mode}
+        duration={duration}
         onFinish={handleFinish}
       />
     </div>

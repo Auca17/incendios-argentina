@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useRef } from 'react';
 
-interface FireCurtainProps {
+export interface FireCurtainProps {
   direction: 'forward' | 'backward';
+  mode?: 'heroic' | 'agile';
   duration?: number;
   onFinish: () => void;
 }
@@ -16,18 +17,22 @@ interface Particle {
   life: number;
   maxLife: number;
   color: string;
+  isAsh?: boolean;
 }
 
 /**
- * FireCurtain: High-performance, bulletproof procedural fire sweep transition.
- * Uses Canvas 2D with 'lighter' composite mode for guaranteed 60fps across all browsers and GPUs.
+ * FireCurtain: High-performance procedural fire sweep transition.
  *
- * Direction:
- * - 'forward': sweeps Left-to-Right with aerodynamic forward flame tongues and flying ember sparks.
- * - 'backward': sweeps Right-to-Left with reverse aerodynamics.
+ * Modes:
+ * - 'heroic' (850ms): Dramatic full-screen transition for major milestones (Portada -> Stories, Stories -> Cierre).
+ *   At apex (fullness > 0.80), renders a 100% opaque thermal wall and dense smoke veil that completely conceals
+ *   the underlying slide DOM change, acting as a flawless cinematic wipe.
+ * - 'agile' (380ms): Fast, sleek directional sweep between intermediate chapters.
+ *   Provides tactile momentum without blacking out the screen or causing navigation fatigue.
  */
 export default function FireCurtain({
   direction = 'forward',
+  mode = 'heroic',
   duration = 850,
   onFinish,
 }: FireCurtainProps) {
@@ -58,33 +63,43 @@ export default function FireCurtain({
 
     const isForward = direction === 'forward';
     const dirMult = isForward ? 1 : -1;
+    const isHeroic = mode === 'heroic';
 
-    // Ember particles pool
+    // Particle pools for glowing embers and dark drifting ash flakes
     const particles: Particle[] = [];
-    const colors = [
+    const emberColors = [
       '#ffffff',
-      '#fffae0',
-      '#ffcc00',
-      '#ff8800',
-      '#ff3b00',
-      '#cc1100',
+      '#fffbeb',
+      '#fef08a',
+      '#f59e0b',
+      '#ea580c',
+      '#dc2626',
+      '#991b1b',
     ];
+    const ashColors = ['#1c1917', '#292524', '#44403c', '#78716c'];
 
-    const spawnEmbers = (centerX: number, count: number) => {
+    const spawnParticles = (centerX: number, count: number) => {
       for (let i = 0; i < count; i++) {
-        const spreadX = (Math.random() - 0.5) * width * 0.25;
+        const isAsh = Math.random() < 0.28;
+        const spreadX = (Math.random() - 0.5) * width * (isAsh ? 0.45 : 0.28);
         const x = centerX + spreadX;
-        const y = height * (0.15 + Math.random() * 0.85);
-        const maxLife = 20 + Math.random() * 40;
+        const y = height * (0.1 + Math.random() * 0.9);
+        const maxLife = isAsh
+          ? 35 + Math.random() * 45
+          : 20 + Math.random() * 35;
+
         particles.push({
           x,
           y,
-          vx: (Math.random() * 8 + 3) * dirMult + (Math.random() - 0.5) * 4,
-          vy: -(Math.random() * 8 + 4),
-          size: Math.random() * 4 + 1.5,
+          vx: (Math.random() * 8 + 3) * dirMult + (Math.random() - 0.5) * (isAsh ? 6 : 4),
+          vy: -(Math.random() * (isAsh ? 4 : 9) + (isAsh ? 1.5 : 3)),
+          size: isAsh ? Math.random() * 3.5 + 1.2 : Math.random() * 4 + 1.5,
           life: 0,
           maxLife,
-          color: colors[Math.floor(Math.random() * colors.length)],
+          color: isAsh
+            ? ashColors[Math.floor(Math.random() * ashColors.length)]
+            : emberColors[Math.floor(Math.random() * emberColors.length)],
+          isAsh,
         });
       }
     };
@@ -96,22 +111,60 @@ export default function FireCurtain({
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1.0);
 
-      // Custom smooth-step acceleration curve
+      // Smooth quintic / cubic easing for natural wave acceleration and deceleration
       const p = progress * progress * (3.0 - 2.0 * progress);
 
       // Sweep center position across the entire viewport + margins
-      const totalSpan = width * 1.5;
+      const totalSpan = width * 1.55;
       const sweepX = isForward
-        ? p * totalSpan - width * 0.25
-        : (1.0 - p) * totalSpan - width * 0.25;
+        ? p * totalSpan - width * 0.28
+        : (1.0 - p) * totalSpan - width * 0.28;
 
       // Fullness curve (0 at start, 1.0 at apex, 0 at end)
       const fullness = Math.sin(p * Math.PI);
-      const wallWidth = width * (0.35 + fullness * 0.45);
+      const wallWidth = width * (isHeroic ? 0.45 + fullness * 0.55 : 0.35 + fullness * 0.35);
 
       ctx.clearRect(0, 0, width, height);
 
-      // --- Layer 1: Ambient thermal heat flash ---
+      // =========================================================================
+      // LAYER 1: Apex 100% Opaque Veil (Heroic mode only)
+      // When fullness > 0.80, this creates an opaque solid wall of fire and dense
+      // smoke so that the underlying slide background change is 100% hidden.
+      // =========================================================================
+      if (isHeroic && fullness > 0.8) {
+        // Ramps from 0 to 1.0 at fullness = 1.0 (apex p = 0.5)
+        const occlusionAlpha = Math.min(1.0, (fullness - 0.8) / 0.16);
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-over';
+
+        // Deep thermal carbon background
+        ctx.fillStyle = `rgba(18, 10, 7, ${occlusionAlpha})`;
+        ctx.fillRect(0, 0, width, height);
+
+        // Blazing central incandescent wall across the full height
+        const apexGrad = ctx.createRadialGradient(
+          sweepX,
+          height * 0.5,
+          width * 0.05,
+          sweepX,
+          height * 0.5,
+          width * 0.75
+        );
+        apexGrad.addColorStop(0, `rgba(255, 250, 220, ${occlusionAlpha * 0.95})`);
+        apexGrad.addColorStop(0.2, `rgba(245, 158, 11, ${occlusionAlpha * 0.9})`);
+        apexGrad.addColorStop(0.5, `rgba(220, 38, 38, ${occlusionAlpha * 0.85})`);
+        apexGrad.addColorStop(0.8, `rgba(127, 29, 29, ${occlusionAlpha * 0.75})`);
+        apexGrad.addColorStop(1, `rgba(18, 10, 7, ${occlusionAlpha})`);
+
+        ctx.fillStyle = apexGrad;
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+      }
+
+      // =========================================================================
+      // LAYER 2: Ambient Thermal Radiation Flash
+      // =========================================================================
       ctx.save();
       const flashGrad = ctx.createRadialGradient(
         sweepX,
@@ -119,19 +172,21 @@ export default function FireCurtain({
         width * 0.05,
         sweepX,
         height * 0.5,
-        width * 0.8
+        width * 0.85
       );
-      const flashAlpha = fullness * 0.55;
-      flashGrad.addColorStop(0, `rgba(255, 140, 0, ${flashAlpha})`);
-      flashGrad.addColorStop(0.4, `rgba(200, 40, 0, ${flashAlpha * 0.7})`);
-      flashGrad.addColorStop(0.8, `rgba(40, 10, 0, ${flashAlpha * 0.4})`);
+      const flashAlpha = fullness * (isHeroic ? 0.65 : 0.45);
+      flashGrad.addColorStop(0, `rgba(245, 158, 11, ${flashAlpha})`);
+      flashGrad.addColorStop(0.35, `rgba(220, 38, 38, ${flashAlpha * 0.75})`);
+      flashGrad.addColorStop(0.75, `rgba(40, 10, 5, ${flashAlpha * 0.4})`);
       flashGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
       ctx.fillStyle = flashGrad;
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
 
-      // --- Layer 2: Main sweeping wall of roaring flames ---
+      // =========================================================================
+      // LAYER 3: Main Sweeping Fire Wall (Additive Blend)
+      // =========================================================================
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
 
@@ -145,15 +200,15 @@ export default function FireCurtain({
       if (isForward) {
         wallGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
         wallGrad.addColorStop(0.2, `rgba(180, 20, 0, ${fullness * 0.7})`);
-        wallGrad.addColorStop(0.45, `rgba(255, 90, 0, ${fullness * 0.95})`);
-        wallGrad.addColorStop(0.65, `rgba(255, 200, 20, ${fullness * 1.0})`);
-        wallGrad.addColorStop(0.8, `rgba(255, 255, 230, ${fullness * 0.95})`);
+        wallGrad.addColorStop(0.45, `rgba(245, 90, 0, ${fullness * 0.95})`);
+        wallGrad.addColorStop(0.68, `rgba(251, 191, 36, ${fullness * 1.0})`);
+        wallGrad.addColorStop(0.85, `rgba(255, 255, 240, ${fullness * 0.95})`);
         wallGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       } else {
         wallGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        wallGrad.addColorStop(0.2, `rgba(255, 255, 230, ${fullness * 0.95})`);
-        wallGrad.addColorStop(0.35, `rgba(255, 200, 20, ${fullness * 1.0})`);
-        wallGrad.addColorStop(0.55, `rgba(255, 90, 0, ${fullness * 0.95})`);
+        wallGrad.addColorStop(0.15, `rgba(255, 255, 240, ${fullness * 0.95})`);
+        wallGrad.addColorStop(0.32, `rgba(251, 191, 36, ${fullness * 1.0})`);
+        wallGrad.addColorStop(0.55, `rgba(245, 90, 0, ${fullness * 0.95})`);
         wallGrad.addColorStop(0.8, `rgba(180, 20, 0, ${fullness * 0.7})`);
         wallGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       }
@@ -161,58 +216,43 @@ export default function FireCurtain({
       ctx.fillStyle = wallGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // --- Layer 3: Organic licking flame tongues ---
-      const tongueCount = 28;
+      // =========================================================================
+      // LAYER 4: Multi-frequency Turbulent Flame Tongues
+      // =========================================================================
+      const tongueCount = isHeroic ? 32 : 22;
       const stepY = height / tongueCount;
 
       for (let i = 0; i <= tongueCount; i++) {
         const y = i * stepY;
-        const timeOffset = elapsed * 0.015 + i * 0.7;
-        const wave = Math.sin(timeOffset) * 45 + Math.cos(timeOffset * 1.6) * 30;
-        const tongueTipX = sweepX + (wave + 80 * fullness) * dirMult;
+        const t1 = elapsed * 0.016 + i * 0.65;
+        const t2 = elapsed * 0.024 - i * 0.45;
+        const wave = Math.sin(t1) * 38 + Math.cos(t2 * 1.5) * 26 + Math.sin(t1 * 2.8) * 14;
+        const tongueTipX = sweepX + (wave + 85 * fullness) * dirMult;
 
         const tongueGrad = ctx.createRadialGradient(
           tongueTipX,
           y,
-          5,
+          4,
           sweepX,
           y,
-          wallWidth * 0.4
+          wallWidth * 0.42
         );
-        tongueGrad.addColorStop(0, `rgba(255, 255, 220, ${fullness * 0.9})`);
-        tongueGrad.addColorStop(0.3, `rgba(255, 140, 10, ${fullness * 0.8})`);
-        tongueGrad.addColorStop(0.7, `rgba(200, 30, 0, ${fullness * 0.5})`);
+        tongueGrad.addColorStop(0, `rgba(255, 255, 235, ${fullness * 0.95})`);
+        tongueGrad.addColorStop(0.28, `rgba(251, 191, 36, ${fullness * 0.85})`);
+        tongueGrad.addColorStop(0.65, `rgba(220, 38, 38, ${fullness * 0.55})`);
         tongueGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
         ctx.fillStyle = tongueGrad;
         ctx.beginPath();
-        ctx.arc(tongueTipX, y, wallWidth * 0.35, 0, Math.PI * 2);
+        ctx.arc(tongueTipX, y, wallWidth * 0.36, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // --- Layer 4: Top and bottom edge licking tongues ---
-      for (let x = sweepX - wallWidth * 0.4; x <= sweepX + wallWidth * 0.4; x += 35) {
-        const tWave = Math.sin(x * 0.04 + elapsed * 0.02) * 50 * fullness;
-        // Top edge
-        const topGrad = ctx.createRadialGradient(x, 0, 2, x, 0, 90 + tWave);
-        topGrad.addColorStop(0, `rgba(255, 200, 30, ${fullness * 0.85})`);
-        topGrad.addColorStop(0.5, `rgba(220, 50, 0, ${fullness * 0.6})`);
-        topGrad.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = topGrad;
-        ctx.fillRect(x - 30, 0, 60, 120 + tWave);
-
-        // Bottom edge
-        const btmGrad = ctx.createRadialGradient(x, height, 2, x, height, 90 + tWave);
-        btmGrad.addColorStop(0, `rgba(255, 200, 30, ${fullness * 0.85})`);
-        btmGrad.addColorStop(0.5, `rgba(220, 50, 0, ${fullness * 0.6})`);
-        btmGrad.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = btmGrad;
-        ctx.fillRect(x - 30, height - 120 - tWave, 60, 120 + tWave);
-      }
-
-      // --- Layer 5: Flying incandescent sparks & embers ---
-      if (progress < 0.92) {
-        spawnEmbers(sweepX, Math.floor(4 + fullness * 8));
+      // =========================================================================
+      // LAYER 5: Flying Incandescent Embers & Textured Ash Flakes
+      // =========================================================================
+      if (progress < 0.94) {
+        spawnParticles(sweepX, Math.floor((isHeroic ? 5 : 3) + fullness * (isHeroic ? 9 : 5)));
       }
 
       for (let i = particles.length - 1; i >= 0; i--) {
@@ -220,7 +260,7 @@ export default function FireCurtain({
         pt.life++;
         pt.x += pt.vx;
         pt.y += pt.vy;
-        pt.size *= 0.96;
+        pt.size *= 0.97;
 
         const particleAlpha = (1.0 - pt.life / pt.maxLife) * fullness;
         if (particleAlpha <= 0 || pt.life >= pt.maxLife) {
@@ -231,13 +271,20 @@ export default function FireCurtain({
         ctx.fillStyle = pt.color;
         ctx.globalAlpha = particleAlpha;
         ctx.beginPath();
-        ctx.arc(pt.x, pt.y, Math.max(pt.size, 0.8), 0, Math.PI * 2);
+
+        if (pt.isAsh) {
+          // Ash flakes render as slightly irregular drifting motes
+          ctx.ellipse(pt.x, pt.y, Math.max(pt.size * 1.4, 1.2), Math.max(pt.size * 0.8, 0.8), pt.vx * 0.1, 0, Math.PI * 2);
+        } else {
+          // Glowing embers render as high-speed sparks with light motion trail
+          ctx.arc(pt.x, pt.y, Math.max(pt.size, 0.8), 0, Math.PI * 2);
+        }
         ctx.fill();
       }
 
       ctx.restore();
 
-      // Next frame
+      // Continue or complete
       if (progress < 1.0) {
         animId = requestAnimationFrame(render);
       } else {
@@ -252,7 +299,7 @@ export default function FireCurtain({
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animId);
     };
-  }, [direction, duration, onFinish]);
+  }, [direction, mode, duration, onFinish]);
 
   return (
     <canvas

@@ -67,15 +67,15 @@ var SKY = {
   mid: ['#4b5a66', '#59291a', '#423e3c'],
   low: ['#92877d', '#a2552d', '#6a5f56']
 };
-var SUN = { core: '#e8d9ae', corona: '#d4a05a', coronaMid: '#a8522a', coronaEdge: '#7a2c12', peak: '#b4431c' };
+var SUN = { core: '#fffbeb', corona: '#f59e0b', coronaMid: '#dc2626', coronaEdge: '#7f1d1d', peak: '#b91c1c' };
 var FIRE = {
-  base: '#6e2a16', mid: '#b4521f', tip: '#d98c3c',      /* outer gradient: dull red, burnt orange, ochre */
-  layer: '#c9772e', core: '#efd9a0',                    /* inner tongue and hot core */
-  glowIn: '#d98c3c', glowMid: '#8a3416', glowOut: '#5a1a0a',
-  ember: '#dba25a', emberFall: '#c8602a', haze: '#c8602a', flare: '#d98c3c'
+  base: '#7a2010', mid: '#cf5a1a', tip: '#f59e0b',      /* outer gradient: rich ruby, vibrant fire, bright amber */
+  layer: '#fbbf24', core: '#fffbeb',                    /* incandescent inner core */
+  glowIn: '#f59e0b', glowMid: '#b43403', glowOut: '#450a0a',
+  ember: '#fef08a', emberFall: '#ea580c', haze: '#ea580c', flare: '#f59e0b'
 };
-var SMOKE = ['#a9a39e', '#221b18', '#7a7470'];
-var WATER = { jetTop: '#dfe9ef', jetBot: '#7aa6c0', jet: '#8fb8d0', drop: '#9dbdd0', fill: '#7fa9c4' };
+var SMOKE = ['#a8a29e', '#1c1917', '#78716c'];
+var WATER = { jetTop: '#f0fdf4', jetBot: '#38bdf8', jet: '#60a5fa', drop: '#bae6fd', fill: '#38bdf8' };
 var AIR = { heli: '#a8432a', heliTail: '#823022', bucket: '#b86030', glass: '#8fb0c4', stripe: '#d9cfc4', plane: '#d8cec2', planeTail: '#a8432a', planeBelly: '#cfc6b9', planeGlass: '#86a8bd' };
 var CREW = { hose: '#a89650', body: '#b5562a', skin: '#d1a584', helmet: '#c9a23a', legA: '#3a3a46', legB: '#30303a', nozzle: '#2a2a2a' };
 var TAG = { bg: 'rgba(14,9,7,0.78)', stroke: 'rgba(200,160,110,0.25)', text: '#cfc5bb' };
