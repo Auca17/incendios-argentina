@@ -216,11 +216,15 @@
 /* Standout Stat Grid */
 .statGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--s-2);
   margin: var(--s-2) 0 var(--s-3);
+  min-width: 0;
 }
 .statBox {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
   padding: var(--s-2) var(--s-3);
   border-radius: var(--r-1);
   background: #14110f;
