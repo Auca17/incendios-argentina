@@ -1,10 +1,10 @@
 .card {
   margin: var(--s-3) 0;
   padding: var(--s-3);
-  border-radius: var(--r-2);
-  background: linear-gradient(180deg, #16120e 0%, #110d0a 100%);
-  border: 1px solid rgba(200, 160, 110, 0.22);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  border-radius: var(--r-1);
+  background: linear-gradient(180deg, #181310 0%, #100d0b 100%);
+  border: 1px solid rgba(197, 82, 33, 0.38);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
@@ -16,7 +16,7 @@
   justify-content: space-between;
   gap: var(--s-2);
   flex-wrap: wrap;
-  border-bottom: 1px solid rgba(200, 160, 110, 0.14);
+  border-bottom: 1px solid rgba(197, 82, 33, 0.2);
   padding-bottom: var(--s-2);
 }
 
@@ -32,22 +32,26 @@
 }
 
 .title {
+  font-family: var(--font-display);
   font-size: var(--fs-14);
   font-weight: 700;
-  color: #f59e0b;
+  color: var(--accent);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   margin: 0;
 }
 
 .biomeBadge {
-  font-size: var(--fs-12);
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 600;
-  color: #fef08a;
-  background: rgba(245, 158, 11, 0.12);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #f4ede6;
+  background: rgba(197, 82, 33, 0.18);
   padding: 2px var(--s-1);
   border-radius: var(--r-1);
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(197, 82, 33, 0.45);
 }
 
 .grid {
@@ -72,53 +76,56 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  font-family: var(--font-display);
   font-size: var(--fs-12);
   font-weight: 700;
-  color: #d6cfc7;
+  color: var(--text-2);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 .desc {
   font-size: var(--fs-14);
   line-height: 1.45;
-  color: #cfc5bb;
+  color: var(--text-2);
   margin: 0;
 }
 
 .highlightRow {
   padding: var(--s-2);
   border-radius: var(--r-1);
-  background: rgba(220, 38, 38, 0.08);
-  border-left: 3px solid #ea580c;
+  background: linear-gradient(90deg, rgba(197, 82, 33, 0.12) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-left: 3px solid var(--accent-burnt);
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .highlightLabel {
+  font-family: var(--font-display);
   font-size: var(--fs-12);
   font-weight: 700;
   color: #ffaa5a;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .highlightText {
   font-size: var(--fs-13);
   line-height: 1.4;
-  color: #f3ece4;
+  color: var(--text);
   margin: 0;
 }
 
 .source {
-  font-size: var(--fs-12);
-  color: #a8a29e;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   padding-top: var(--s-1);
   margin: 0;
 }
 
 .source b {
-  color: #cfc5bb;
+  color: var(--text-2);
 }

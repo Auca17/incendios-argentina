@@ -5,31 +5,57 @@
 .text :where(b) { color: var(--text); }
 .kicker {
   margin: var(--s-3) 0 0;
+  font-family: var(--font-display);
   font-size: var(--fs-12);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--accent);
+  font-weight: 700;
 }
-.title { margin: var(--s-1) 0 var(--s-2); font-size: var(--fs-32); line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
-.lead { margin: 0 0 var(--s-2); font-size: var(--fs-20); line-height: 1.5; color: var(--text); }
+.title {
+  margin: var(--s-1) 0 var(--s-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-32);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.lead {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-20);
+  line-height: 1.5;
+  color: var(--text);
+  font-weight: 500;
+}
 .h {
   margin: var(--s-4) 0 var(--s-1);
+  font-family: var(--font-display);
   font-size: var(--fs-14);
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-2);
 }
 .note {
   margin: var(--s-2) 0;
-  padding-left: var(--s-2);
-  border-left: 3px solid #4a3126;
+  padding: var(--s-1) var(--s-2);
+  border-left: 3px solid var(--accent-burnt);
+  background: linear-gradient(90deg, rgba(197, 82, 33, 0.08) 0%, transparent 100%);
+  border-radius: 0 var(--r-1) var(--r-1) 0;
   font-size: var(--fs-14);
   color: var(--muted);
 }
 .facts { list-style: none; margin: var(--s-3) 0 0; padding: 0; display: grid; gap: var(--s-2); }
 .facts li { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: var(--s-2); align-items: start; }
-.facts b { font-size: var(--fs-20); line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--accent); overflow-wrap: anywhere; }
+.facts b {
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
 .facts span { font-size: var(--fs-14); color: var(--text-2); }
 .plain { margin: var(--s-1) 0; padding-left: var(--s-3); }
 .plain li { margin: var(--s-1) 0; font-size: var(--fs-14); color: var(--text-2); }
@@ -50,15 +76,19 @@
   border-radius: var(--r-1);
   background: var(--accent);
   color: #1b0c04;
+  font-family: var(--font-display);
   font-size: var(--fs-14);
   font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s var(--ease);
+  transition: background 0.2s var(--ease), transform 0.15s var(--ease);
   width: 100%;
   text-align: center;
 }
 .startBtn:hover {
   background: #ffc864;
+  transform: translateY(-1px);
 }
 
 @media (max-width: 899.98px) {

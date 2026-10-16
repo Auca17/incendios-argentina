@@ -1,5 +1,20 @@
 import type { Metadata, Viewport } from 'next';
+import { Chakra_Petch, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+
+const chakraPetch = Chakra_Petch({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 const TITLE = 'Lo que el fuego se llevó: 15 años, 6 historias';
 const DESCRIPTION =
@@ -19,7 +34,7 @@ export const viewport: Viewport = { themeColor: '#0a0a0a' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" className={`${chakraPetch.variable} ${jetbrainsMono.variable}`}>
       <body>{children}</body>
     </html>
   );

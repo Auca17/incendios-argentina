@@ -2,16 +2,18 @@
 
 .card {
   padding: var(--s-2);
-  background: #111;
-  border-radius: var(--r-2);
-  box-shadow: 0 0 0 1px var(--ring);
+  background: linear-gradient(180deg, #151210 0%, #0e0c0b 100%);
+  border-radius: var(--r-1);
+  border: 1px solid rgba(197, 82, 33, 0.28);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   min-width: 0;
 }
 .card h3 {
   margin: 0 0 var(--s-1);
+  font-family: var(--font-display);
   font-size: var(--fs-12);
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent);
 }
@@ -28,19 +30,25 @@
   gap: var(--s-half);
   padding: 3px;
   margin-bottom: var(--s-2);
-  border-radius: 999px;
-  box-shadow: 0 0 0 1px var(--ring);
+  border-radius: var(--r-1);
+  border: 1px solid rgba(197, 82, 33, 0.35);
+  background: rgba(10, 8, 7, 0.6);
 }
 .tabs button {
   flex: 1;
   min-height: var(--s-5);
   border: 0;
-  border-radius: 999px;
+  border-radius: 4px;
   padding: var(--s-half) var(--s-2);
   background: transparent;
   color: var(--muted);
-  font-size: var(--fs-14);
+  font-family: var(--font-display);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   cursor: pointer;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
 }
 .tabs button[aria-selected='true'] { background: var(--accent); color: #1b0c04; font-weight: 700; }
 
@@ -50,14 +58,15 @@
   flex: none;
   width: var(--s-6);
   height: var(--s-6);
-  border-radius: 50%;
+  border-radius: var(--r-1);
   border: 1px solid var(--ring-ui);
-  background: var(--accent-soft);
+  background: rgba(197, 82, 33, 0.2);
   color: var(--text);
   font-size: var(--fs-16);
   cursor: pointer;
+  transition: background 0.2s var(--ease);
 }
-.player button:hover { background: rgba(245, 165, 36, 0.28); }
+.player button:hover { background: rgba(197, 82, 33, 0.38); }
 .player input[type='range'] { flex: 1; min-width: 0; height: var(--s-5); accent-color: var(--accent); }
 
 .legend { display: flex; align-items: center; gap: var(--s-1); margin-top: var(--s-1); font-size: var(--fs-12); color: var(--muted); }
@@ -132,29 +141,31 @@
   gap: var(--s-1);
   padding: var(--s-half) 6px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 4px;
   background: transparent;
   color: var(--text-2);
+  font-family: var(--font-display);
   font-size: var(--fs-14);
   text-align: left;
   cursor: pointer;
+  transition: background 0.15s var(--ease);
 }
 .rank button:hover { background: rgba(255, 255, 255, 0.05); }
-.rank button.on { background: var(--accent-soft); color: var(--text); }
-.rn { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.rank button.on { background: rgba(197, 82, 33, 0.25); color: var(--text); }
+.rn { color: var(--muted); font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
 .rl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rb { height: 7px; background: #1d1d1d; border-radius: 4px; overflow: hidden; }
-.rb i { display: block; height: 100%; background: #ff6a1a; border-radius: 4px; }
-.rv { text-align: right; font-variant-numeric: tabular-nums; }
+.rb { height: 7px; background: #1d1a18; border-radius: 4px; overflow: hidden; }
+.rb i { display: block; height: 100%; background: linear-gradient(90deg, #b3300f, #ff6a1a); border-radius: 4px; }
+.rv { text-align: right; font-family: var(--font-mono); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); }
 
 /* comparison table */
-.cmpt { width: 100%; margin-top: var(--s-1); border-collapse: collapse; font-size: var(--fs-14); font-variant-numeric: tabular-nums; }
-.cmpt th, .cmpt td { padding: var(--s-half) 6px; text-align: right; border-bottom: 1px solid #1d1d1d; }
-.cmpt thead th { color: var(--muted); font-weight: 600; }
+.cmpt { width: 100%; margin-top: var(--s-1); border-collapse: collapse; font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.cmpt th, .cmpt td { padding: var(--s-half) 6px; text-align: right; border-bottom: 1px solid rgba(197, 82, 33, 0.15); }
+.cmpt thead th { color: var(--muted); font-weight: 700; font-family: var(--font-display); letter-spacing: 0.05em; text-transform: uppercase; font-size: 11px; }
 .cmpt th[scope='row'], .cmpt thead th:first-child { text-align: left; }
 .cmpt th button { padding: 0; border: 0; background: none; color: var(--text-2); font: inherit; text-align: left; cursor: pointer; }
 .cmpt th button:hover { color: var(--accent); }
-.cmpt tr.on { background: var(--accent-soft); }
+.cmpt tr.on { background: rgba(197, 82, 33, 0.2); }
 .cmpt td small { display: block; font-size: 11px; opacity: 0.85; }
 .up { color: rgb(255, 170, 90); }
 .down { color: rgb(130, 190, 250); }

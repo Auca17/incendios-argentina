@@ -7,9 +7,10 @@
   align-items: center;
   gap: var(--s-1);
   padding: var(--s-half) var(--s-1);
-  background: var(--card);
+  background: rgba(14, 12, 10, 0.95);
   border-radius: 999px;
-  box-shadow: 0 0 0 1px var(--ring);
+  border: 1px solid rgba(197, 82, 33, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 .arrow {
   width: var(--s-5);
@@ -43,10 +44,15 @@
   border-radius: 50%;
   background: var(--muted);
   opacity: 0.7;
-  transition: background 0.2s var(--ease), transform 0.2s var(--ease);
+  transition: background 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 .dot:hover::after { background: var(--text); opacity: 1; }
-.on::after { opacity: 1; background: var(--accent); transform: scale(1.5); }
+.on::after {
+  opacity: 1;
+  background: var(--accent);
+  transform: scale(1.5);
+  box-shadow: 0 0 8px rgba(245, 165, 36, 0.7);
+}
 
 @media (max-width: 899.98px) {
   .nav { right: auto; left: 50%; transform: translateX(-50%); bottom: var(--s-1); }
