@@ -17,13 +17,13 @@
   position: fixed;
   top: 48px;
   right: 0;
-  left: clamp(380px, 32vw, 440px);
+  left: clamp(460px, 36vw, 540px);
   bottom: 0;
   z-index: 5;
   display: flex;
   background: #000;
   overflow: hidden;
-  border-left: 1px solid var(--ring);
+  border-left: 1px solid var(--ring-ui);
 }
 
 .panelCol {
@@ -33,7 +33,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--s-3);
-  border-left: 1px solid var(--ring);
+  border-left: 1px solid var(--ring-ui);
   background: rgba(14, 11, 9, 0.95);
   backdrop-filter: blur(12px);
   scrollbar-width: thin;
@@ -45,15 +45,15 @@
   position: fixed;
   top: 48px;
   left: 0;
-  width: clamp(380px, 32vw, 440px);
+  width: clamp(460px, 36vw, 540px);
   bottom: 0;
   z-index: 20;
   pointer-events: none;
-  background: rgba(10, 8, 7, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-right: 1px solid var(--ring);
-  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.6);
+  background: rgba(12, 10, 8, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--ring-ui);
+  box-shadow: 12px 0 40px rgba(0, 0, 0, 0.65);
 }
 
 .narrativeSection {
@@ -91,7 +91,7 @@
 .avisoSlot {
   position: fixed;
   top: 48px;
-  left: clamp(380px, 32vw, 440px);
+  left: clamp(460px, 36vw, 540px);
   right: 0;
   height: 48px;
   z-index: 25;

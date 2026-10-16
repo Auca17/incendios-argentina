@@ -3,6 +3,7 @@ import { EVENTS } from './events';
 export type Slide =
   | { type: 'intro'; name: string }
   | { type: 'event'; name: string; ev: any }
+  | { type: 'explore'; name: string }
   | { type: 'method'; name: string };
 
 /**
@@ -15,10 +16,11 @@ export const GEOGRAPHIC_EVENTS = [...EVENTS].sort(
   (a, b) => NORTH_TO_SOUTH_IDS.indexOf(a.id) - NORTH_TO_SOUTH_IDS.indexOf(b.id)
 );
 
-/** Screens in geographic descent order: intro, the six fires from North to South, method. */
+/** Screens in geographic descent order: intro, the six fires from North to South, 15-year national explorer epilogue, method. */
 export const SLIDES: Slide[] = [
   { type: 'intro', name: 'Inicio' },
   ...GEOGRAPHIC_EVENTS.map((ev): Slide => ({ type: 'event', name: ev.region, ev })),
+  { type: 'explore', name: '15 Años Nacional' },
   { type: 'method', name: 'Cómo se hizo' },
 ];
 

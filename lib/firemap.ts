@@ -263,11 +263,24 @@ export class FireMap {
       });
     }
     b.lineJoin = 'round';
+    // 1. Neighboring provinces: clear and defined boundaries
     this.paths.forEach((o) => {
-      if (hi.indexOf(o.name) < 0) { b.strokeStyle = 'rgba(237,237,237,.18)'; b.lineWidth = 0.7; b.stroke(o.p); }
+      if (hi.indexOf(o.name) < 0) {
+        b.strokeStyle = 'rgba(230, 215, 195, 0.35)';
+        b.lineWidth = 1.0;
+        b.stroke(o.p);
+      }
     });
+    // 2. Active fire province: vivid fire frame with neon ember glow
     this.paths.forEach((o) => {
-      if (hi.indexOf(o.name) >= 0) { b.strokeStyle = '#ffb03a'; b.lineWidth = 1.4; b.stroke(o.p); }
+      if (hi.indexOf(o.name) >= 0) {
+        b.shadowColor = 'rgba(255, 120, 20, 0.9)';
+        b.shadowBlur = 14;
+        b.strokeStyle = '#ffa733';
+        b.lineWidth = 2.4;
+        b.stroke(o.p);
+        b.shadowBlur = 0;
+      }
     });
   }
 

@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { loadProvinciaMes } from '../lib/data';
 import { ALT, factsFor, monthSeries, type Fact } from '../lib/fire';
 import { getStoryPhoto, type StoryPhoto } from '../lib/photos';
+import type { Slide } from '../lib/slides';
+import ScenePanel from './ScenePanel';
 import CountUp from './CountUp';
 import MonthChart from './MonthChart';
 import BiodiversityCard from './BiodiversityCard';
@@ -88,9 +90,20 @@ type Props = {
   index: number;
   total: number;
   onOpenPhoto: (p: StoryPhoto) => void;
+  s?: number;
+  stage?: number;
+  slide?: Slide;
 };
 
-export default function StoryActSection({ ev, index, total, onOpenPhoto }: Props) {
+export default function StoryActSection({
+  ev,
+  index,
+  total,
+  onOpenPhoto,
+  s = 0,
+  stage = 0,
+  slide,
+}: Props) {
   const [series, setSeries] = useState<any>(null);
 
   useEffect(() => {
@@ -195,6 +208,17 @@ export default function StoryActSection({ ev, index, total, onOpenPhoto }: Props
             <span>Fuente oficial:</span> <b>{ev.hero.src}</b>
           </div>
         </div>
+
+        {/* Animated Ecosystem & Combat Scene */}
+        {slide && (
+          <div className={styles.embeddedSceneWrap}>
+            <div className={styles.sceneHeader}>
+              <span className={styles.sceneBadge}>Ecosistema y Combate</span>
+              <span className={styles.sceneAct}>Acto {stage + 1} de 3</span>
+            </div>
+            <ScenePanel s={s} stage={stage} slide={slide} />
+          </div>
+        )}
 
         {alt && (
           <div className={styles.altCard}>

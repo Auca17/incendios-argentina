@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import type { Slide } from '../lib/slides';
 import ThreeGlobe from './ThreeGlobe';
 import MapPanel, { type ExploreMap } from './MapPanel';
-import ScenePanel from './ScenePanel';
 import styles from './InteractiveStage.module.css';
 
 type Props = {
@@ -28,8 +27,6 @@ export default function InteractiveStage({
   introProgress,
 }: Props) {
   const isIntro = slideIndex === 0;
-  const isEvent = slide.type === 'event';
-  const ev = isEvent ? slide.ev : null;
 
   // Globe opacity: 1.0 in orbit, fades out between 0.65 and 0.95 zoom approach
   const globeOpacity = isIntro
@@ -52,7 +49,7 @@ export default function InteractiveStage({
         <ThreeGlobe progress={introProgress} opacity={globeOpacity} />
       )}
 
-      {/* 2. Detailed Canvas Map of Argentina & Provinces */}
+      {/* 3. Detailed Canvas Map of Argentina & Provinces */}
       <div
         className={styles.mapLayer}
         style={{
@@ -62,19 +59,6 @@ export default function InteractiveStage({
       >
         <MapPanel p={p} slide={slide} geo={geo} explore={explore} />
       </div>
-
-      {/* 3. Floating HUD Card: Animated Scene of Bioma & Aircraft */}
-      {isEvent && (
-        <aside className={styles.floatingSceneHud} aria-label="Escena del ecosistema y combate">
-          <div className={styles.hudHeader}>
-            <span className={styles.hudBadge}>Ecosistema y Combate</span>
-            <span className={styles.hudAct}>Acto {stage + 1} de 3</span>
-          </div>
-          <div className={styles.sceneBoxWrap}>
-            <ScenePanel s={s} stage={stage} slide={slide} />
-          </div>
-        </aside>
-      )}
     </div>
   );
 }

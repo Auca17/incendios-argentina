@@ -7,6 +7,7 @@ import { useIsMobile } from '../lib/useMediaQuery';
 import { buildView, type ViewSpec } from '../lib/explore';
 import type { StoryPhoto } from '../lib/photos';
 import TopBar from './TopBar';
+import SmokeCurtain from './SmokeCurtain';
 import InteractiveStage from './InteractiveStage';
 import type { ExploreMap } from './MapPanel';
 import ExplorePanel from './ExplorePanel';
@@ -22,16 +23,17 @@ const NO_PROVINCES: string[] = [];
 const NO_GEO: any[] = [];
 const NO_HI: string[] = [];
 
-// Ranges for 8 milestones along the continuous 0 to 1 window scroll
+// Ranges for 9 milestones along the continuous 0 to 1 window scroll
 const MILESTONES = [
-  { id: 'intro', start: 0.00, end: 0.12 },
-  { id: 'misiones', start: 0.12, end: 0.26 },
-  { id: 'corrientes', start: 0.26, end: 0.40 },
-  { id: 'cordoba', start: 0.40, end: 0.54 },
-  { id: 'delta', start: 0.54, end: 0.68 },
-  { id: 'mendoza', start: 0.68, end: 0.82 },
-  { id: 'chubut', start: 0.82, end: 0.94 },
-  { id: 'method', start: 0.94, end: 1.00 },
+  { id: 'intro', start: 0.00, end: 0.10 },
+  { id: 'misiones', start: 0.10, end: 0.24 },
+  { id: 'corrientes', start: 0.24, end: 0.38 },
+  { id: 'cordoba', start: 0.38, end: 0.52 },
+  { id: 'delta', start: 0.52, end: 0.66 },
+  { id: 'mendoza', start: 0.66, end: 0.80 },
+  { id: 'chubut', start: 0.80, end: 0.90 },
+  { id: 'explore', start: 0.90, end: 0.96 },
+  { id: 'method', start: 0.96, end: 1.00 },
 ];
 
 export default function ScrollyExperience() {
@@ -148,7 +150,7 @@ export default function ScrollyExperience() {
     : { kind, year, cmp: null, nat, view, hi, onSelect };
 
   const panel =
-    currentSlide.type === 'intro' ? (
+    currentSlide.type === 'intro' || currentSlide.type === 'explore' ? (
       <ExplorePanel
         nat={nat}
         failed={failed}
@@ -170,6 +172,12 @@ export default function ScrollyExperience() {
     <div className={styles.app}>
       <TopBar index={activeSlide} count={SLIDES.length} name={currentSlide.name} />
 
+      {/* ================= 0. FULL-SCREEN SMOKE & CLOUD CURTAIN OPENER ================= */}
+      <SmokeCurtain
+        progress={introProgress}
+        onStartClick={() => scrollToSlide(1)}
+      />
+
       {/* ================= FIXED STAGE (RIGHT / BACKGROUND) ================= */}
       <div className={styles.fixedStageWrapper}>
         <InteractiveStage
@@ -182,8 +190,8 @@ export default function ScrollyExperience() {
           explore={explore}
           introProgress={introProgress}
         />
-        {/* National explore panel on intro desktop */}
-        {currentSlide.type === 'intro' && !isMobile && (
+        {/* National explore panel on explore desktop */}
+        {currentSlide.type === 'explore' && !isMobile && (
           <aside className={styles.panelCol} aria-label="Exploración">
             {panel}
           </aside>
@@ -197,21 +205,13 @@ export default function ScrollyExperience() {
       </div>
 
       {/* ================= FLOATING NARRATIVE STREAM (LEFT) ================= */}
-      <div className={styles.fixedNarrativeWrapper}>
-        {/* Intro Card */}
-        <div
-          className={`${styles.narrativeSection} ${activeSlide === 0 ? styles.sectionActive : styles.sectionHidden}`}
-        >
-          <div className={styles.introCardWrap}>
-            <HomeSidebar
-              year={year}
-              onPickYear={onYear}
-              onStart={() => scrollToSlide(1)}
-            >
-              {isMobile && panel}
-            </HomeSidebar>
-          </div>
-        </div>
+      <div
+        className={styles.fixedNarrativeWrapper}
+        style={{
+          opacity: activeSlide === 0 ? Math.max(0, (introProgress - 0.75) / 0.25) : 1,
+          transition: 'opacity 0.4s ease',
+        }}
+      >
 
         {/* 6 Event Story Cards (North to South) */}
         {GEOGRAPHIC_EVENTS.map((ev, evIdx) => {
@@ -228,14 +228,32 @@ export default function ScrollyExperience() {
                 index={slideIdx}
                 total={GEOGRAPHIC_EVENTS.length}
                 onOpenPhoto={(photo) => setModalPhoto(photo)}
+                s={s}
+                stage={stage}
+                slide={currentSlide}
               />
             </div>
           );
         })}
 
-        {/* Method Card */}
+        {/* 15 Años Nacional Epilogue Card */}
         <div
           className={`${styles.narrativeSection} ${activeSlide === 7 ? styles.sectionActive : styles.sectionHidden}`}
+        >
+          <div className={styles.introCardWrap}>
+            <HomeSidebar
+              year={year}
+              onPickYear={onYear}
+              onStart={() => scrollToSlide(8)}
+            >
+              {isMobile && panel}
+            </HomeSidebar>
+          </div>
+        </div>
+
+        {/* Method Card */}
+        <div
+          className={`${styles.narrativeSection} ${activeSlide === 8 ? styles.sectionActive : styles.sectionHidden}`}
         >
           <div className={styles.methodCardWrap}>
             <MethodSidebar>
