@@ -286,7 +286,7 @@ function crewSVG(i) {
 }
 
 /* Same drop over the fire, but a steeper climb-out that clears the helicopter refilling at the lake. */
-var PLANE_PATH_HELI = 'M-80 128C40 140 140 166 240 164S370 30 520 -30';
+var PLANE_PATH_HELI = 'M-80 128C40 140 140 166 240 164S380 48 520 10';
 var PLANE_PATH = 'M-80 128C40 140 140 166 240 164S420 118 520 70', PLANE_IN = S_FIGHT, PLANE_OUT = 0.9;
 var HELI_KEYS = [[0.69, 450, 60], [0.74, 355, 174], [0.77, 355, 174], [0.83, 246, 116], [0.86, 232, 114], [0.91, 355, 174], [0.935, 355, 174], [0.985, 204, 114], [1, 196, 112]];
 var HELI_DIPS = [[0.74, 0.77], [0.91, 0.935]], HELI_DROPS = [[0.83, 0.865], [0.985, 1.01]];
@@ -300,8 +300,8 @@ function create(o) {
   var oPt = ORIGIN[id] || ORIGIN[kind] || [220, 230];
   var burnX = oPt[0];
 
-  var s = '<svg class="scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice" role="img" aria-label="' + (o.aria || 'Ilustración esquemática del incendio') + '">' + defs();
-  s += '<rect width="400" height="300" fill="url(#sg-sky)"/>';
+  var s = '<svg class="scene" viewBox="0 -15 400 315" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + (o.aria || 'Ilustración esquemática del incendio') + '">' + defs();
+  s += '<rect x="0" y="-30" width="400" height="340" fill="url(#sg-sky)"/>';
   /* Radiant sun with luminous corona */
   s += '<g id="sg-sun"><circle cx="330" cy="88" r="42" fill="url(#sg-suncorona)"/><circle id="sg-sunc" cx="330" cy="88" r="14" fill="' + SUN.core + '"/></g>';
 

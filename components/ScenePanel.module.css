@@ -27,9 +27,10 @@
  */
 .scenebox {
   display: flex;
-  flex: 0 1 auto;
+  flex: none;
+  width: 100%;
   aspect-ratio: 4 / 3;
-  min-height: 200px;
+  min-height: 320px;
   border-radius: var(--r-2);
   overflow: hidden;
   background: #0b0706;
