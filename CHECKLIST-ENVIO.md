@@ -23,7 +23,7 @@ Orden sugerido. No actualizar el formulario ni los enlaces hasta completar todo.
 ## Documentos
 
 - [x] Revisar y decidir los 5 puntos de `VERIFICACION.md` (resueltos y documentados en código y texto).
-- [ ] Revisar y firmar `IA-declaracion.md` (seudónimo y fecha).
+- [x] Revisar y firmar `IA-declaracion.md` (seudónimo y fecha).
 - [x] Confirmar que `DESCRIPCION.md` no pasa de 200 palabras (181 palabras exactas con títulos).
 - [x] Confirmar que no hay fotos en el sitio y que `FOTOS.md` está al día.
 - [x] Revisar que ningún documento nombre al autor ni incluya su correo (cero coincidencias).

@@ -59,10 +59,20 @@ Después de la versión presentada (tag `entrega-v1-2026-10-15`), el sitio se po
 - No hay fotos en el sitio.
 - Las cifras, causas y fuentes de `EVENTS` se copiaron sin cambios; una prueba automática lo comprueba (ver `VERIFICACION.md`).
 
+## Sesión del 16 de octubre de 2026 (Biodiversidad y diseño editorial Impeccable)
+
+Bajo la dirección de la persona autora, se trabajó con el asistente Antigravity (Google DeepMind, Gemini) para sumar dos mejoras:
+1. **Biodiversidad y contexto ecológico:** Se incorporó el componente `BiodiversityCard` y el módulo `lib/biodiversity.ts` con datos verificados de flora, fauna vulnerable y biomas afectados para cada una de las seis historias, citando fuentes oficiales y académicas (APN, INTA, CONICET, MAyDS).
+2. **Sistema de diseño editorial Impeccable:** Se adoptó una estética de afiche editorial de alto contraste, incorporando tipografía técnica display (`Chakra Petch`), números monoespaciados (`JetBrains Mono`), y una paleta de acentos en naranja quemado (`#c55221`) y ámbar cálido (`#f5a524`) sobre superficies oscuras, manteniendo el 100 % de contraste accesible (30/30 pares WCAG AA verificados con `contrast.mjs`).
+
+**Qué no se hizo:**
+- No se generaron imágenes ni ilustraciones con IA generativa: todos los elementos gráficos siguen siendo código SVG, canvas y CSS escrito a mano.
+- No se alteraron los totales de datos oficiales de NASA FIRMS ni los registros históricos verificados de `EVENTS`.
+
 ## Alcance
 
-Este resumen cubre las sesiones de trabajo del 14 de octubre de 2026 y la migración a Next.js del 15 de octubre de 2026. No describe el trabajo hecho antes en el repositorio. Las páginas de referencia (649 Héroes y Milla 201) se miraron solo como inspiración de diseño; ver `INSPIRACION.md`.
+Este resumen cubre las sesiones de trabajo del 14 de octubre de 2026 (versión estática), la migración a Next.js del 15 de octubre de 2026 (tag `entrega-v1-2026-10-15`) y la actualización de biodiversidad y diseño editorial del 16 de octubre de 2026 (tag `entrega-v1-2026-10-16`). Las páginas de referencia (649 Héroes y Milla 201) se miraron solo como inspiración de diseño; ver `INSPIRACION.md`.
 
-Firma: [seudónimo]
+Firma: Auca17
 
-Fecha: [fecha]
+Fecha: 16 de octubre de 2026
