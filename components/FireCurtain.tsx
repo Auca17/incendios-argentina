@@ -3,7 +3,6 @@ import { useEffect, useRef } from 'react';
 
 export interface FireCurtainProps {
   direction: 'forward' | 'backward';
-  mode?: 'heroic' | 'agile';
   duration?: number;
   onFinish: () => void;
 }
@@ -22,18 +21,12 @@ interface Particle {
 
 /**
  * FireCurtain: High-performance procedural fire sweep transition.
- *
- * Modes:
- * - 'heroic' (850ms): Dramatic full-screen transition for major milestones (Portada -> Stories, Stories -> Cierre).
- *   At apex (fullness > 0.80), renders a 100% opaque thermal wall and dense smoke veil that completely conceals
- *   the underlying slide DOM change, acting as a flawless cinematic wipe.
- * - 'agile' (380ms): Fast, sleek directional sweep between intermediate chapters.
- *   Provides tactile momentum without blacking out the screen or causing navigation fatigue.
+ * Sweeps with a uniform, polished speed and an opaque apex veil that completely
+ * conceals background map/DOM switching across all chapter jumps.
  */
 export default function FireCurtain({
   direction = 'forward',
-  mode = 'heroic',
-  duration = 850,
+  duration = 520,
   onFinish,
 }: FireCurtainProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -63,7 +56,6 @@ export default function FireCurtain({
 
     const isForward = direction === 'forward';
     const dirMult = isForward ? 1 : -1;
-    const isHeroic = mode === 'heroic';
 
     // Particle pools for glowing embers and dark drifting ash flakes
     const particles: Particle[] = [];
@@ -85,13 +77,13 @@ export default function FireCurtain({
         const x = centerX + spreadX;
         const y = height * (0.1 + Math.random() * 0.9);
         const maxLife = isAsh
-          ? 35 + Math.random() * 45
-          : 20 + Math.random() * 35;
+          ? 30 + Math.random() * 40
+          : 18 + Math.random() * 30;
 
         particles.push({
           x,
           y,
-          vx: (Math.random() * 8 + 3) * dirMult + (Math.random() - 0.5) * (isAsh ? 6 : 4),
+          vx: (Math.random() * 9 + 4) * dirMult + (Math.random() - 0.5) * (isAsh ? 6 : 4),
           vy: -(Math.random() * (isAsh ? 4 : 9) + (isAsh ? 1.5 : 3)),
           size: isAsh ? Math.random() * 3.5 + 1.2 : Math.random() * 4 + 1.5,
           life: 0,
@@ -111,7 +103,7 @@ export default function FireCurtain({
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1.0);
 
-      // Smooth quintic / cubic easing for natural wave acceleration and deceleration
+      // Smooth cubic-bezier curve for natural momentum
       const p = progress * progress * (3.0 - 2.0 * progress);
 
       // Sweep center position across the entire viewport + margins
@@ -122,23 +114,23 @@ export default function FireCurtain({
 
       // Fullness curve (0 at start, 1.0 at apex, 0 at end)
       const fullness = Math.sin(p * Math.PI);
-      const wallWidth = width * (isHeroic ? 0.45 + fullness * 0.55 : 0.35 + fullness * 0.35);
+      const wallWidth = width * (0.42 + fullness * 0.48);
 
       ctx.clearRect(0, 0, width, height);
 
       // =========================================================================
-      // LAYER 1: Apex 100% Opaque Veil (Heroic mode only)
-      // When fullness > 0.80, this creates an opaque solid wall of fire and dense
+      // LAYER 1: Apex 100% Opaque Veil
+      // When fullness > 0.78, this creates an opaque solid wall of fire and dense
       // smoke so that the underlying slide background change is 100% hidden.
       // =========================================================================
-      if (isHeroic && fullness > 0.8) {
+      if (fullness > 0.78) {
         // Ramps from 0 to 1.0 at fullness = 1.0 (apex p = 0.5)
-        const occlusionAlpha = Math.min(1.0, (fullness - 0.8) / 0.16);
+        const occlusionAlpha = Math.min(1.0, (fullness - 0.78) / 0.18);
 
         ctx.save();
         ctx.globalCompositeOperation = 'source-over';
 
-        // Deep thermal carbon background
+        // Deep thermal carbon background covering entire screen
         ctx.fillStyle = `rgba(18, 10, 7, ${occlusionAlpha})`;
         ctx.fillRect(0, 0, width, height);
 
@@ -174,7 +166,7 @@ export default function FireCurtain({
         height * 0.5,
         width * 0.85
       );
-      const flashAlpha = fullness * (isHeroic ? 0.65 : 0.45);
+      const flashAlpha = fullness * 0.6;
       flashGrad.addColorStop(0, `rgba(245, 158, 11, ${flashAlpha})`);
       flashGrad.addColorStop(0.35, `rgba(220, 38, 38, ${flashAlpha * 0.75})`);
       flashGrad.addColorStop(0.75, `rgba(40, 10, 5, ${flashAlpha * 0.4})`);
@@ -219,7 +211,7 @@ export default function FireCurtain({
       // =========================================================================
       // LAYER 4: Multi-frequency Turbulent Flame Tongues
       // =========================================================================
-      const tongueCount = isHeroic ? 32 : 22;
+      const tongueCount = 28;
       const stepY = height / tongueCount;
 
       for (let i = 0; i <= tongueCount; i++) {
@@ -252,7 +244,7 @@ export default function FireCurtain({
       // LAYER 5: Flying Incandescent Embers & Textured Ash Flakes
       // =========================================================================
       if (progress < 0.94) {
-        spawnParticles(sweepX, Math.floor((isHeroic ? 5 : 3) + fullness * (isHeroic ? 9 : 5)));
+        spawnParticles(sweepX, Math.floor(4 + fullness * 7));
       }
 
       for (let i = particles.length - 1; i >= 0; i--) {
@@ -273,10 +265,8 @@ export default function FireCurtain({
         ctx.beginPath();
 
         if (pt.isAsh) {
-          // Ash flakes render as slightly irregular drifting motes
           ctx.ellipse(pt.x, pt.y, Math.max(pt.size * 1.4, 1.2), Math.max(pt.size * 0.8, 0.8), pt.vx * 0.1, 0, Math.PI * 2);
         } else {
-          // Glowing embers render as high-speed sparks with light motion trail
           ctx.arc(pt.x, pt.y, Math.max(pt.size, 0.8), 0, Math.PI * 2);
         }
         ctx.fill();
@@ -299,7 +289,7 @@ export default function FireCurtain({
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animId);
     };
-  }, [direction, mode, duration, onFinish]);
+  }, [direction, duration, onFinish]);
 
   return (
     <canvas
