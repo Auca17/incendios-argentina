@@ -12,23 +12,23 @@ export default function CountUp({ value, className }: { value: number; className
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (reduced || typeof IntersectionObserver === 'undefined') { setShown(value); return; }
+    if (typeof IntersectionObserver === 'undefined') { setShown(value); return; }
     setShown(0);
     let raf = 0;
     const io = new IntersectionObserver((es) => {
       if (!es.some((e) => e.isIntersecting)) return;
       io.disconnect();
-      const t0 = performance.now(), dur = 1300;
+      const t0 = performance.now(), dur = 1200;
       const tick = (t: number) => {
         const p = Math.min(1, (t - t0) / dur);
         setShown(value * (1 - Math.pow(1 - p, 3)));
         if (p < 1) raf = requestAnimationFrame(tick);
       };
       raf = requestAnimationFrame(tick);
-    });
+    }, { threshold: 0.1 });
     io.observe(el);
     return () => { io.disconnect(); if (raf) cancelAnimationFrame(raf); };
-  }, [value, reduced]);
+  }, [value]);
 
   return <span ref={ref} className={className}>{fmt(shown)}</span>;
 }

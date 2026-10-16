@@ -23,7 +23,7 @@ export default function ScenePanel({ s, stage, slide }: Props) {
     () =>
       ev
         ? createScene({
-            still: reduced,
+            still: false,
             id: ev.id,
             kind: ev.cause.kind,
             means: ev.means || { crew: 3 },
@@ -32,7 +32,7 @@ export default function ScenePanel({ s, stage, slide }: Props) {
             aria: 'Ilustración esquemática: cómo empezó, cómo creció y cómo se combatió el incendio de ' + ev.region,
           })
         : null,
-    [ev, reduced],
+    [ev],
   );
 
   /* mount, then keep ambient motion running only while the scene is on screen and the tab is visible */
@@ -58,8 +58,8 @@ export default function ScenePanel({ s, stage, slide }: Props) {
     };
   }, [scene]);
 
-  /* reduced motion: still frames chosen so each stage shows its means */
-  const sEff = reduced ? [0.18, 0.5, 0.8][stage] : s;
+  /* scroll drives the scene continuously (forward and backward) */
+  const sEff = s;
   useEffect(() => {
     scene?.update(sEff);
     scrolling.current = true;

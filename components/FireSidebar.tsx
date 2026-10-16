@@ -124,15 +124,15 @@ const FireBody = memo(function FireBody({ ev, index, total, nextName, onNext }: 
     return () => { live = false; };
   }, [ev]);
 
-  /* each text block fades in once (200 ms) when it first enters the reading area */
+  /* each text block fades in smoothly when it first enters the reading area */
   useEffect(() => {
     const el = root.current;
-    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches || typeof IntersectionObserver === 'undefined') return;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
     const io = new IntersectionObserver(
       (es) => es.forEach((e) => {
         if (e.isIntersecting) { (e.target as HTMLElement).removeAttribute('data-reveal'); io.unobserve(e.target); }
       }),
-      { root: el.closest('aside'), threshold: 0.05 },
+      { root: el.closest('aside'), threshold: 0.08 },
     );
     el.querySelectorAll('[data-blk]').forEach((n) => { n.setAttribute('data-reveal', 'pre'); io.observe(n); });
     return () => io.disconnect();

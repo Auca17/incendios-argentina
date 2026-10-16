@@ -15,17 +15,28 @@ export function YearBars({ meta, year, onPick }: { meta: any; year: number | nul
   const mx = Math.max(...YEARS.map((y) => totalYear(meta, y)));
   return (
     <svg className={styles.bars} viewBox={`0 0 ${w} ${h}`} role="group" aria-label="Focos de calor por año">
+      <defs>
+        <linearGradient id="yearOnGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fff2a8" />
+          <stop offset="35%" stopColor="#ffc83d" />
+          <stop offset="100%" stopColor="#d97706" />
+        </linearGradient>
+        <linearGradient id="yearOffGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ff7a1a" />
+          <stop offset="100%" stopColor="#b43b00" />
+        </linearGradient>
+      </defs>
       {YEARS.map((y, i) => {
         const v = totalYear(meta, y), bh = (v / mx) * (h - 30), x = i * (bw + gap) + 2, on = y === year;
         return (
           <g key={y}>
             <rect className={styles.pick} data-y={y} x={x} y={h - 18 - bh} width={bw} height={bh} rx={2}
-              fill={on ? ON : OFF} opacity={on ? 1 : 0.55} role="button" tabIndex={0}
+              fill={on ? 'url(#yearOnGrad)' : 'url(#yearOffGrad)'} opacity={on ? 1 : 0.65} role="button" tabIndex={0}
               aria-label={`${y}: ${fmt(v)} focos`} aria-pressed={on}
               onClick={() => onPick(y)} onKeyDown={onKey(() => onPick(y))}>
               <title>{`${y}: ${fmt(v)} focos`}</title>
             </rect>
-            <text x={x + bw / 2} y={h - 5} fontSize={7.5} fill={AXIS} textAnchor="middle">{String(y).slice(2)}</text>
+            <text x={x + bw / 2} y={h - 5} fontSize={7.5} fill={on ? '#ffc83d' : AXIS} fontWeight={on ? 700 : 400} textAnchor="middle">{String(y).slice(2)}</text>
           </g>
         );
       })}
