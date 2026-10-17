@@ -9,101 +9,148 @@ import PhotoModal from './PhotoModal';
 import Epilogue from './Epilogue';
 import styles from './ScrollyExperience.module.css';
 
-// 10 sequential milestones along the continuous 0 to 1 window scroll
-const MILESTONES = [
-  { id: 'opening', start: 0.00, end: 0.10, name: 'Argentina bajo las nubes' },
-  { id: 'misiones', start: 0.10, end: 0.22, name: 'Misiones' },
-  { id: 'corrientes', start: 0.22, end: 0.35, name: 'Corrientes' },
-  { id: 'cordoba', start: 0.35, end: 0.48, name: 'Córdoba' },
-  { id: 'delta', start: 0.48, end: 0.61, name: 'Delta del Paraná' },
-  { id: 'mendoza', start: 0.61, end: 0.74, name: 'Mendoza' },
-  { id: 'chubut', start: 0.74, end: 0.86, name: 'Chubut' },
-  { id: 'wide_shot', start: 0.86, end: 0.92, name: 'Memoria territorial' },
-  { id: 'closing_clouds', start: 0.92, end: 0.96, name: 'El telón se cierra' },
-  { id: 'epilogue', start: 0.96, end: 1.00, name: 'Epílogo y fuentes' },
+// 10 sequential narrative milestones strictly aligned with DOM elements
+const SECTIONS = [
+  { id: 'sec-opening', name: 'Argentina bajo las nubes' },
+  { id: 'sec-misiones', name: 'Misiones' },
+  { id: 'sec-corrientes', name: 'Corrientes' },
+  { id: 'sec-cordoba', name: 'Córdoba' },
+  { id: 'sec-delta', name: 'Delta del Paraná' },
+  { id: 'sec-mendoza', name: 'Mendoza' },
+  { id: 'sec-chubut', name: 'Chubut' },
+  { id: 'sec-wide_shot', name: 'Memoria territorial' },
+  { id: 'sec-closing_clouds', name: 'El telón se cierra' },
+  { id: 'sec-epilogue', name: 'Epílogo y fuentes' },
 ];
 
 export default function ScrollyExperience() {
-  const [totalProgress, setTotalProgress] = useState(0);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [localProg, setLocalProg] = useState(0);
+  const [cloudOpenProgress, setCloudOpenProgress] = useState(0);
+  const [cloudCloseProgress, setCloudCloseProgress] = useState(0);
   const [modalPhoto, setModalPhoto] = useState<StoryPhoto | null>(null);
 
-  // Global window scroll listener (passive & 60 FPS)
+  // Robust, DOM-driven 60 FPS scroll synchronization (never desyncs on any screen)
   useEffect(() => {
     let ticking = false;
+
+    const computeSections = () => {
+      const vh = window.innerHeight;
+      const readingLine = vh * 0.45; // focal reading center line
+
+      // 1. Cloud open progress:
+      // When top of Misiones is at bottom of viewport, openProg = 0
+      // When top of Misiones reaches readingLine, openProg = 1
+      const misionesEl = document.getElementById('sec-misiones');
+      if (misionesEl) {
+        const mRect = misionesEl.getBoundingClientRect();
+        const rawOpen = (vh - mRect.top) / Math.max(1, vh - readingLine);
+        setCloudOpenProgress(Math.min(1, Math.max(0, rawOpen)));
+      } else {
+        setCloudOpenProgress(1);
+      }
+
+      // 2. Compute active section by intersecting readingLine with each DOM element
+      let currentActive = 0;
+      let currentLocal = 0;
+
+      for (let i = 0; i < SECTIONS.length; i++) {
+        const el = document.getElementById(SECTIONS[i].id);
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+
+        if (rect.top <= readingLine && rect.bottom > readingLine) {
+          currentActive = i;
+          currentLocal = Math.min(1, Math.max(0, (readingLine - rect.top) / Math.max(1, rect.height)));
+          break;
+        }
+      }
+
+      // If scrolled past all sections into the epilogue
+      const epilogueEl = document.getElementById('sec-epilogue');
+      if (epilogueEl) {
+        const eRect = epilogueEl.getBoundingClientRect();
+        if (eRect.top <= readingLine) {
+          currentActive = SECTIONS.length - 1;
+          currentLocal = 1;
+        }
+      }
+
+      setActiveIdx(currentActive);
+      setLocalProg(currentLocal);
+
+      // 3. Cloud close progress (before epilogue)
+      const closeEl = document.getElementById('sec-closing_clouds');
+      if (closeEl) {
+        const cRect = closeEl.getBoundingClientRect();
+        if (cRect.top < vh) {
+          const rawClose = (vh - cRect.top) / Math.max(1, vh - readingLine);
+          setCloudCloseProgress(Math.min(1, Math.max(0, rawClose)));
+        } else {
+          setCloudCloseProgress(0);
+        }
+      }
+
+      ticking = false;
+    };
+
     const onScroll = () => {
       if (!ticking) {
-        requestAnimationFrame(() => {
-          const scrollY = window.scrollY;
-          const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-          const p = Math.min(1, Math.max(0, scrollY / maxScroll));
-          setTotalProgress(p);
-          ticking = false;
-        });
+        requestAnimationFrame(computeSections);
         ticking = true;
       }
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener('resize', onScroll, { passive: true });
+    computeSections();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
   }, []);
 
-  // Determine active milestone index & local progress (deterministic & bidirectional)
-  let activeIndex = 0;
-  let localProgress = 0;
-
-  for (let i = 0; i < MILESTONES.length; i++) {
-    const m = MILESTONES[i];
-    if (totalProgress >= m.start && totalProgress <= m.end) {
-      activeIndex = i;
-      localProgress = (totalProgress - m.start) / Math.max(1e-5, m.end - m.start);
-      break;
-    }
-  }
-
-  if (totalProgress > MILESTONES[MILESTONES.length - 1].end) {
-    activeIndex = MILESTONES.length - 1;
-    localProgress = 1;
-  }
-
-  // Synchronized map state:
-  // - -1: Opening (full country under clouds, approaching Misiones as clouds part)
-  // - 0..5: Misiones, Corrientes, Córdoba, Delta, Mendoza, Chubut
-  // - 6: Wide shot / Closing clouds / Epilogue (full country with all 6 burned provinces)
+  // Map chapter mapping:
+  // - -1: Opening (under clouds, approaching Misiones as clouds part)
+  // - 0: Misiones
+  // - 1: Corrientes
+  // - 2: Córdoba
+  // - 3: Delta
+  // - 4: Mendoza
+  // - 5: Chubut
+  // - 6: Wide shot / Closing clouds / Epilogue (All 6 burned regions)
   let mapChapterIndex = -1;
   let mapChapterProgress = 0;
 
-  if (activeIndex === 0) {
-    // Synchronize: In the second half of opening (localProgress > 0.4), begin smooth approach to Misiones
-    if (localProgress > 0.45) {
+  if (activeIdx === 0) {
+    if (cloudOpenProgress > 0.45) {
       mapChapterIndex = 0;
-      mapChapterProgress = (localProgress - 0.45) / 0.55 * 0.25;
+      mapChapterProgress = (cloudOpenProgress - 0.45) / 0.55 * 0.25;
     } else {
       mapChapterIndex = -1;
-      mapChapterProgress = localProgress;
+      mapChapterProgress = 0;
     }
-  } else if (activeIndex >= 1 && activeIndex <= 6) {
-    mapChapterIndex = activeIndex - 1;
-    mapChapterProgress = localProgress;
+  } else if (activeIdx >= 1 && activeIdx <= 6) {
+    // Indexes 1..6 map to chapter 0..5
+    mapChapterIndex = activeIdx - 1;
+    mapChapterProgress = localProg;
   } else {
-    // Wide shot, closing clouds, and epilogue
+    // Wide shot (7), Closing clouds (8), Epilogue (9)
     mapChapterIndex = 6;
     mapChapterProgress = 1;
   }
 
-  // Cloud curtain parameters:
-  // - Opening: parts laterally from 0 to 1
-  // - Stories (milestones 1..7): clouds parted (openProgress = 1, closeProgress = 0)
-  // - Closing (milestone 8): clouds return from sides (closeProgress: 0 -> 1)
-  // - Epilogue (milestone 9): clouds closed over map (closeProgress = 1)
-  const cloudOpenProgress = activeIndex === 0 ? localProgress : 1;
-  const cloudCloseProgress = activeIndex === 8 ? localProgress : activeIndex >= 9 ? 1 : 0;
-
   const scrollToMilestone = useCallback((index: number) => {
-    const m = MILESTONES[index] || MILESTONES[0];
-    const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    const targetY = m.start * maxScroll + 12;
-    window.scrollTo({ top: targetY, behavior: 'smooth' });
+    const targetId = SECTIONS[index]?.id;
+    if (!targetId) return;
+    const el = document.getElementById(targetId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }, []);
+
+  const isTimelineVisible = activeIdx >= 1 && activeIdx <= 6;
 
   return (
     <div className={styles.appRoot}>
@@ -115,7 +162,7 @@ export default function ScrollyExperience() {
         />
       </div>
 
-      {/* 2. ATMOSPHERIC CLOUD CURTAIN (FULL-BLEED OPENING & CLOSING) */}
+      {/* 2. ATMOSPHERIC CLOUD CURTAIN (SIMPSONS-STYLE OPENING & LEFT CLOUD BANK) */}
       <CloudCurtain
         openProgress={cloudOpenProgress}
         closeProgress={cloudCloseProgress}
@@ -124,7 +171,7 @@ export default function ScrollyExperience() {
       {/* 3. NARRATIVE STREAM (NATURAL DOCUMENT SCROLL FLOW) */}
       <div className={styles.narrativeTrack}>
         {/* Section 0: Portada bajo las nubes */}
-        <section className={styles.openingHeroSection}>
+        <section id="sec-opening" className={styles.openingHeroSection}>
           <div className={styles.openingCard}>
             <div className={styles.flagRibbon} aria-hidden="true">
               <span className={styles.flagStripeSky} />
@@ -136,17 +183,22 @@ export default function ScrollyExperience() {
             <p className={styles.openingLead}>
               El territorio cuenta la historia. Desplazate hacia abajo para iniciar el recorrido de Norte a Sur por los grandes incendios y sus consecuencias en Argentina.
             </p>
+            <div className={styles.scrollCue}>
+              <span className={styles.scrollCueText}>Desplazá para descender al territorio</span>
+              <span className={styles.scrollCueArrow} aria-hidden="true">↓</span>
+            </div>
           </div>
         </section>
 
         {/* 6 Event Story Sections */}
         {GEOGRAPHIC_EVENTS.map((ev, evIdx) => {
           const milestoneIdx = evIdx + 1;
-          const isActive = activeIndex === milestoneIdx;
+          const isActive = activeIdx === milestoneIdx;
 
           return (
             <div
               key={ev.id}
+              id={`sec-${ev.id}`}
               className={`${styles.storySectionWrap} ${isActive ? styles.storyActive : styles.storyDormant}`}
             >
               <StorySection
@@ -160,7 +212,7 @@ export default function ScrollyExperience() {
         })}
 
         {/* Section 7: Final Wide Shot (Contemplation of all 6 burned provinces) */}
-        <div className={styles.wideShotSection}>
+        <div id="sec-wide_shot" className={styles.wideShotSection}>
           <div className={styles.wideShotCard}>
             <span className={styles.wideShotBadge}>Memoria territorial</span>
             <h2 className={styles.wideShotTitle}>Las marcas que quedan en el mapa</h2>
@@ -170,22 +222,25 @@ export default function ScrollyExperience() {
           </div>
         </div>
 
-        {/* Spacer for Closing Clouds veil */}
-        <div className={styles.closingCloudsSpacer} aria-hidden="true" />
+        {/* Section 8: Spacer for Closing Clouds veil */}
+        <div id="sec-closing_clouds" className={styles.closingCloudsSpacer} aria-hidden="true" />
 
         {/* Section 9: Epilogue and verified open data sources */}
-        <div className={styles.epilogueWrap}>
+        <div id="sec-epilogue" className={styles.epilogueWrap}>
           <Epilogue />
         </div>
       </div>
 
-      {/* 4. DISCRETE RIGHT TIMELINE HUD (Minimalist nav dots) */}
-      <nav className={styles.timelineHud} aria-label="Progreso del relato geográfico">
+      {/* 4. DISCRETE RIGHT TIMELINE HUD (Minimalist nav dots, hidden in opening) */}
+      <nav
+        className={`${styles.timelineHud} ${isTimelineVisible ? styles.timelineHudVisible : styles.timelineHudHidden}`}
+        aria-label="Progreso del relato geográfico"
+      >
         <div className={styles.timelineTrack}>
-          {MILESTONES.slice(1, 7).map((m, i) => {
+          {SECTIONS.slice(1, 7).map((m, i) => {
             const milestoneIndex = i + 1;
-            const isPassed = activeIndex > milestoneIndex;
-            const isCurrent = activeIndex === milestoneIndex;
+            const isPassed = activeIdx > milestoneIndex;
+            const isCurrent = activeIdx === milestoneIndex;
 
             return (
               <button
