@@ -8,28 +8,12 @@ import TourStage from './TourStage';
 import TourHud from './TourHud';
 import StoryPod from './StoryPod';
 import Epilogue from './Epilogue';
+import CoverTitle from './CoverTitle';
 import SourcesSection from './SourcesSection';
 import styles from './ScrollyExperience.module.css';
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 const vh = (id: string) => ({ minHeight: SECTIONS.find((s) => s.id === id)!.vh + 'vh' });
-
-/** Title pod: its opacity follows the scroll state directly (no React render per frame). */
-function TitlePod() {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => subscribe(({ st }) => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.opacity = st.title.toFixed(3);
-    el.style.visibility = st.title > 0 ? 'visible' : 'hidden';
-  }), []);
-  return (
-    <div ref={ref} className={styles.titlePod} style={{ opacity: 0, visibility: 'hidden' }}>
-      <h1 className={styles.h1}>Lo que el fuego se llevó</h1>
-      <p className={styles.sub}>Seis historias. 2012–2026.</p>
-    </div>
-  );
-}
 
 /** Scroll hint of the opening: visible only at the very top, gone as soon as the reader scrolls. */
 function Cue() {
@@ -39,7 +23,8 @@ function Cue() {
   }), []);
   return (
     <p ref={ref} className={styles.cue} data-on="1">
-      Deslizá para empezar <span aria-hidden="true">↓</span>
+      <span aria-hidden="true">↓</span>
+      <span className="sr-only">Deslizá para empezar</span>
     </p>
   );
 }
@@ -64,13 +49,12 @@ export default function ScrollyExperience() {
       <TourHud paused={paused} onPause={() => setPaused((p) => !p)} />
 
       <main className={styles.track}>
-        <section id="sec-opening" className={styles.opening} style={vh('sec-opening')} aria-label="Apertura">
+        <section id="sec-opening" className={styles.opening} style={vh('sec-opening')}>
+          <CoverTitle />
           <Cue />
         </section>
 
-        <section id="sec-title" className={styles.titleSec} style={vh('sec-title')}>
-          <TitlePod />
-        </section>
+        <section id="sec-title" className={styles.titleSec} style={vh('sec-title')} aria-hidden="true" />
 
         <div id="sec-reveal" style={vh('sec-reveal')} aria-hidden="true" />
 

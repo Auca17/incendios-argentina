@@ -16,41 +16,15 @@
 .opening { position: relative; }
 .cue {
   position: absolute;
-  top: calc(100vh - 88px);
+  top: calc(100vh - 72px);
   left: 50%;
   transform: translateX(-50%);
-  padding: var(--s-1) var(--s-2);
-  border-radius: 999px;
-  background: var(--t-chip);
-  font: 600 var(--fs-14) / 1 var(--t-font-read);
-  color: var(--t-text);
+  font: 400 var(--fs-32) / 1 var(--t-font-read);
+  color: var(--t-ink);
+  text-shadow: 0 0 12px #fff;
   transition: opacity 300ms var(--ease);
 }
 .cue[data-on='0'] { opacity: 0; }
-
-.titlePod {
-  position: fixed;
-  z-index: 4;
-  top: 50%;
-  left: var(--s-4);
-  width: var(--t-pod-w);
-  padding: var(--s-5) var(--s-4);
-  border-radius: 48px 40px 52px 36px / 40px 48px 36px 44px;
-  background: var(--t-pod);
-  box-shadow: 0 0 0 1px var(--t-pod-ring), 0 24px 64px rgba(0, 0, 0, 0.35);
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-.h1 {
-  font: 700 var(--fs-56) / 1.05 var(--t-font-title);
-  color: var(--t-text);
-  text-wrap: balance;
-}
-.sub {
-  margin-top: var(--s-2);
-  font: 400 var(--fs-20) / 1.4 var(--t-font-read);
-  color: var(--t-text-2);
-}
 
 .story { position: relative; }
 .podSlot {
@@ -89,19 +63,8 @@
     padding: 0 var(--s-2) var(--s-8);
   }
   .widePod { width: auto; padding: var(--s-3); }
-  .opening, .titleSec { position: relative; z-index: 8; }
-  .titlePod {
-    z-index: 8;
-    top: auto;
-    bottom: var(--s-3);
-    left: var(--s-2);
-    right: var(--s-2);
-    width: auto;
-    padding: var(--s-3);
-    transform: none;
-  }
-  .h1 { font-size: var(--fs-32); }
-  .sub { font-size: var(--fs-16); }
+  .opening, .titleSec { position: relative; z-index: 10; }
+  .epilogue { z-index: 10; }
 }
 
 @media (prefers-reduced-motion: reduce) {

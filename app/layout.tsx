@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from 'next';
-import { Cinzel, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { New_Rocker, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
-const cinzel = Cinzel({
+const newRocker = New_Rocker({
   subsets: ['latin'],
-  weight: ['700'],
-  variable: '--font-cinzel',
+  weight: ['400'],
+  variable: '--font-rocker',
   display: 'swap',
 });
 
@@ -41,7 +41,7 @@ export const viewport: Viewport = { themeColor: "#050c16" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${cinzel.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}>
+    <html lang="es" className={`${newRocker.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}>
       <body>{children}</body>
     </html>
   );

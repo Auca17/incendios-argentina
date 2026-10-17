@@ -42,9 +42,10 @@ export type TourState = {
   /** Opacity of the provincial borders and of the HUD. */
   borders: number;
   hud: number;
-  /** Title pod visibility. */
+  /** Title visibility, and how far it moved from the centre of the cover to the side (0..1). */
   title: number;
-  /** -1 = whole country before the tour, 0..5 = fire, 6 = wide shot (all fires visited). */
+  titleDock: number;
+  /** -2 = South America, -1 = Argentina, 0..5 = fire, 6 = wide shot (all fires visited). */
   chapter: number;
   /** Progress inside the fire (0..1); 1 outside the stories. */
   chapterT: number;
@@ -75,19 +76,24 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     }
   }
   const sec = SECTIONS[idx];
-  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, chapter: -1, chapterT: 1, bank: 1, smoke: 0, drift: 0 };
+  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, titleDock: 0, chapter: -2, chapterT: 1, bank: 1, smoke: 0, drift: 0 };
   switch (sec.kind) {
     case 'opening':
+      st.title = 1;
       break;
     case 'title':
-      st.title = seg(t, 0.05, 0.35);
-      st.open = 0.45 * seg(t, 0.35, 1);
+      // a short scroll moves the title from the middle of the cover to the reading column
+      st.title = 1;
+      st.titleDock = seg(t, 0, 0.5);
+      st.open = 0.45 * seg(t, 0.2, 1);
       break;
     case 'reveal':
-      st.title = 1 - seg(t, 0.55, 0.85);
+      st.title = 1 - seg(t, 0.75, 0.95);
+      st.titleDock = 1;
       st.open = 0.45 + 0.55 * seg(t, 0, 0.45);
-      st.borders = seg(t, 0.45, 0.8);
-      st.hud = seg(t, 0.7, 1);
+      st.chapter = t < 0.55 ? -2 : -1;
+      st.borders = seg(t, 0.55, 0.85);
+      st.hud = seg(t, 0.8, 1);
       break;
     case 'story':
       st.open = 1; st.borders = 1; st.hud = 1;
@@ -107,6 +113,7 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
   }
   if (reduced) {
     st.title = st.title > 0 ? 1 : 0;
+    st.titleDock = st.titleDock > 0.5 ? 1 : 0;
     st.open = st.open > 0.5 ? 1 : 0;
     st.close = st.close > 0 ? 1 : 0;
     st.borders = st.borders > 0 ? 1 : 0;

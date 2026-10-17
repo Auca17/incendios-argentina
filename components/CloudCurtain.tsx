@@ -95,7 +95,7 @@ void main() {
     float along = uBank.x < 1.5 ? q.y : q.x;
     float across = uBank.x < 1.5 ? uBank.y - q.x : q.y - uBank.y;
     float wobble = (billow(vec2(along / 140.0, 3.7)) - 0.75) * 70.0;
-    inside = across + wobble + (d - 0.5) * 150.0;
+    inside = across + wobble + (d - 0.5) * 90.0; // reaches at most ~88 px past the edge (BANK_EDGE)
     float b = smoothstep(-12.0, 12.0, inside) * uBank.z;
     if (b > a) { a = b; depth = max(depth, smoothstep(0.0, 220.0, inside)); }
   }
@@ -200,10 +200,12 @@ export default function CloudCurtain() {
       if (key === lastKey) return false;
       lastKey = key;
       canvas.dataset.coverage = cov.toFixed(4);
+      // in front while the curtain covers something or turns to smoke; otherwise only the bank shows, behind the text
+      wrap.current!.dataset.front = cov > 0.001 || st.smoke > 0 ? '1' : '0';
       gl.uniform2f(u.view, w, h);
       gl.uniform1f(u.ratio, ratio);
       gl.uniform1f(u.cov, cov);
-      gl.uniform3f(u.bank, mobile ? 2 : 1, mobile ? h * 0.44 + 24 : podRight(w) + 48, st.bank);
+      gl.uniform3f(u.bank, mobile ? 2 : 1, mobile ? h * 0.44 + 24 : podRight(w) + 24, st.bank);
       gl.uniform2f(u.center, mobile ? w / 2 : (podRight(w) + w) / 2, mobile ? h * 0.25 : h / 2);
       gl.uniform1f(u.smoke, st.smoke);
       gl.uniform1f(u.drift, st.drift);

@@ -9,38 +9,43 @@ import styles from './TourMap.module.css';
 
 /*
  * Map of the tour, drawn on one canvas. Everything it shows comes from the scroll state:
- *  - territory in a neutral cold slate (no biome or land-cover layer: the project has no such data);
- *  - provincial borders, 1 px, faded in when Argentina is revealed;
- *  - the active fire's provinces outlined in amber, its weekly foci lit up to the current week;
- *  - visited provinces keep only a dim outline and their real accumulated foci as ash dots.
- *    No province is ever filled as burnt: the foci are the only marks.
+ *  - South America on Natural Earth II shaded relief (public domain; its tints follow climate, arid
+ *    west and humid east) with the neighbouring countries outlined thin and faint (Natural Earth 1:50m);
+ *  - Argentina's provinces outlined in black, faded in when Argentina is revealed;
+ *  - the active fire's provinces outlined in red-orange, its weekly foci lit up to the current week;
+ *  - visited fires keep a dim outline and their real accumulated foci as embers.
+ *    No province is ever filled as burnt: the foci are the only marks. Each focus cell has a dark rim,
+ *    so it keeps at least 3:1 against whatever terrain is around it.
  * The camera follows a spring (tension 0.052, friction 0.78) whose target depends only on the
- * chapter, and snaps exactly onto the target when it settles, so a scroll position always ends on
- * the same frame.
+ * chapter (-2 South America, -1 Argentina, 0..5 a fire, 6 all Argentina) and snaps onto the target
+ * when it settles, so a scroll position always ends on the same frame.
  */
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 const K = Math.cos((38 * Math.PI) / 180);
-const COUNTRY: Box = [-74.2, -52.8, -55.4, -21.6];
+const ARGENTINA: Box = [-74.2, -52.8, -55.4, -21.6];
+const CONTINENT: Box = [-82, -34, -56, 13];
+const RELIEF: Box = [-94, -24, -63, 14]; // extent of public/map/sudamerica-ne2.webp
 const TENSION = 0.052;
 const FRICTION = 0.78;
 
 type Box = [number, number, number, number]; // minLon, maxLon, minLat, maxLat
 type Prov = { name: string; path: Path2D; box: Box };
 
-const C = {
-  sea0: '#08121f',
-  sea1: '#050c16',
-  land0: '#16222e',
-  land1: '#1f2f3d',
-  border: '49, 70, 90',
-  visited: 'rgba(122, 140, 158, 0.55)',
-  active: '#ffa236',
-  activeGlow: 'rgba(255, 162, 54, 0.22)',
-  hot: '#ffd27a',
-  ember: '#ff8a1f',
-  deep: '#b3361a',
-  ash: '#4a4540',
-  ashLit: '#6e655c',
+export const MAP_COLORS = {
+  sea: '#5288a4', // matches the deep sea at the edges of the relief image
+  neighbour: 'rgba(20, 24, 28, 0.35)',
+  province: '12, 12, 12',
+  visited: 'rgba(70, 22, 12, 0.7)',
+  active: '#ff5a1f',
+  activeHalo: 'rgba(0, 0, 0, 0.55)',
+  rim: '#240800',
+  hot: '#ffd166',
+  ember: '#ff7a1c',
+  deep: '#e8401c',
+  old: '#b3301a',
+  visitedFocus: '#a62a16',
 };
+const C = MAP_COLORS;
 
 export default function TourMap() {
   const wrap = useRef<HTMLDivElement>(null);
@@ -51,6 +56,8 @@ export default function TourMap() {
     const box = wrap.current!;
     const ctx = canvas.getContext('2d')!;
     let provs: Prov[] = [];
+    let neighbours: Path2D | null = null;
+    let relief: HTMLImageElement | null = null;
     const foci = new Map<string, Foci>();
     let live = true;
 
@@ -59,6 +66,18 @@ export default function TourMap() {
       provs = fc.features.map((f: any) => toProv(f));
       request();
     }, () => {});
+    fetch(BASE_PATH + '/data/sudamerica.json').then((r) => r.json()).then((fc) => {
+      if (!live) return;
+      const p = new Path2D();
+      fc.features.forEach((f: any) => addGeometry(p, f.geometry));
+      neighbours = p;
+      lastKey = baseKey = '';
+      request();
+    }, () => {});
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => { if (live) { relief = img; lastKey = baseKey = ''; request(); } };
+    img.src = BASE_PATH + '/map/sudamerica-ne2.webp';
     TOUR_EVENTS.forEach((ev) => loadFoci(ev.id).then((E) => { if (live) { foci.set(ev.id, E); request(); } }, () => {}));
 
     let w = 0, h = 0, dpr = 1;
@@ -80,7 +99,8 @@ export default function TourMap() {
     let lastKey = '';
 
     const boxFor = (chapter: number): Box => {
-      if (chapter < 0 || chapter > 5 || !provs.length) return COUNTRY;
+      if (chapter === -2) return CONTINENT;
+      if (chapter < 0 || chapter > 5 || !provs.length) return ARGENTINA;
       const names: string[] = TOUR_EVENTS[chapter].provs;
       const b: Box = [180, -180, 90, -90];
       provs.forEach((p) => {
@@ -118,7 +138,7 @@ export default function TourMap() {
     };
 
     /*
-     * Layers, so a scroll frame inside a fire draws little: `base` holds sea, land, borders and the
+     * Layers, so a scroll frame inside a fire draws little: `base` holds relief, borders and the
      * visited fires (rebuilt when the camera, the chapter or the borders change); `ash` holds the
      * active fire's weeks older than 8 (rebuilt when that week changes); only the 8 recent weeks
      * are drawn each frame. Same scroll position, same layers, same pixels.
@@ -155,7 +175,7 @@ export default function TourMap() {
       }
       const camKey = c.map((v) => v.toFixed(4)).join(',') + '|' + w + 'x' + h;
 
-      const bk = [camKey, chapter, borders.toFixed(3), provs.length, foci.size].join('|');
+      const bk = [camKey, chapter, borders.toFixed(3), provs.length, foci.size, !!relief, !!neighbours].join('|');
       if (bk !== baseKey) {
         baseKey = bk;
         ashKey = '';
@@ -171,11 +191,11 @@ export default function TourMap() {
       ctx.lineJoin = 'round';
       provs.forEach((p) => {
         if (!a.provs.includes(p.name)) return;
-        ctx.strokeStyle = C.activeGlow;
-        ctx.lineWidth = 6 * px;
+        ctx.strokeStyle = C.activeHalo;
+        ctx.lineWidth = 4.5 * px;
         ctx.stroke(p.path);
         ctx.strokeStyle = C.active;
-        ctx.lineWidth = 1.6 * px;
+        ctx.lineWidth = 2 * px;
         ctx.stroke(p.path);
       });
       if (!Ea) return;
@@ -189,8 +209,7 @@ export default function TourMap() {
         actx.setTransform(1, 0, 0, 1, 0, 0);
         actx.clearRect(0, 0, ash.width, ash.height);
         world(actx);
-        actx.fillStyle = C.ash;
-        for (let wk = 0; wk < ashW; wk++) cells(actx, W[wk], Ea.step, px);
+        for (let wk = 0; wk < ashW; wk++) cells(actx, W[wk], Ea.step, px, C.old, true);
         ashWeek = ashW;
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -198,55 +217,66 @@ export default function TourMap() {
       world(ctx);
       for (let wk = ashW; wk < week; wk++) {
         const age = week - 1 - wk;
-        ctx.fillStyle = age < 1 ? C.hot : age < 3 ? C.ember : C.deep;
-        cells(ctx, W[wk], Ea.step, px);
+        cells(ctx, W[wk], Ea.step, px, age < 1 ? C.hot : age < 3 ? C.ember : C.deep);
       }
     };
 
     const drawBase = (g: CanvasRenderingContext2D, world: (g: CanvasRenderingContext2D) => void, chapter: number, borders: number, px: number) => {
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const sea = g.createLinearGradient(0, 0, 0, h);
-      sea.addColorStop(0, C.sea0);
-      sea.addColorStop(1, C.sea1);
-      g.fillStyle = sea;
+      g.fillStyle = C.sea;
       g.fillRect(0, 0, w, h);
-      if (!provs.length) return;
-
       world(g);
-      const land = g.createLinearGradient(0, 21, 0, 56);
-      land.addColorStop(0, C.land1);
-      land.addColorStop(1, C.land0);
-      g.fillStyle = land;
-      provs.forEach((p) => g.fill(p.path));
-
+      if (relief) {
+        g.imageSmoothingQuality = 'high';
+        g.drawImage(relief, RELIEF[0] * K, -RELIEF[3], (RELIEF[1] - RELIEF[0]) * K, RELIEF[3] - RELIEF[2]);
+      }
       g.lineJoin = 'round';
+      if (neighbours) {
+        g.strokeStyle = C.neighbour;
+        g.lineWidth = 0.8 * px;
+        g.stroke(neighbours);
+      }
+      if (!provs.length) return;
       if (borders > 0) {
-        g.strokeStyle = `rgba(${C.border}, ${(0.6 * borders).toFixed(3)})`;
+        g.strokeStyle = `rgba(${C.province}, ${(0.85 * borders).toFixed(3)})`;
         g.lineWidth = px;
         provs.forEach((p) => g.stroke(p.path));
       }
 
-      // visited fires: dim outline + all their foci as ash (the last two weeks a little lighter)
+      // visited fires: dim outline + all their foci as embers
       const visited = chapter === 6 ? 6 : Math.max(0, chapter);
       for (let i = 0; i < visited; i++) {
         const v = TOUR_EVENTS[i];
         g.strokeStyle = C.visited;
-        g.lineWidth = 1.2 * px;
+        g.lineWidth = 1.6 * px;
         provs.forEach((p) => { if (v.provs.includes(p.name)) g.stroke(p.path); });
         const Ev = foci.get(v.id);
         if (!Ev) continue;
         const W = weeksOf(v.id, Ev);
-        for (let wk = 0; wk < Ev.weeks; wk++) {
-          g.fillStyle = Ev.weeks - 1 - wk < 2 ? C.ashLit : C.ash;
-          cells(g, W[wk], Ev.step, px);
-        }
+        for (let wk = 0; wk < Ev.weeks; wk++) cells(g, W[wk], Ev.step, px, C.visitedFocus, true);
       }
     };
 
-    /** One week of 0.05-degree cells, at least 2.4 px wide so isolated foci stay visible. */
-    const cells = (g: CanvasRenderingContext2D, list: [number, number][], step: number, px: number) => {
+    /**
+     * One week of 0.05-degree cells with a dark rim, at least 2.4 px wide so isolated foci stay visible.
+     * Older weeks (`small`) are drawn at their true size, translucent: dense fires then read as a
+     * density of points over visible terrain, never as a filled province.
+     */
+    const cells = (g: CanvasRenderingContext2D, list: [number, number][], step: number, px: number, fill: string, small = false) => {
+      if (small) {
+        // true cell size, translucent, no rim: density reads as density and the terrain stays visible
+        const sx = step * K * 0.8, sy = step * 0.8;
+        g.globalAlpha = 0.6;
+        g.fillStyle = fill;
+        for (const [lon, lat] of list) g.fillRect(lon * K - sx / 2, -lat - sy / 2, sx, sy);
+        g.globalAlpha = 1;
+        return;
+      }
       const sx = Math.max(step * K, 2.4 * px);
       const sy = Math.max(step, 2.4 * px);
+      g.fillStyle = C.rim;
+      for (const [lon, lat] of list) g.fillRect(lon * K - sx / 2 - px, -lat - sy / 2 - px, sx + 2 * px, sy + 2 * px);
+      g.fillStyle = fill;
       for (const [lon, lat] of list) g.fillRect(lon * K - sx / 2, -lat - sy / 2, sx, sy);
     };
 
@@ -261,26 +291,29 @@ export default function TourMap() {
         className={styles.canvas}
         data-tour-canvas="map"
         role="img"
-        aria-label="Mapa de Argentina con sus provincias y los focos de calor semanales detectados por satélite en cada incendio del recorrido"
+        aria-label="Mapa de Sudamérica con las provincias argentinas y los focos de calor semanales detectados por satélite en cada incendio del recorrido"
       />
     </div>
   );
 }
 
+function addGeometry(p: Path2D, g: any) {
+  const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
+  polys.forEach((poly: number[][][]) => poly.forEach((ring) => {
+    ring.forEach(([lon, lat], i) => (i === 0 ? p.moveTo(lon * K, -lat) : p.lineTo(lon * K, -lat)));
+    p.closePath();
+  }));
+}
+
 function toProv(f: any): Prov {
   const p = new Path2D();
   const b: Box = [180, -180, 90, -90];
+  addGeometry(p, f.geometry);
   const g = f.geometry;
   const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
-  polys.forEach((poly: number[][][]) => {
-    poly.forEach((ring) => {
-      ring.forEach(([lon, lat], i) => {
-        if (i === 0) p.moveTo(lon * K, -lat); else p.lineTo(lon * K, -lat);
-        if (lon < b[0]) b[0] = lon; if (lon > b[1]) b[1] = lon;
-        if (lat < b[2]) b[2] = lat; if (lat > b[3]) b[3] = lat;
-      });
-      p.closePath();
-    });
-  });
+  polys.forEach((poly: number[][][]) => poly[0].forEach(([lon, lat]) => {
+    if (lon < b[0]) b[0] = lon; if (lon > b[1]) b[1] = lon;
+    if (lat < b[2]) b[2] = lat; if (lat > b[3]) b[3] = lat;
+  }));
   return { name: f.properties.name, path: p, box: b };
 }

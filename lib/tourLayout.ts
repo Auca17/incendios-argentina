@@ -8,6 +8,8 @@ const clamp = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
 export const DESKTOP = 1024;
 export const GUTTER = 32;
 export const HUD_W = 72;
+/** Room the cloud bank takes past the reading column (its puffy edge). */
+export const BANK_EDGE = 88;
 
 export const podWidth = (w: number) => clamp(w * 0.3, 340, 460);
 export const podRight = (w: number) => GUTTER + podWidth(w);
@@ -16,7 +18,7 @@ export const sceneWidth = (w: number) => clamp(w * 0.26, 280, 400);
 /** Horizontal band [left, right] the map fits into, in CSS px of the map canvas. */
 export function mapRect(w: number, chapter: number): [number, number] {
   if (w < DESKTOP) return [8, w - 8];
-  const left = podRight(w) + GUTTER;
+  const left = podRight(w) + BANK_EDGE;
   const right = chapter >= 0 && chapter <= 5 ? w - HUD_W - sceneWidth(w) - 24 : w - HUD_W;
   return [left, right];
 }
