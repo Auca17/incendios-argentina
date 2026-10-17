@@ -12,6 +12,8 @@
 //   --out <dir>          directory for the PNGs (created if missing; default ./shots)
 //   --prefix <name>      file name prefix (default "shot")
 //   --fractions <list>   comma list of scroll fractions (default 0,0.25,0.5,0.75,1)
+//   --ys <list>          comma list of absolute scroll positions in px (replaces --fractions); name:px entries
+//                        name the shots (e.g. misiones-050:3555)
 //   --wait <ms>          wait after each scroll before capturing (default 1800)
 //   --text <selectors>   comma-separated CSS selectors whose textContent is printed for every shot
 //   --motion <v>         prefers-reduced-motion to emulate: no-preference (default) or reduce
@@ -49,6 +51,7 @@ const DPR = +(args.dpr || (MOBILE ? 2 : 1));
 const OUT = path.resolve(args.out || 'shots');
 const PREFIX = args.prefix || 'shot';
 const FRACTIONS = (args.fractions || '0,0.25,0.5,0.75,1').split(',').map(Number);
+const YS = args.ys ? args.ys.split(',').map((e) => { const [n, v] = e.includes(':') ? e.split(':') : [null, e]; return { n, y: +v }; }) : null;
 const WAIT = +(args.wait || 1800);
 const MOTION = args.motion === 'reduce' ? 'reduce' : 'no-preference';
 const TEXTS = args.text ? args.text.split(',').map((s) => s.trim()).filter(Boolean) : [];
@@ -179,11 +182,12 @@ async function main() {
 
   if (args.eval) console.log('eval:', JSON.stringify(await evaluate(args.eval)));
   console.log(`viewport ${W}x${H} dpr ${DPR} mobile ${MOBILE} motion ${MOTION} · ${args.url}`);
-  for (const f of FRACTIONS) {
-    const sc = await scrollTo(f);
+  const stops = YS ? YS : FRACTIONS.map((f) => ({ f }));
+  for (const st of stops) {
+    const sc = YS ? await evaluate(`(() => { window.scrollTo(0, ${st.y}); return { container: 'html', top: Math.round(scrollY), max: document.documentElement.scrollHeight - innerHeight }; })()`) : await scrollTo(st.f);
     await sleep(WAIT);
     const pr = await probe();
-    const name = `${PREFIX}_${String(Math.round(f * 100)).padStart(3, '0')}.png`;
+    const name = YS ? `${PREFIX}_${st.n || st.y}.png` : `${PREFIX}_${String(Math.round(st.f * 100)).padStart(3, '0')}.png`;
     const shot = await send('Page.captureScreenshot', { format: 'png' });
     fs.writeFileSync(path.join(OUT, name), Buffer.from(shot.data, 'base64'));
     console.log(`  ${name}  scroll ${sc.container} ${sc.top}/${sc.max}`);

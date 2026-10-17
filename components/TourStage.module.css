@@ -1,0 +1,86 @@
+/* Overlays on the map band (desktop) or on the fixed top stage (mobile). */
+.notice,
+.counter,
+.scene {
+  position: fixed;
+  z-index: 2;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 300ms var(--ease), visibility 0s linear 300ms;
+}
+.on {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 300ms var(--ease), visibility 0s;
+}
+
+.notice {
+  top: var(--s-3);
+  left: var(--t-map-left);
+  max-width: calc(100vw - var(--t-map-left) - var(--t-hud-w) - var(--s-2));
+  padding: var(--s-1) var(--s-2);
+  border-radius: 999px;
+  background: var(--t-chip);
+  box-shadow: 0 0 0 1px var(--t-line);
+  font: 400 var(--fs-14) / 1.3 var(--t-font-read);
+  color: var(--t-text-2);
+}
+.notice b { font-weight: 600; color: var(--t-text); }
+
+.counter {
+  bottom: var(--s-3);
+  left: var(--t-map-left);
+  max-width: calc(100vw - var(--t-map-left) - var(--t-hud-w) - var(--t-scene-w) - var(--s-4));
+  display: grid;
+  gap: var(--s-half);
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-2);
+  background: var(--t-chip);
+  box-shadow: 0 0 0 1px var(--t-line);
+}
+.counterHead { font: 400 var(--fs-12) / 1.3 var(--t-font-read); color: var(--t-muted); }
+.counterLine { font: 400 var(--fs-14) / 1.3 var(--t-font-mono); color: var(--t-text-2); font-variant-numeric: tabular-nums; }
+.counterLine b { font-weight: 600; color: var(--t-amber); }
+
+/* scene box on the right, between the map and the HUD */
+.scene {
+  bottom: var(--s-3);
+  right: var(--t-hud-w);
+  width: var(--t-scene-w);
+}
+.scene > section {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+@media (max-width: 1023.98px) {
+  .notice {
+    top: var(--s-1);
+    left: var(--s-1);
+    max-width: calc(100vw - 2 * var(--s-1));
+    padding: var(--s-half) var(--s-1);
+    font-size: var(--fs-12);
+    z-index: 6;
+  }
+  .counter {
+    top: calc(var(--t-stage-h) - 52px);
+    bottom: auto;
+    left: var(--s-1);
+    max-width: 56vw;
+    padding: var(--s-half) var(--s-1);
+    z-index: 6;
+  }
+  .counterHead { display: none; }
+  .counterLine { font-size: var(--fs-12); }
+  .scene {
+    top: calc(var(--t-stage-h) - 8px);
+    bottom: auto;
+    right: var(--s-1);
+    width: min(42vw, 220px);
+    transform: translateY(-100%);
+    z-index: 6;
+  }
+  .scene > section { gap: 0; }
+  .scene > section > div:last-child { display: none; } /* caption: the pod below carries the text */
+}

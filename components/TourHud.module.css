@@ -1,0 +1,117 @@
+.hud {
+  position: fixed;
+  z-index: 5;
+  top: var(--s-3);
+  right: var(--s-2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s-3);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 300ms var(--ease), visibility 0s linear 300ms;
+}
+.on { opacity: 1; visibility: visible; transition: opacity 300ms var(--ease), visibility 0s; }
+
+/* thin overall progress, behind the dots */
+.track {
+  position: absolute;
+  top: 0;
+  right: 19px;
+  width: 2px;
+  height: calc(6 * 40px + 5 * 8px);
+  background: var(--t-line);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--t-amber);
+  transform-origin: top;
+  transform: scaleY(0);
+}
+
+.dots {
+  position: relative;
+  display: grid;
+  gap: var(--s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.dot i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--t-sea-1);
+  box-shadow: 0 0 0 1.5px var(--t-control);
+}
+.dotDone i { background: var(--t-control); }
+.dotOn i { width: 14px; height: 14px; background: var(--t-amber); box-shadow: 0 0 0 3px rgba(255, 162, 54, 0.25); }
+.dot:hover i { box-shadow: 0 0 0 1.5px var(--t-amber); }
+.label {
+  position: absolute;
+  right: 44px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: var(--s-half) var(--s-1);
+  border-radius: var(--r-1);
+  background: var(--t-chip);
+  box-shadow: 0 0 0 1px var(--t-line);
+  font: 600 var(--fs-14) / 1.3 var(--t-font-read);
+  color: var(--t-text);
+  white-space: nowrap;
+}
+
+.tools {
+  display: grid;
+  justify-items: end;
+  gap: var(--s-1);
+}
+.tool {
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 var(--s-1);
+  border: 1px solid var(--t-control);
+  border-radius: 999px;
+  background: var(--t-chip);
+  color: var(--t-text);
+  font: 600 var(--fs-12) / 1 var(--t-font-read);
+  text-decoration: none;
+  cursor: pointer;
+}
+.tool:hover { border-color: var(--t-amber); }
+
+@media (max-width: 1023.98px) {
+  .hud {
+    top: calc(var(--s-1) + 36px);
+    right: var(--s-1);
+    flex-direction: row;
+    align-items: center;
+    gap: var(--s-1);
+    transform: none;
+    z-index: 7;
+  }
+  .track { display: none; }
+  .dots { grid-auto-flow: column; gap: 0; }
+  .dot { width: 28px; height: 32px; }
+  .label { display: none; }
+  .tools { grid-auto-flow: column; gap: var(--s-half); }
+  .tool { min-width: 32px; height: 32px; }
+}

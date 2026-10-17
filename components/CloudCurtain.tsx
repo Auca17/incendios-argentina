@@ -1,293 +1,200 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import { subscribe, type Frame } from '../lib/scrollDriver';
+import { DESKTOP, podRight } from '../lib/tourLayout';
 import styles from './CloudCurtain.module.css';
 
-type Props = {
-  /** 0 = full Simpsons sky with cumulus clouds, 1 = parted (left bank active, right side clear) */
-  openProgress: number;
-  /** 0 = normal reading, 1 = closing clouds veil over whole screen before epilogue */
-  closeProgress?: number;
-};
-
-interface CloudLobe {
-  dx: number;    // offset X relative to radius (-1.2 to 1.2)
-  dy: number;    // offset Y relative to radius (-0.8 to 0.8)
-  rRatio: number; // radius relative to cloud scale
-  shade: number; // 0 = sunlit bright white, 0.5 = mid body, 1.0 = underside shadow
-}
-
-interface StylizedCloud {
-  type: 'left_bank' | 'parting_right';
-  xRatio: number; // normalized initial X (0..1)
-  yRatio: number; // normalized initial Y (0..1)
-  scale: number;  // overall cloud radius in px
-  lobes: CloudLobe[];
-  vx: number;     // gentle horizontal drift
-  vy: number;     // gentle vertical convection
-  baseAlpha: number;
-}
-
-/**
- * Builds a sculpted, volumetric cumulus cloud inspired by "The Simpsons" and Ghibli skies.
- * Composed of:
- * - Wide, cool shaded underbelly lobes (bottom).
- * - Puffy, billowy ivory-white body lobes (middle).
- * - Brilliant sunlit crest dome lobes (top).
+/*
+ * Hand-drawn cumulus clouds on a canvas (no images): slate base, ivory body, lit domes.
+ * Two layers:
+ *  - curtain: a jittered grid that covers the whole viewport. It parts to the right while `open`
+ *    goes 0 -> 1 (right-hand clouds first) and comes back from both sides while `close` goes 0 -> 1,
+ *    over a flat fill that guarantees full, opaque coverage in the centre once closed.
+ *  - left bank (desktop only): a column of clouds behind the reading pod; it never enters the map band.
+ * Positions are a pure function of (open, close, viewport): no time, no randomness at draw time
+ * (the layout comes from a seeded generator). Each cloud is pre-rendered once into a sprite and the
+ * canvas is redrawn only when that state changes.
  */
-function createVolumetricCloud(
-  type: 'left_bank' | 'parting_right',
-  initialX: number,
-  initialY: number,
-  scale: number
-): StylizedCloud {
-  const lobes: CloudLobe[] = [];
+type Lobe = [number, number, number]; // dx, dy, r (relative to R)
+type Cloud = { hx: number; hy: number; R: number; sprite: HTMLCanvasElement; edge: boolean };
 
-  // 1. Underbelly base shadow lobes (3 lobes, wide and flatter)
-  lobes.push({ dx: -0.65, dy: 0.32, rRatio: 0.68, shade: 0.92 });
-  lobes.push({ dx: 0.05, dy: 0.38, rRatio: 0.74, shade: 0.88 });
-  lobes.push({ dx: 0.72, dy: 0.30, rRatio: 0.65, shade: 0.95 });
+const SKY0 = '#1d3550';
+const SKY1 = '#5f7f9e';
+const SHADE = '#8a99ab';
+const BODY = '#e6e2da';
+const BODY_LIT = '#f6f3ed';
+const DOME = '#fdfbf7';
+const FILL0 = '#dcdfe2';
+const FILL1 = '#c4ccd5';
 
-  // 2. Mid body lobes (3 to 4 billows)
-  lobes.push({ dx: -0.75, dy: 0.02, rRatio: 0.78, shade: 0.52 });
-  lobes.push({ dx: -0.25, dy: -0.05, rRatio: 0.88, shade: 0.45 });
-  lobes.push({ dx: 0.35, dy: -0.02, rRatio: 0.85, shade: 0.48 });
-  lobes.push({ dx: 0.82, dy: 0.05, rRatio: 0.72, shade: 0.55 });
-
-  // 3. Top sunlit billowing dome lobes (3 lofty domes catching direct sunlight)
-  lobes.push({ dx: -0.42, dy: -0.38, rRatio: 0.72, shade: 0.08 });
-  lobes.push({ dx: 0.12, dy: -0.48, rRatio: 0.84, shade: 0.04 }); // tallest center dome
-  lobes.push({ dx: 0.58, dy: -0.32, rRatio: 0.68, shade: 0.12 });
-
-  // 4. Fluffy side accents
-  lobes.push({ dx: -1.02, dy: 0.18, rRatio: 0.45, shade: 0.70 });
-  lobes.push({ dx: 1.08, dy: 0.15, rRatio: 0.48, shade: 0.72 });
-
-  // Sort: base shadow lobes first, mid lobes second, top domes last
-  lobes.sort((a, b) => b.shade - a.shade);
-
-  return {
-    type,
-    xRatio: initialX,
-    yRatio: initialY,
-    scale,
-    lobes,
-    vx: (Math.random() - 0.5) * 0.00016,
-    vy: -0.00018 - Math.random() * 0.00022, // gentle convection upward
-    baseAlpha: 0.92 + Math.random() * 0.08, // Solid, tangible cartoon presence
+function rng(seed: number) {
+  return () => {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
 
-/**
- * Renders a single volumetric lobe with solid cartoon core and soft atmospheric rim.
- */
-function renderVolumetricLobe(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  r: number,
-  shade: number,
-  alpha: number
-) {
-  if (r <= 2 || alpha <= 0.015) return;
+const BASE: Lobe[] = [[-0.75, 0.3, 0.55], [0, 0.36, 0.62], [0.75, 0.3, 0.55]];
+const BODYL: Lobe[] = [[-0.98, 0.1, 0.48], [-0.45, -0.04, 0.68], [0.2, -0.1, 0.74], [0.82, 0.06, 0.56]];
+const DOMES: Lobe[] = [[-0.36, -0.42, 0.5], [0.18, -0.55, 0.58], [0.62, -0.3, 0.45]];
 
-  const grad = ctx.createRadialGradient(
-    cx - r * 0.18,
-    cy - r * 0.26,
-    r * 0.08,
-    cx,
-    cy,
-    r
-  );
-
-  // Compute color based on 3-tier lighting:
-  // - Top dome (0.0): #ffffff (pure brilliant sunlit white)
-  // - Mid body (0.5): #f2f7fc (clean ivory white)
-  // - Shadow underbelly (1.0): #9cb2cc (cool periwinkle slate)
-  let rC: number, gC: number, bC: number;
-  if (shade < 0.35) {
-    rC = 255;
-    gC = 255;
-    bC = 255;
-  } else if (shade < 0.75) {
-    const t = (shade - 0.35) / 0.4;
-    rC = Math.round(255 - t * 14);
-    gC = Math.round(255 - t * 10);
-    bC = Math.round(255 - t * 4);
-  } else {
-    const t = (shade - 0.75) / 0.25;
-    rC = Math.round(241 - t * 85);
-    gC = Math.round(245 - t * 67);
-    bC = Math.round(251 - t * 47);
-  }
-
-  // SOLID cartoon core: 0 to 74% radius is opaque; 74% to 100% provides clean antialiased contour
-  grad.addColorStop(0, `rgba(${rC}, ${gC}, ${bC}, ${alpha * 0.98})`);
-  grad.addColorStop(0.74, `rgba(${rC}, ${gC}, ${bC}, ${alpha * 0.95})`);
-  grad.addColorStop(0.90, `rgba(${rC}, ${gC}, ${bC}, ${alpha * 0.55})`);
-  grad.addColorStop(1, `rgba(${rC}, ${gC}, ${bC}, 0)`);
-
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.fill();
+function makeSprite(R: number, dpr: number, rnd: () => number): HTMLCanvasElement {
+  const W = 2.9 * R, H = 2.0 * R, cx = 1.45 * R, cy = 1.1 * R;
+  const c = document.createElement('canvas');
+  c.width = Math.ceil(W * dpr);
+  c.height = Math.ceil(H * dpr);
+  const g = c.getContext('2d')!;
+  g.scale(dpr, dpr);
+  const j = (l: Lobe): Lobe => [l[0] + (rnd() - 0.5) * 0.12, l[1] + (rnd() - 0.5) * 0.1, l[2] * (0.92 + rnd() * 0.16)];
+  const lobes = [...BASE.map(j), ...BODYL.map(j), ...DOMES.map(j)];
+  // one silhouette: the union of all lobes, shaded top to bottom (lit domes, ivory body, slate base)
+  const shape = new Path2D();
+  lobes.forEach(([dx, dy, r]) => { shape.moveTo(cx + dx * R + r * R, cy + dy * R); shape.arc(cx + dx * R, cy + dy * R, r * R, 0, Math.PI * 2); });
+  const body = g.createLinearGradient(0, cy - 1.15 * R, 0, cy + 0.62 * R);
+  body.addColorStop(0, DOME);
+  body.addColorStop(0.45, BODY_LIT);
+  body.addColorStop(0.72, BODY);
+  body.addColorStop(1, SHADE);
+  g.fillStyle = body;
+  g.fill(shape);
+  // soft volume inside the silhouette: lit tops of the domes, a cool shade under the body
+  g.save();
+  g.clip(shape);
+  lobes.forEach(([dx, dy, r], i) => {
+    const x = cx + dx * R, y = cy + dy * R, rr = r * R;
+    const lit = g.createRadialGradient(x - rr * 0.3, y - rr * 0.4, 0, x - rr * 0.3, y - rr * 0.4, rr * 0.9);
+    lit.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+    lit.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    g.fillStyle = lit;
+    g.fillRect(x - rr, y - rr, 2 * rr, 2 * rr);
+    if (i >= BASE.length) {
+      const sh = g.createRadialGradient(x, y + rr * 0.9, 0, x, y + rr * 0.9, rr * 0.8);
+      sh.addColorStop(0, 'rgba(125, 142, 162, 0.35)');
+      sh.addColorStop(1, 'rgba(125, 142, 162, 0)');
+      g.fillStyle = sh;
+      g.fillRect(x - rr, y, 2 * rr, 2 * rr);
+    }
+  });
+  g.restore();
+  // flat base
+  g.globalCompositeOperation = 'destination-out';
+  g.fillRect(0, cy + 0.62 * R, W, H);
+  return c;
 }
 
-/**
- * Atmospheric Simpsons-Style Cloud Curtain:
- * - Opening: Starts immersed in a radiant celestial blue sky with sculpted, puffy cumulus clouds.
- * - Parting: As user scrolls, center and right clouds fly out to the right like The Simpsons intro, clearing the satellite map.
- * - Left Bank: Left clouds stay, clustering in the left ~42vw column as living atmospheric clouds/smoke behind the story pods.
- * - Closing: Clouds billow back across the whole screen before the epilogue.
- */
-export default function CloudCurtain({ openProgress, closeProgress = 0 }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+const ease = (t: number) => t * t * (3 - 2 * t);
+const seg = (x: number, a: number, b: number) => Math.min(1, Math.max(0, (x - a) / (b - a)));
 
-  const openRef = useRef(openProgress);
-  openRef.current = openProgress;
-  const closeRef = useRef(closeProgress);
-  closeRef.current = closeProgress;
+export default function CloudCurtain() {
+  const cv = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const cv = canvasRef.current;
-    if (!cv) return;
-    const ctx = cv.getContext('2d');
-    if (!ctx) return;
+    const canvas = cv.current!;
+    const ctx = canvas.getContext('2d')!;
+    let w = 0, h = 0, dpr = 1;
+    let curtain: Cloud[] = [];
+    let bank: Cloud[] = [];
+    let lastKey = '';
 
-    let animId = 0;
-    let w = (cv.width = window.innerWidth);
-    let h = (cv.height = window.innerHeight);
-
-    const onResize = () => {
-      w = cv.width = window.innerWidth;
-      h = cv.height = window.innerHeight;
-    };
-    window.addEventListener('resize', onResize);
-
-    const clouds: StylizedCloud[] = [];
-
-    // 1. Persistent Left Bank Clouds:
-    // Flank the left side (-0.1 to 0.38) and remain active throughout the narrative.
-    const leftCount = 12;
-    for (let i = 0; i < leftCount; i++) {
-      const x = -0.06 + (i / leftCount) * 0.40 + (Math.random() - 0.5) * 0.06;
-      const y = (i / leftCount) * 1.25 - 0.12 + (Math.random() - 0.5) * 0.1;
-      const scale = 125 + Math.random() * 85;
-      clouds.push(createVolumetricCloud('left_bank', x, y, scale));
-    }
-
-    // 2. Parting Right/Center Clouds (The Simpsons opening veil):
-    // Fill the center and right sky in the opening, and fly out to the right when scrolling.
-    const rightCount = 16;
-    for (let i = 0; i < rightCount; i++) {
-      const x = 0.22 + (i / rightCount) * 0.86 + (Math.random() - 0.5) * 0.08;
-      const y = (i / rightCount) * 1.20 - 0.10 + (Math.random() - 0.5) * 0.12;
-      const scale = 140 + Math.random() * 100;
-      clouds.push(createVolumetricCloud('parting_right', x, y, scale));
-    }
-
-    const render = () => {
-      animId = requestAnimationFrame(render);
-
-      const curOpen = openRef.current;
-      const curClose = closeRef.current;
-      const isClosing = curClose > 0.001;
-
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
-        cv.width = Math.round(w * dpr);
-        cv.height = Math.round(h * dpr);
+    const build = () => {
+      w = window.innerWidth;
+      h = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, w < DESKTOP ? 1.5 : 2);
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      const rnd = rng(20120120);
+      const R = Math.max(w, h) * (w < DESKTOP ? 0.2 : 0.16);
+      const cols = Math.ceil(w / (R * 1.7)) + 1;
+      const rows = Math.ceil(h / (R * 1.05)) + 1;
+      curtain = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const hx = ((c + (r % 2) * 0.5) / (cols - 1)) * w + (rnd() - 0.5) * R * 0.4;
+          const hy = (r / (rows - 1)) * h + (rnd() - 0.5) * R * 0.3;
+          const rr = R * (0.85 + rnd() * 0.3);
+          const edge = r === 0 || r === rows - 1 || hx < R * 0.9 || hx > w - R * 0.9;
+          curtain.push({ hx, hy, R: rr, sprite: makeSprite(rr, dpr, rnd), edge });
+        }
       }
+      bank = [];
+      if (w >= DESKTOP) {
+        const right = podRight(w);
+        const Rb = right * 0.36;
+        const n = Math.ceil(h / (Rb * 0.95)) + 1;
+        for (let i = 0; i < n; i++) {
+          const hx = right * (0.22 + (i % 2) * 0.3) + (rnd() - 0.5) * Rb * 0.2;
+          const hy = (i / (n - 1)) * h + (rnd() - 0.5) * Rb * 0.2;
+          // keep the sprite's right edge inside the reading column plus one gutter
+          const R2 = Math.min(Rb * (0.85 + rnd() * 0.25), (right + 24 - hx) / 1.45);
+          bank.push({ hx, hy, R: R2, sprite: makeSprite(R2, dpr, rnd), edge: true });
+        }
+      }
+      lastKey = '';
+    };
 
+    const put = (cl: Cloud, x: number, y: number) => {
+      ctx.drawImage(cl.sprite, x - 1.45 * cl.R, y - 1.1 * cl.R, 2.9 * cl.R, 2.0 * cl.R);
+    };
+
+    const draw = (open: number, close: number) => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-
-      // ================= A. SIMPSONS CELESTIAL SKY GRADIENT =================
-      // Vivid celestial daytime sky. Fades out smoothly as the user descends into the territory.
-      if (curOpen < 0.98 && !isClosing) {
-        const skyAlpha = Math.max(0, 1 - curOpen * 1.25);
-        const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
-        skyGrad.addColorStop(0, `rgba(22, 92, 185, ${skyAlpha * 0.96})`); // deep royal sky
-        skyGrad.addColorStop(0.42, `rgba(50, 142, 235, ${skyAlpha * 0.92})`); // Simpsons azure
-        skyGrad.addColorStop(0.78, `rgba(125, 195, 252, ${skyAlpha * 0.85})`);
-        skyGrad.addColorStop(1, `rgba(180, 225, 255, ${skyAlpha * 0.75})`); // soft horizon
-
-        ctx.fillStyle = skyGrad;
+      const sky = 1 - seg(open, 0.25, 0.85);
+      if (sky > 0) {
+        const g = ctx.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0, SKY0);
+        g.addColorStop(1, SKY1);
+        ctx.globalAlpha = sky;
+        ctx.fillStyle = g;
         ctx.fillRect(0, 0, w, h);
+        ctx.globalAlpha = 1;
       }
-
-      // ================= B. VOLUMETRIC CUMULUS CLOUDS =================
-      const partingProgress = Math.min(1, Math.max(0, curOpen));
-      const partingX = Math.pow(partingProgress, 0.8) * (w * 1.15);
-
-      clouds.forEach((cloud) => {
-        // Continuous organic drift
-        cloud.xRatio += cloud.vx;
-        cloud.yRatio += cloud.vy;
-
-        // Wrap around vertically
-        if (cloud.yRatio < -0.35) {
-          cloud.yRatio = 1.35;
-          cloud.xRatio += (Math.random() - 0.5) * 0.05;
+      bank.forEach((cl) => put(cl, cl.hx, cl.hy));
+      if (close > 0) {
+        const fill = seg(close, 0.45, 0.9);
+        if (fill > 0) {
+          const g = ctx.createLinearGradient(0, 0, 0, h);
+          g.addColorStop(0, FILL0);
+          g.addColorStop(1, FILL1);
+          ctx.globalAlpha = fill;
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, w, h);
+          ctx.globalAlpha = 1;
         }
-        if (cloud.yRatio > 1.35) {
-          cloud.yRatio = -0.35;
-        }
-
-        let cx = cloud.xRatio * w;
-        let cy = cloud.yRatio * h;
-        let effectiveAlpha = 0;
-
-        if (isClosing) {
-          // Closing mode: clouds billow back from both sides across the whole screen
-          const closeParting = (1 - curClose) * w * 0.95;
-          cx = cloud.type === 'left_bank' ? cx - closeParting : cx + closeParting;
-          effectiveAlpha = cloud.baseAlpha * curClose;
-        } else if (cloud.type === 'parting_right') {
-          // Right & center clouds fly off to the right like The Simpsons opening
-          cx += partingX;
-          const fadeOut = Math.max(0, 1 - partingProgress * 1.28);
-          effectiveAlpha = cloud.baseAlpha * fadeOut;
-        } else {
-          // Left persistent bank:
-          // In opening: covers left sky (alpha ~ 0.95).
-          // When opened: stays as living atmospheric cloud/smoke bank on the left (alpha ~ 0.45 - 0.55).
-          // Pull gently inward to left margin as parting occurs to keep map 100% clear:
-          const targetX = cloud.xRatio * (1 - partingProgress * 0.45);
-          cx = targetX * w;
-          const maxAllowedCx = w * 0.22;
-          if (cx > maxAllowedCx) {
-            cx = maxAllowedCx;
-          }
-          const openAlpha = 0.45 + (1 - partingProgress) * 0.52;
-          effectiveAlpha = cloud.baseAlpha * openAlpha;
-        }
-
-        if (effectiveAlpha <= 0.015) return;
-
-        // Render each lobe of the cloud
-        const baseRadius = cloud.scale;
-
-        cloud.lobes.forEach((lobe) => {
-          const lx = cx + lobe.dx * baseRadius;
-          const ly = cy + lobe.dy * baseRadius;
-          const lr = baseRadius * lobe.rRatio;
-
-          renderVolumetricLobe(ctx, lx, ly, lr, lobe.shade, effectiveAlpha);
+        const k = 1 - ease(close);
+        curtain.forEach((cl) => {
+          if (fill >= 1 && !cl.edge) return; // closed: flat centre, volume only at the edges
+          const dir = cl.hx < w / 2 ? -1 : 1;
+          put(cl, cl.hx + dir * k * (w * 0.8), cl.hy);
         });
+        return;
+      }
+      if (open >= 1) return;
+      curtain.forEach((cl) => {
+        const delay = 0.5 * (1 - cl.hx / w); // right-hand clouds leave first
+        const m = ease(seg(open, delay * 0.9, delay * 0.9 + 0.5));
+        put(cl, cl.hx + m * (w - cl.hx + cl.R * 1.6), cl.hy);
       });
     };
 
-    render();
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('resize', onResize);
+    const onFrame = (f: Frame) => {
+      if (f.vw !== w || f.vh !== h) build();
+      const key = f.st.open.toFixed(4) + '|' + f.st.close.toFixed(4);
+      if (key === lastKey) return false;
+      lastKey = key;
+      draw(f.st.open, f.st.close);
+      return false;
     };
+
+    build();
+    return subscribe(onFrame);
   }, []);
 
   return (
-    <div className={styles.curtainWrap} aria-hidden="true">
-      <canvas ref={canvasRef} className={styles.cloudCanvas} />
+    <div className={styles.curtain} aria-hidden="true">
+      <canvas ref={cv} className={styles.canvas} data-tour-canvas="clouds" />
     </div>
   );
 }

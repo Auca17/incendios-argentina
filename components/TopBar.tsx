@@ -11,6 +11,7 @@ export default function TopBar({ index, count, name }: Props) {
       <span className={styles.chapter}>
         {name}
       </span>
+      <a className={styles.tour} href={(process.env.NEXT_PUBLIC_BASE_PATH || '') + '/'}>Recorrido guiado</a>
     </header>
   );
 }

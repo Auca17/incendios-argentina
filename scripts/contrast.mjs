@@ -47,6 +47,13 @@ const S = {
   scene: surf('#0b0706'),
   accent: surf('var(--accent)'),
   accentSoft: surf('var(--accent-soft)'),
+  // guided tour, worst cases: translucent pods and chips composited over the brightest thing that can
+  // sit behind them (the lit cloud dome, or the hottest fire dot on the map)
+  tPod: over(parse('var(--t-pod)'), parse('#fdfbf7')),
+  tChip: over(parse('var(--t-chip)'), parse('#ffd27a')),
+  tChipCloud: over(parse('var(--t-chip)'), parse('#fdfbf7')),
+  tPaper: parse('var(--t-paper)'),
+  tAmber: parse('var(--t-amber)'),
 };
 
 // [label, foreground, surface, size px, bold, kind]  kind: 'text' | 'ui'
@@ -83,6 +90,25 @@ const PAIRS = [
   U('focus outline accent on page', 'var(--accent)', 'page'),
   U('focus outline accent on #1a1a1a fields', 'var(--accent)', 'field'),
   U('inactive nav dot (muted, .7) on card', 'rgba(154, 145, 138, 0.7)', 'card'),
+  // guided tour (home)
+  T('tour: title text on pod over lit cloud', 'var(--t-text)', 'tPod', 24, true),
+  T('tour: body text-2 on pod over lit cloud', 'var(--t-text-2)', 'tPod', 16),
+  T('tour: muted on pod over lit cloud', 'var(--t-muted)', 'tPod', 12),
+  T('tour: amber label on pod over lit cloud', 'var(--t-amber)', 'tPod', 14),
+  T('tour: month chart labels #b09d92 on pod', '#b09d92', 'tPod', 12),
+  T('tour: text on chip over hot foci', 'var(--t-text)', 'tChip', 14),
+  T('tour: text-2 on chip over hot foci', 'var(--t-text-2)', 'tChip', 14),
+  T('tour: muted on chip over hot foci', 'var(--t-muted)', 'tChip', 12),
+  T('tour: amber on chip over hot foci', 'var(--t-amber)', 'tChip', 14, true),
+  T('tour: scroll cue on chip over cloud', 'var(--t-text)', 'tChipCloud', 14, true),
+  T('tour: text-2 on sources paper', 'var(--t-text-2)', 'tPaper', 16),
+  T('tour: muted on sources paper', 'var(--t-muted)', 'tPaper', 12),
+  T('tour: amber links on sources paper', 'var(--t-amber)', 'tPaper', 12),
+  T('tour: button text #1a0d02 on amber', '#1a0d02', 'tAmber', 14, true),
+  U('tour: control border on pod over lit cloud', 'var(--t-control)', 'tPod'),
+  U('tour: control border on chip over hot foci', 'var(--t-control)', 'tChip'),
+  U('tour: control border on sources paper', 'var(--t-control)', 'tPaper'),
+  U('tour: focus outline amber on pod', 'var(--accent)', 'tPod'),
 ];
 
 const rows = PAIRS.map((p) => {

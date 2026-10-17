@@ -4,21 +4,21 @@ import './globals.css';
 
 const cinzel = Cinzel({
   subsets: ['latin'],
-  weight: ['600', '700', '800', '900'],
+  weight: ['700'],
   variable: '--font-cinzel',
   display: 'swap',
 });
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '600', '700'],
   variable: '--font-jakarta',
   display: 'swap',
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '600'],
   variable: '--font-jetbrains',
   display: 'swap',
 });
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = { themeColor: '#0a0a0a' };
+export const viewport: Viewport = { themeColor: "#050c16" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

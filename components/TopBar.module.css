@@ -35,3 +35,17 @@
   .bar { min-height: var(--topbar-h-m); padding: var(--s-half) var(--s-2); }
   .title { font-size: 13px; }
 }
+
+/* back to the guided tour (home); border meets 3:1 like the other controls */
+.tour {
+  margin-left: var(--s-2);
+  padding: var(--s-half) var(--s-1);
+  border: 1px solid var(--ring-ui);
+  border-radius: 999px;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.tour:hover { border-color: var(--accent); }
