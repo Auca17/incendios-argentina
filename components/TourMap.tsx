@@ -102,7 +102,7 @@ export default function TourMap() {
       for (let i = 0; i < 6; i++) {
         vel[i] = (vel[i] + (target[i] - cam[i]) * TENSION) * FRICTION;
         cam[i] += vel[i];
-        const eps = i < 4 ? 0.002 : 0.5;
+        const eps = i < 4 ? 0.01 : 1; // about a third of a pixel: the snap is invisible
         if (Math.abs(target[i] - cam[i]) < eps && Math.abs(vel[i]) < eps) { cam[i] = target[i]; vel[i] = 0; } else moving = true;
       }
 
@@ -120,8 +120,8 @@ export default function TourMap() {
     /*
      * Layers, so a scroll frame inside a fire draws little: `base` holds sea, land, borders and the
      * visited fires (rebuilt when the camera, the chapter or the borders change); `ash` holds the
-     * active fire's weeks older than 8, extended week by week; only the 8 recent weeks are drawn
-     * each frame. Same scroll position, same layers, same pixels.
+     * active fire's weeks older than 8 (rebuilt when that week changes); only the 8 recent weeks
+     * are drawn each frame. Same scroll position, same layers, same pixels.
      */
     const base = document.createElement('canvas');
     const bctx = base.getContext('2d')!;
@@ -182,16 +182,15 @@ export default function TourMap() {
       const W = weeksOf(a.id, Ea);
       const ashW = Math.max(0, week - 8);
       const ak = camKey + '|' + chapter;
-      if (ak !== ashKey || ashW < ashWeek) {
+      // rebuilt whole whenever it changes: drawing it week by week would round the antialiased edges
+      // differently depending on the scroll path, and the same position must give the same pixels
+      if (ak !== ashKey || ashW !== ashWeek) {
         ashKey = ak;
         actx.setTransform(1, 0, 0, 1, 0, 0);
         actx.clearRect(0, 0, ash.width, ash.height);
-        ashWeek = 0;
-      }
-      if (ashW > ashWeek) {
         world(actx);
         actx.fillStyle = C.ash;
-        for (let wk = ashWeek; wk < ashW; wk++) cells(actx, W[wk], Ea.step, px);
+        for (let wk = 0; wk < ashW; wk++) cells(actx, W[wk], Ea.step, px);
         ashWeek = ashW;
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);

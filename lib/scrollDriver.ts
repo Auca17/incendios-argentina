@@ -40,7 +40,7 @@ function frame() {
   const vh = window.innerHeight;
   const vw = window.innerWidth;
   const scrollY = window.scrollY;
-  const st = tourState(scrollY + vh * FOCAL, tops, heights, reduced);
+  const st = tourState(scrollY + vh * FOCAL, tops, heights, reduced, scrollY);
   const f: Frame = { st, scrollY, vw, vh, progress: tourProgress(scrollY, tops, heights, vh), reduced };
   last = f;
   let again = false;

@@ -48,13 +48,19 @@ export type TourState = {
   chapter: number;
   /** Progress inside the fire (0..1); 1 outside the stories. */
   chapterT: number;
+  /** Static cloud bank behind the reading text (0..1). */
+  bank: number;
+  /** 0 = white clouds, 1 = dark smoke (end of the epilogue, into the sources). */
+  smoke: number;
+  /** Scroll-driven offset for embers and ash (0 while there is no smoke). */
+  drift: number;
 };
 
 /**
  * Pure state for a focal position. `tops` and `heights` are the cached document offsets of SECTIONS.
  * With `reduced` (prefers-reduced-motion) the clouds and the title jump to still frames per stage.
  */
-export function tourState(focal: number, tops: number[], heights: number[], reduced = false): TourState {
+export function tourState(focal: number, tops: number[], heights: number[], reduced = false, scrollY = 0): TourState {
   let idx = 0;
   let t = 0;
   if (tops.length && focal >= tops[0]) {
@@ -69,7 +75,7 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     }
   }
   const sec = SECTIONS[idx];
-  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, chapter: -1, chapterT: 1 };
+  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, chapter: -1, chapterT: 1, bank: 1, smoke: 0, drift: 0 };
   switch (sec.kind) {
     case 'opening':
       break;
@@ -95,7 +101,8 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     case 'epilogue':
       st.open = 1; st.borders = 1; st.chapter = 6;
       st.close = seg(t, 0, 0.3);
-      st.hud = 1 - st.close;
+      st.hud = st.close > 0 ? 0 : 1;
+      st.smoke = seg(t, 0.62, 0.8);
       break;
   }
   if (reduced) {
@@ -104,7 +111,9 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     st.close = st.close > 0 ? 1 : 0;
     st.borders = st.borders > 0 ? 1 : 0;
     st.hud = st.hud > 0 ? 1 : 0;
+    st.smoke = st.smoke > 0.5 ? 1 : 0;
   }
+  st.drift = st.smoke > 0 && !reduced ? Math.round(scrollY) : 0;
   return st;
 }
 

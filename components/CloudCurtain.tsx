@@ -5,195 +5,218 @@ import { DESKTOP, podRight } from '../lib/tourLayout';
 import styles from './CloudCurtain.module.css';
 
 /*
- * Hand-drawn cumulus clouds on a canvas (no images): slate base, ivory body, lit domes.
- * Two layers:
- *  - curtain: a jittered grid that covers the whole viewport. It parts to the right while `open`
- *    goes 0 -> 1 (right-hand clouds first) and comes back from both sides while `close` goes 0 -> 1,
- *    over a flat fill that guarantees full, opaque coverage in the centre once closed.
- *  - left bank (desktop only): a column of clouds behind the reading pod; it never enters the map band.
- * Positions are a pure function of (open, close, viewport): no time, no randomness at draw time
- * (the layout comes from a seeded generator). Each cloud is pre-rendered once into a sprite and the
- * canvas is redrawn only when that state changes.
+ * Cumulus clouds drawn by a WebGL2 fragment shader (no images, no libraries): inverted cellular
+ * (Worley) noise over four octaves gives round cotton-like puffs; each puff is shaded by the normal
+ * of the density field with light from above (white tops, blue-grey bases).
+ *
+ * Uniforms, all derived from the scroll state:
+ *  - coverage (0..1): 1 = clouds cover the whole viewport, 0 = fully open. The threshold varies in
+ *    space, so the clouds open from the centre outwards and close back the same way: continuous and
+ *    reversible, nothing pops.
+ *  - bank: a static cloud bank behind the reading text (left column on desktop, bottom band on
+ *    mobile). It never moves and never opens.
+ *  - smoke (0..1): the same clouds turned into dark smoke with sparse embers and ash (epilogue).
+ *  - drift: scroll-driven offset for embers and ash; nothing moves with time.
+ * The canvas renders at reduced resolution and redraws only when a uniform changes.
+ * Without WebGL2 a CSS gradient stands in (styles.fallback).
  */
-type Lobe = [number, number, number]; // dx, dy, r (relative to R)
-type Cloud = { hx: number; hy: number; R: number; sprite: HTMLCanvasElement; edge: boolean };
 
-const SKY0 = '#1d3550';
-const SKY1 = '#5f7f9e';
-const SHADE = '#8a99ab';
-const BODY = '#e6e2da';
-const BODY_LIT = '#f6f3ed';
-const DOME = '#fdfbf7';
-const FILL0 = '#dcdfe2';
-const FILL1 = '#c4ccd5';
+const VERT = `#version 300 es
+in vec2 p;
+void main() { gl_Position = vec4(p, 0.0, 1.0); }`;
 
-function rng(seed: number) {
-  return () => {
-    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+const FRAG = `#version 300 es
+precision highp float;
+uniform vec2 uView;      // viewport in CSS px
+uniform float uRatio;    // canvas px per CSS px
+uniform float uCov;
+uniform vec3 uBank;      // mode (0 none, 1 left column, 2 bottom band), edge in CSS px, strength 0..1
+uniform vec2 uCenter;    // opening centre in CSS px
+uniform float uSmoke;
+uniform float uDrift;
+out vec4 outColor;
+
+float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float noise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+float billow(vec2 p) {
+  float s = 0.0, a = 0.5;
+  for (int i = 0; i < 3; i++) { s += a * (1.0 - abs(2.0 * noise(p) - 1.0)); p = p * 2.03 + 11.7; a *= 0.5; }
+  return s;
+}
+vec2 hash2(vec2 p) { return fract(sin(vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)))) * 43758.5453); }
+// smooth F1 cellular distance: a soft minimum, so the shading has no creases at cell borders
+float worley(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  float acc = 0.0;
+  for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+    vec2 g = vec2(float(x), float(y));
+    vec2 r = g + 0.15 + 0.7 * hash2(i + g) - f;
+    acc += exp(-9.0 * dot(r, r));
+  }
+  return sqrt(max(0.0, -log(acc) / 9.0));
+}
+// cumulus puffs: inverted cellular noise over three octaves (big soft lumps, few wrinkles)
+float density(vec2 q) {
+  vec2 p = q / 300.0;
+  float s = 0.0, a = 0.56;
+  for (int k = 0; k < 3; k++) {
+    float w = worley(p);
+    s += a * (1.0 - smoothstep(0.0, 0.95, w));
+    p = p * 2.13 + vec2(5.2, 1.3);
+    a *= 0.45;
+  }
+  // low-frequency masses so the puffs merge into larger clouds
+  float mass = noise(q / 520.0 + 2.0) * 0.6 + noise(q / 260.0 + 7.0) * 0.4;
+  return smoothstep(0.1, 0.9, 0.72 * s + 0.38 * mass);
 }
 
-const BASE: Lobe[] = [[-0.75, 0.3, 0.55], [0, 0.36, 0.62], [0.75, 0.3, 0.55]];
-const BODYL: Lobe[] = [[-0.98, 0.1, 0.48], [-0.45, -0.04, 0.68], [0.2, -0.1, 0.74], [0.82, 0.06, 0.56]];
-const DOMES: Lobe[] = [[-0.36, -0.42, 0.5], [0.18, -0.55, 0.58], [0.62, -0.3, 0.45]];
+void main() {
+  vec2 q = vec2(gl_FragCoord.x, uView.y * uRatio - gl_FragCoord.y) / uRatio; // CSS px, y down
+  float d = density(q);
 
-function makeSprite(R: number, dpr: number, rnd: () => number): HTMLCanvasElement {
-  const W = 2.9 * R, H = 2.0 * R, cx = 1.45 * R, cy = 1.1 * R;
-  const c = document.createElement('canvas');
-  c.width = Math.ceil(W * dpr);
-  c.height = Math.ceil(H * dpr);
-  const g = c.getContext('2d')!;
-  g.scale(dpr, dpr);
-  const j = (l: Lobe): Lobe => [l[0] + (rnd() - 0.5) * 0.12, l[1] + (rnd() - 0.5) * 0.1, l[2] * (0.92 + rnd() * 0.16)];
-  const lobes = [...BASE.map(j), ...BODYL.map(j), ...DOMES.map(j)];
-  // one silhouette: the union of all lobes, shaded top to bottom (lit domes, ivory body, slate base)
-  const shape = new Path2D();
-  lobes.forEach(([dx, dy, r]) => { shape.moveTo(cx + dx * R + r * R, cy + dy * R); shape.arc(cx + dx * R, cy + dy * R, r * R, 0, Math.PI * 2); });
-  const body = g.createLinearGradient(0, cy - 1.15 * R, 0, cy + 0.62 * R);
-  body.addColorStop(0, DOME);
-  body.addColorStop(0.45, BODY_LIT);
-  body.addColorStop(0.72, BODY);
-  body.addColorStop(1, SHADE);
-  g.fillStyle = body;
-  g.fill(shape);
-  // soft volume inside the silhouette: lit tops of the domes, a cool shade under the body
-  g.save();
-  g.clip(shape);
-  lobes.forEach(([dx, dy, r], i) => {
-    const x = cx + dx * R, y = cy + dy * R, rr = r * R;
-    const lit = g.createRadialGradient(x - rr * 0.3, y - rr * 0.4, 0, x - rr * 0.3, y - rr * 0.4, rr * 0.9);
-    lit.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
-    lit.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    g.fillStyle = lit;
-    g.fillRect(x - rr, y - rr, 2 * rr, 2 * rr);
-    if (i >= BASE.length) {
-      const sh = g.createRadialGradient(x, y + rr * 0.9, 0, x, y + rr * 0.9, rr * 0.8);
-      sh.addColorStop(0, 'rgba(125, 142, 162, 0.35)');
-      sh.addColorStop(1, 'rgba(125, 142, 162, 0)');
-      g.fillStyle = sh;
-      g.fillRect(x - rr, y, 2 * rr, 2 * rr);
-    }
-  });
-  g.restore();
-  // flat base
-  g.globalCompositeOperation = 'destination-out';
-  g.fillRect(0, cy + 0.62 * R, W, H);
-  return c;
-}
+  // curtain: radial distance from the opening centre, broken up by the cloud density
+  vec2 rel = (q - uCenter) / (0.62 * uView);
+  float g = length(rel);
+  float F = 0.85 * g + 0.95 * (d - 0.5);
+  // threshold grows a little faster than the opening, so the open area grows at an even pace
+  float R = mix(-0.62, 1.25, pow(1.0 - uCov, 0.75));
+  // a soft fringe, then a firmer edge: puffs read crisp without popping
+  float a = smoothstep(0.08, 0.92, smoothstep(R, R + 0.26, F));
+  float curtain = a;
+  float depth = smoothstep(R, R + 0.6, F);
 
-const ease = (t: number) => t * t * (3 - 2 * t);
-const seg = (x: number, a: number, b: number) => Math.min(1, Math.max(0, (x - a) / (b - a)));
+  // static bank behind the text
+  float inside = -1e4;
+  if (uBank.x > 0.5) {
+    float along = uBank.x < 1.5 ? q.y : q.x;
+    float across = uBank.x < 1.5 ? uBank.y - q.x : q.y - uBank.y;
+    float wobble = (billow(vec2(along / 140.0, 3.7)) - 0.75) * 70.0;
+    inside = across + wobble + (d - 0.5) * 150.0;
+    float b = smoothstep(-12.0, 12.0, inside) * uBank.z;
+    if (b > a) { a = b; depth = max(depth, smoothstep(0.0, 220.0, inside)); }
+  }
+
+  // light from above: shade each puff by the normal of the density field
+  float e = 12.0;
+  float dx = density(q + vec2(e, 0.0)) - d;
+  float dy = density(q + vec2(0.0, e)) - d;
+  vec3 n = normalize(vec3(-dx * 6.0, -dy * 6.0, 1.0));
+  vec3 L = normalize(vec3(-0.25, -0.8, 0.55)); // up-left (screen y grows downwards)
+  float light = clamp(dot(n, L) * 0.85 + 0.2 + 0.25 * d + 0.15 * depth, 0.0, 1.0);
+  vec3 shadowC = vec3(0.5, 0.57, 0.68);
+  vec3 litC = vec3(1.0, 0.995, 0.985);
+  vec3 col = mix(shadowC, litC, light);
+  // calm, bright interior under the text (contrast for dark type)
+  float calm = smoothstep(60.0, 200.0, inside) * (1.0 - curtain);
+  col = mix(col, vec3(0.965, 0.968, 0.972), calm * 0.9);
+
+  // smoke palette
+  if (uSmoke > 0.0) {
+    vec3 sDark = vec3(0.045, 0.047, 0.055);
+    vec3 sLit = vec3(0.22, 0.225, 0.24);
+    vec3 smoke = mix(sDark, sLit, light * 0.85);
+    smoke = mix(smoke, vec3(0.06, 0.062, 0.07), calm * 0.8);
+    // embers: sparse, rising with the scroll
+    vec2 eq = q + vec2(0.0, uDrift * 0.35);
+    vec2 cell = floor(eq / 34.0);
+    float h = hash(cell);
+    vec2 c = (cell + 0.2 + 0.6 * vec2(hash(cell + 3.1), hash(cell + 7.7))) * 34.0;
+    float r = length(eq - c);
+    float ember = h < 0.035 ? smoothstep(3.2, 0.6, r) : 0.0;
+    float glow = h < 0.035 ? smoothstep(14.0, 0.0, r) * 0.35 : 0.0;
+    // ash: small grey flecks drifting faster
+    vec2 aq = q + vec2(uDrift * 0.08, uDrift * 0.6);
+    vec2 acell = floor(aq / 22.0);
+    float ah = hash(acell + 19.0);
+    vec2 ac = (acell + 0.25 + 0.5 * vec2(hash(acell + 5.3), hash(acell + 2.9))) * 22.0;
+    float ash = ah < 0.06 ? smoothstep(1.6, 0.4, length(aq - ac)) * 0.55 : 0.0;
+    smoke += vec3(1.0, 0.24, 0.08) * glow + vec3(1.0, 0.36, 0.12) * ember + vec3(0.62) * ash;
+    col = mix(col, smoke, uSmoke);
+    a = mix(a, 1.0, uSmoke);
+  }
+  outColor = vec4(col * a, a);
+}`;
+
+/** Curtain coverage for a scroll state: closes again over the epilogue. */
+export const coverageOf = (open: number, close: number) => (close > 0 ? close : 1 - open);
 
 export default function CloudCurtain() {
   const cv = useRef<HTMLCanvasElement>(null);
+  const wrap = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const canvas = cv.current!;
-    const ctx = canvas.getContext('2d')!;
-    let w = 0, h = 0, dpr = 1;
-    let curtain: Cloud[] = [];
-    let bank: Cloud[] = [];
-    let lastKey = '';
-
-    const build = () => {
-      w = window.innerWidth;
-      h = window.innerHeight;
-      dpr = Math.min(window.devicePixelRatio || 1, w < DESKTOP ? 1.5 : 2);
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
-      const rnd = rng(20120120);
-      const R = Math.max(w, h) * (w < DESKTOP ? 0.2 : 0.16);
-      const cols = Math.ceil(w / (R * 1.7)) + 1;
-      const rows = Math.ceil(h / (R * 1.05)) + 1;
-      curtain = [];
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const hx = ((c + (r % 2) * 0.5) / (cols - 1)) * w + (rnd() - 0.5) * R * 0.4;
-          const hy = (r / (rows - 1)) * h + (rnd() - 0.5) * R * 0.3;
-          const rr = R * (0.85 + rnd() * 0.3);
-          const edge = r === 0 || r === rows - 1 || hx < R * 0.9 || hx > w - R * 0.9;
-          curtain.push({ hx, hy, R: rr, sprite: makeSprite(rr, dpr, rnd), edge });
-        }
-      }
-      bank = [];
-      if (w >= DESKTOP) {
-        const right = podRight(w);
-        const Rb = right * 0.36;
-        const n = Math.ceil(h / (Rb * 0.95)) + 1;
-        for (let i = 0; i < n; i++) {
-          const hx = right * (0.22 + (i % 2) * 0.3) + (rnd() - 0.5) * Rb * 0.2;
-          const hy = (i / (n - 1)) * h + (rnd() - 0.5) * Rb * 0.2;
-          // keep the sprite's right edge inside the reading column plus one gutter
-          const R2 = Math.min(Rb * (0.85 + rnd() * 0.25), (right + 24 - hx) / 1.45);
-          bank.push({ hx, hy, R: R2, sprite: makeSprite(R2, dpr, rnd), edge: true });
-        }
-      }
-      lastKey = '';
-    };
-
-    const put = (cl: Cloud, x: number, y: number) => {
-      ctx.drawImage(cl.sprite, x - 1.45 * cl.R, y - 1.1 * cl.R, 2.9 * cl.R, 2.0 * cl.R);
-    };
-
-    const draw = (open: number, close: number) => {
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, w, h);
-      const sky = 1 - seg(open, 0.25, 0.85);
-      if (sky > 0) {
-        const g = ctx.createLinearGradient(0, 0, 0, h);
-        g.addColorStop(0, SKY0);
-        g.addColorStop(1, SKY1);
-        ctx.globalAlpha = sky;
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, w, h);
-        ctx.globalAlpha = 1;
-      }
-      bank.forEach((cl) => put(cl, cl.hx, cl.hy));
-      if (close > 0) {
-        const fill = seg(close, 0.45, 0.9);
-        if (fill > 0) {
-          const g = ctx.createLinearGradient(0, 0, 0, h);
-          g.addColorStop(0, FILL0);
-          g.addColorStop(1, FILL1);
-          ctx.globalAlpha = fill;
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, w, h);
-          ctx.globalAlpha = 1;
-        }
-        const k = 1 - ease(close);
-        curtain.forEach((cl) => {
-          if (fill >= 1 && !cl.edge) return; // closed: flat centre, volume only at the edges
-          const dir = cl.hx < w / 2 ? -1 : 1;
-          put(cl, cl.hx + dir * k * (w * 0.8), cl.hy);
-        });
-        return;
-      }
-      if (open >= 1) return;
-      curtain.forEach((cl) => {
-        const delay = 0.5 * (1 - cl.hx / w); // right-hand clouds leave first
-        const m = ease(seg(open, delay * 0.9, delay * 0.9 + 0.5));
-        put(cl, cl.hx + m * (w - cl.hx + cl.R * 1.6), cl.hy);
+    const gl = canvas.getContext('webgl2', { premultipliedAlpha: true, preserveDrawingBuffer: true, antialias: false });
+    if (!gl) {
+      // no WebGL2: a plain cloud-coloured veil that follows the same coverage
+      wrap.current!.classList.add(styles.fallback);
+      return subscribe(({ st }) => {
+        const c = coverageOf(st.open, st.close);
+        wrap.current!.style.opacity = String(Math.max(c, st.smoke));
+        wrap.current!.dataset.smoke = st.smoke > 0.5 ? '1' : '0';
+        canvas.dataset.coverage = c.toFixed(4);
+        return false;
       });
-    };
+    }
 
+    const sh = (type: number, src: string) => {
+      const s = gl.createShader(type)!;
+      gl.shaderSource(s, src);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) || 'shader');
+      return s;
+    };
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'p');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    const U = (n: string) => gl.getUniformLocation(prog, n);
+    const u = { view: U('uView'), ratio: U('uRatio'), cov: U('uCov'), bank: U('uBank'), center: U('uCenter'), smoke: U('uSmoke'), drift: U('uDrift') };
+
+    let w = 0, h = 0, ratio = 0.5, lastKey = '';
     const onFrame = (f: Frame) => {
-      if (f.vw !== w || f.vh !== h) build();
-      const key = f.st.open.toFixed(4) + '|' + f.st.close.toFixed(4);
+      if (f.vw !== w || f.vh !== h) {
+        w = f.vw; h = f.vh;
+        ratio = Math.min(window.devicePixelRatio || 1, 2) * (w < DESKTOP ? 0.4 : 0.5);
+        canvas.width = Math.round(w * ratio);
+        canvas.height = Math.round(h * ratio);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        lastKey = '';
+      }
+      const { st } = f;
+      const cov = coverageOf(st.open, st.close);
+      const mobile = w < DESKTOP;
+      const key = [cov.toFixed(4), st.bank.toFixed(3), st.smoke.toFixed(4), Math.round(st.drift)].join('|');
       if (key === lastKey) return false;
       lastKey = key;
-      draw(f.st.open, f.st.close);
+      canvas.dataset.coverage = cov.toFixed(4);
+      gl.uniform2f(u.view, w, h);
+      gl.uniform1f(u.ratio, ratio);
+      gl.uniform1f(u.cov, cov);
+      gl.uniform3f(u.bank, mobile ? 2 : 1, mobile ? h * 0.44 + 24 : podRight(w) + 48, st.bank);
+      gl.uniform2f(u.center, mobile ? w / 2 : (podRight(w) + w) / 2, mobile ? h * 0.25 : h / 2);
+      gl.uniform1f(u.smoke, st.smoke);
+      gl.uniform1f(u.drift, st.drift);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
       return false;
     };
-
-    build();
     return subscribe(onFrame);
   }, []);
 
   return (
-    <div className={styles.curtain} aria-hidden="true">
+    <div ref={wrap} className={styles.curtain} aria-hidden="true">
       <canvas ref={cv} className={styles.canvas} data-tour-canvas="clouds" />
     </div>
   );

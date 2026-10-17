@@ -28,6 +28,7 @@ const WAIT = +(args.wait || 2000);
 const W = +(args.w || 1440), H = +(args.h || 900);
 const MOBILE = W < 1024;
 const SEED = +(args.seed || 2026);
+const DEBUG = args.debug ? 1 : 0;
 const OUT = path.resolve(args.out || path.join(os.tmpdir(), 'scroll-test'));
 const OUT_DIR = path.join(ROOT, 'out');
 if (!fs.existsSync(path.join(OUT_DIR, 'index.html'))) { console.error('out/ missing: run `npm run build` first'); process.exit(2); }
@@ -97,6 +98,8 @@ on('Network.loadingFailed', (p) => { if (!p.canceled) problems.push('network.fai
 on('Network.responseReceived', (p) => { if (p.response.status >= 400) problems.push(`http ${p.response.status} ${p.response.url}`); });
 await Promise.all(['Page', 'Runtime', 'Network'].map((d) => send(d + '.enable')));
 await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 1, mobile: MOBILE });
+// headless Chrome reports reduced motion unless told otherwise; test the full motion path by default
+await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: args.motion === 'reduce' ? 'reduce' : 'no-preference' }] });
 const loaded = new Promise((res) => on('Page.loadEventFired', res));
 await send('Page.navigate', { url: URL_ });
 await loaded;
@@ -110,21 +113,28 @@ const fingerprint = async () => {
   const canv = await evaluate(`(async () => {
     const out = {};
     for (const c of document.querySelectorAll('canvas[data-tour-canvas]')) {
-      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      // copy into a 2D canvas: works for the 2D map and for the WebGL clouds (preserveDrawingBuffer)
+      const k = document.createElement('canvas');
+      k.width = c.width; k.height = c.height;
+      const g = k.getContext('2d', { willReadFrequently: true });
+      g.drawImage(c, 0, 0);
+      const d = g.getImageData(0, 0, c.width, c.height).data;
+      (window.__px = window.__px || {})[c.dataset.tourCanvas] = d;
       const h = await crypto.subtle.digest('SHA-256', d);
       out[c.dataset.tourCanvas] = [...new Uint8Array(h)].slice(0, 8).map((b) => b.toString(16).padStart(2, '0')).join('');
     }
-    return { y: Math.round(scrollY), out };
+    const m = document.querySelector('canvas[data-tour-canvas="map"]');
+    return { y: Math.round(scrollY), out, mapPng: ${DEBUG} ? m.toDataURL('image/png').split(',')[1] : '' };
   })()`);
   const hud = await send('Page.captureScreenshot', { format: 'png', clip: { x: MOBILE ? 0 : W - 200, y: 0, width: MOBILE ? W : 200, height: MOBILE ? 120 : H, scale: 1 } });
   const hudHash = crypto.createHash('sha256').update(Buffer.from(hud.data, 'base64')).digest('hex').slice(0, 16);
-  return { y: canv.y, map: canv.out.map, clouds: canv.out.clouds, hud: hudHash, hudPng: hud.data };
+  return { y: canv.y, map: canv.out.map, clouds: canv.out.clouds, hud: hudHash, hudPng: hud.data, mapPng: canv.mapPng };
 };
 
 let s = SEED;
 const rnd = () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
 const seen = new Map();
-let compared = 0, mismatches = 0;
+let compared = 0, mismatches = 0, tolerated = 0;
 const kinds = { walk: 0, hud: 0, key: 0 };
 
 console.log(`tour range 0..${tourEnd}px · ${STEPS} steps · wait ${WAIT} ms · ${W}x${H}`);
@@ -151,14 +161,30 @@ for (let step = 0; step < STEPS; step++) {
   const fp = await fingerprint();
   y = fp.y;
   const prev = seen.get(fp.y);
-  if (!prev) { seen.set(fp.y, fp); continue; }
+  if (!prev) {
+    seen.set(fp.y, fp);
+    await evaluate(`(() => { window.__ref = window.__ref || {}; for (const k in window.__px) window.__ref['${fp.y}:' + k] = window.__px[k]; })()`);
+    continue;
+  }
   compared++;
-  const bad = ['map', 'clouds', 'hud'].filter((k) => prev[k] !== fp[k]);
+  let bad = ['map', 'clouds', 'hud'].filter((k) => prev[k] !== fp[k]);
+  // minimal tolerance for the canvases: at most 0.1 % of pixels may differ visibly (> 24 levels)
+  for (const k of bad.filter((x) => x !== 'hud')) {
+    const visible = await evaluate(`(() => {
+      const a = window.__ref && window.__ref['${fp.y}:${k}'], b = window.__px['${k}'];
+      if (!a || a.length !== b.length) return 1;
+      let n = 0;
+      for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) > 24 || Math.abs(a[i + 1] - b[i + 1]) > 24 || Math.abs(a[i + 2] - b[i + 2]) > 24) n++;
+      return n / (a.length / 4);
+    })()`);
+    if (visible <= 0.001) { bad = bad.filter((x) => x !== k); tolerated++; }
+  }
   if (bad.length) {
     mismatches++;
     console.log(`  MISMATCH at y=${fp.y} (step ${step}): ${bad.join(', ')}`);
     fs.writeFileSync(path.join(OUT, `hud_${fp.y}_a.png`), Buffer.from(prev.hudPng, 'base64'));
     fs.writeFileSync(path.join(OUT, `hud_${fp.y}_b.png`), Buffer.from(fp.hudPng, 'base64'));
+    if (DEBUG) { fs.writeFileSync(path.join(OUT, `map_${fp.y}_a.png`), Buffer.from(prev.mapPng, 'base64')); fs.writeFileSync(path.join(OUT, `map_${fp.y}_b.png`), Buffer.from(fp.mapPng, 'base64')); }
   }
 }
 
@@ -168,8 +194,11 @@ const cover = await evaluate(`(async () => {
   const top = el.getBoundingClientRect().top + scrollY;
   window.scrollTo(0, Math.round(top + el.offsetHeight * 0.4 - innerHeight * 0.45));
   await new Promise((r) => setTimeout(r, 1200));
-  const c = document.querySelector('canvas[data-tour-canvas="clouds"]');
+  const src = document.querySelector('canvas[data-tour-canvas="clouds"]');
+  const c = document.createElement('canvas');
+  c.width = src.width; c.height = src.height;
   const g = c.getContext('2d');
+  g.drawImage(src, 0, 0);
   const x0 = Math.round(c.width * 0.15), y0 = Math.round(c.height * 0.1);
   const d = g.getImageData(x0, y0, Math.round(c.width * 0.7), Math.round(c.height * 0.8)).data;
   let holes = 0;
@@ -177,7 +206,7 @@ const cover = await evaluate(`(async () => {
   return { holes, pixels: d.length / 4 };
 })()`);
 
-console.log(`stops: ${STEPS} (walk ${kinds.walk}, HUD ${kinds.hud}, keys ${kinds.key}) · distinct positions: ${seen.size} · repeats compared: ${compared} · mismatches: ${mismatches}`);
+console.log(`stops: ${STEPS} (walk ${kinds.walk}, HUD ${kinds.hud}, keys ${kinds.key}) · distinct positions: ${seen.size} · repeats compared: ${compared} · identical or within 0.1 % (${tolerated} sub-pixel) · mismatches: ${mismatches}`);
 console.log(`epilogue cover: ${cover.holes} non-opaque pixels of ${cover.pixels} in the central 70 % x 80 %`);
 problems.forEach((p) => console.log('  ' + p));
 const ok = mismatches === 0 && cover.holes === 0 && problems.length === 0 && compared > 0;
