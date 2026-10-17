@@ -51,7 +51,7 @@
 .epilogue {
   position: relative;
   z-index: 8;
-  padding: 95vh 0 var(--s-8);
+  padding: 88vh 0 var(--s-8); /* enters once the clouds have closed (t = 0.18) */
 }
 
 @media (max-width: 1023.98px) {

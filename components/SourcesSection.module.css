@@ -1,75 +1,111 @@
+/*
+ * Sources over the dark smoke (the cloud canvas behind is fixed). Every text block sits on a dark,
+ * nearly opaque card, so the sparse embers of the smoke never reduce contrast. The whole block fades
+ * in with the smoke (--fade, set from the scroll state).
+ */
 .sources {
+  --fade: 0;
   position: relative;
   z-index: 9;
-  background: var(--t-paper);
-  color: var(--t-text-2);
+  color: var(--t-text);
   font: 400 var(--fs-16) / 1.55 var(--t-font-read);
-  border-top: 1px solid var(--t-line);
+  opacity: var(--fade);
 }
 .sources:focus { outline: none; }
 .inner {
   width: min(960px, calc(100vw - 2 * var(--s-2)));
   margin: 0 auto;
-  padding: var(--s-8) 0 var(--s-8);
-}
-.kicker {
-  font: 600 var(--fs-12) / 1.3 var(--t-font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--t-amber);
+  padding: var(--s-8) 0;
 }
 .h2 {
-  margin: var(--s-1) 0 var(--s-4);
-  font: 700 var(--fs-32) / 1.2 var(--t-font-read);
+  display: inline-block;
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-2);
+  background: var(--t-smoke-card);
+  font: 400 var(--fs-56) / 1.05 var(--t-font-title);
+  color: #fff;
+}
+.lead {
+  display: inline-block;
+  margin-top: var(--s-2);
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-1);
+  background: var(--t-smoke-card);
+  font-size: var(--fs-20);
   color: var(--t-text);
-  text-wrap: balance;
 }
 .h3 {
-  margin: var(--s-5) 0 var(--s-2);
-  font: 700 var(--fs-20) / 1.3 var(--t-font-read);
-  color: var(--t-text);
-}
-.list { display: grid; gap: var(--s-1); margin: 0; padding-left: var(--s-3); max-width: 72ch; }
-.list b { color: var(--t-text); font-weight: 600; }
-.para, .note { max-width: 72ch; }
-.note { margin-bottom: var(--s-2); font-size: var(--fs-14); color: var(--t-muted); }
-.sources code { font: 400 0.9em var(--t-font-mono); font-variant-ligatures: none; color: var(--t-text); }
-.sources a { color: var(--t-amber); }
-
-.tableWrap { overflow-x: auto; border: 1px solid var(--t-line); border-radius: var(--r-2); }
-.table { width: 100%; border-collapse: collapse; font-size: var(--fs-14); line-height: 1.45; }
-.table th, .table td { padding: var(--s-1) var(--s-2); text-align: left; vertical-align: top; border-bottom: 1px solid var(--t-line); }
-.table thead th { font-weight: 600; color: var(--t-text); background: var(--t-chip); }
-.table tbody th { font-weight: 600; color: var(--t-text); white-space: nowrap; }
-.year { display: block; font: 400 var(--fs-12) / 1.4 var(--t-font-mono); color: var(--t-muted); }
-.quote { font-style: italic; }
-.access { display: block; font-size: var(--fs-12); color: var(--t-muted); }
-.ok, .partial {
   display: inline-block;
-  padding: 2px var(--s-1);
-  border-radius: 999px;
-  font-size: var(--fs-12);
-  font-weight: 600;
-  white-space: nowrap;
+  margin: var(--s-6) 0 var(--s-2);
+  padding: var(--s-half) var(--s-2);
+  border-radius: var(--r-1);
+  background: var(--t-smoke-card);
+  font: 700 var(--fs-24) / 1.3 var(--t-font-read);
+  color: #fff;
 }
-.ok { box-shadow: inset 0 0 0 1px var(--t-control); color: var(--t-text); }
-.partial { box-shadow: inset 0 0 0 1px var(--t-amber); color: var(--t-amber); }
+.group { margin-top: var(--s-3); }
+.h4 {
+  display: inline-block;
+  margin: 0 0 var(--s-1);
+  padding: var(--s-half) var(--s-2);
+  border-radius: var(--r-1);
+  background: var(--t-smoke-card);
+  font: 700 var(--fs-20) / 1.3 var(--t-font-read);
+  color: #fff;
+}
+.h4 span { font: 400 var(--fs-16) / 1 var(--t-font-mono); color: var(--t-ember); }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.card {
+  display: grid;
+  gap: var(--s-1);
+  align-content: start;
+  padding: var(--s-3);
+  border-radius: var(--r-2);
+  background: var(--t-smoke-card);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.cardSource { font-weight: 700; color: #fff; }
+.cardWhat { display: grid; gap: var(--s-half); margin: 0; padding-left: var(--s-2); font-size: var(--fs-14); color: var(--t-text); }
+.cardLink {
+  justify-self: start;
+  margin-top: var(--s-half);
+  font-weight: 700;
+  font-size: var(--fs-14);
+  color: var(--t-ember);
+}
+.cardLink:focus-visible { outline: 3px solid var(--t-ember); outline-offset: 3px; }
+
+.panel {
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-5);
+  border-radius: var(--r-2);
+  background: var(--t-smoke-card);
+}
+.list { display: grid; gap: var(--s-1); margin: 0; max-width: 78ch; color: var(--t-text); }
 
 .back {
-  margin-top: var(--s-5);
-  min-height: 44px;
-  padding: 0 var(--s-3);
-  border: 1px solid var(--t-control);
+  margin-top: var(--s-6);
+  min-height: 48px;
+  padding: 0 var(--s-4);
+  border: 2px solid #fff;
   border-radius: 999px;
-  background: transparent;
-  color: var(--t-text);
-  font: 600 var(--fs-14) / 1 var(--t-font-read);
+  background: var(--t-smoke-card);
+  color: #fff;
+  font: 700 var(--fs-16) / 1 var(--t-font-read);
   cursor: pointer;
 }
-.back:hover { border-color: var(--t-amber); }
+.back:hover { background: #fff; color: #111; }
+.back:focus-visible { outline: 3px solid var(--t-ember); outline-offset: 3px; }
 
 @media (max-width: 719.98px) {
   .inner { padding: var(--s-5) 0; }
-  .h2 { font-size: var(--fs-24); }
-  .table { min-width: 680px; }
+  .h2 { font-size: 40px; }
+  .lead { font-size: var(--fs-16); }
 }

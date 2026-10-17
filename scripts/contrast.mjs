@@ -58,6 +58,8 @@ const S = {
   // cover title: the shader keeps a sunlit patch behind it (rgb .985 .985 .98)
   tCloudShade: [251, 251, 250, 1],
   tAmber: parse('var(--t-amber)'),
+  // source cards over the smoke, composited over the brightest ember of the shader
+  tSmokeCard: over(parse('var(--t-smoke-card)'), [255, 92, 31, 1]),
 };
 
 // [label, foreground, surface, size px, bold, kind]  kind: 'text' | 'ui'
@@ -101,6 +103,9 @@ const PAIRS = [
   T('tour: cover title ink on the sunlit patch', 'var(--t-ink)', 'tCloudShade', 56),
   T('tour: cover subtitle red on the sunlit patch (24 px bold)', 'var(--t-red)', 'tCloudShade', 24, true),
   U('tour: Ver más border (ink) on the cloud', 'var(--t-ink)', 'tCloud'),
+  T('tour: white on source cards over an ember', '#ffffff', 'tSmokeCard', 14),
+  T('tour: text on source cards over an ember', 'var(--t-text)', 'tSmokeCard', 14),
+  T('tour: ember links on source cards over an ember', 'var(--t-ember)', 'tSmokeCard', 14, true),
   // guided tour (home)
   T('tour: title text on pod over lit cloud', 'var(--t-text)', 'tPod', 24, true),
   T('tour: body text-2 on pod over lit cloud', 'var(--t-text-2)', 'tPod', 16),

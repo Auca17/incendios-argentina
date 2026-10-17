@@ -35,6 +35,7 @@ uniform vec2 uCenter;    // opening centre in CSS px
 uniform float uSmoke;
 uniform float uDrift;
 uniform vec4 uGlow;      // sunlit patch behind the cover title: centre xy, radii zw (CSS px); 0 radius = none
+uniform vec3 uColumn;    // flat bright column behind the epilogue: centre x, half width, strength
 out vec4 outColor;
 
 float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -122,6 +123,12 @@ void main() {
     col = mix(col, vec3(0.985, 0.985, 0.98), gl * a);
   }
 
+  // flat bright column behind the epilogue text once the clouds have closed (puffy edges stay at the sides)
+  if (uColumn.z > 0.0) {
+    float cm = 1.0 - smoothstep(uColumn.y - 60.0, uColumn.y + 30.0, abs(q.x - uColumn.x) + (d - 0.5) * 60.0);
+    col = mix(col, vec3(0.972, 0.975, 0.978), cm * uColumn.z);
+  }
+
   // smoke palette
   if (uSmoke > 0.0) {
     vec3 sDark = vec3(0.045, 0.047, 0.055);
@@ -189,7 +196,7 @@ export default function CloudCurtain() {
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     const U = (n: string) => gl.getUniformLocation(prog, n);
-    const u = { view: U('uView'), ratio: U('uRatio'), cov: U('uCov'), bank: U('uBank'), center: U('uCenter'), smoke: U('uSmoke'), drift: U('uDrift'), glow: U('uGlow') };
+    const u = { view: U('uView'), ratio: U('uRatio'), cov: U('uCov'), bank: U('uBank'), center: U('uCenter'), smoke: U('uSmoke'), drift: U('uDrift'), glow: U('uGlow'), column: U('uColumn') };
 
     let w = 0, h = 0, ratio = 0.5, lastKey = '';
     const onFrame = (f: Frame) => {
@@ -204,7 +211,7 @@ export default function CloudCurtain() {
       const { st } = f;
       const cov = coverageOf(st.open, st.close);
       const mobile = w < DESKTOP;
-      const key = [cov.toFixed(4), st.bank.toFixed(3), st.smoke.toFixed(4), Math.round(st.drift), st.title.toFixed(3), st.titleDock.toFixed(4)].join('|');
+      const key = [cov.toFixed(4), st.bank.toFixed(3), st.smoke.toFixed(4), Math.round(st.drift), st.title.toFixed(3), st.titleDock.toFixed(4), st.close.toFixed(4)].join('|');
       if (key === lastKey) return false;
       lastKey = key;
       canvas.dataset.coverage = cov.toFixed(4);
@@ -223,6 +230,7 @@ export default function CloudCurtain() {
         const tw = b.width * b.scale;
         gl.uniform4f(u.glow, b.x + tw / 2, b.y + b.height / 2, tw * 0.78, b.height * 1.1);
       } else gl.uniform4f(u.glow, 0, 0, 0, 0);
+      gl.uniform3f(u.column, w / 2, mobile ? w / 2 + 40 : Math.min(420, w / 2), st.close);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);

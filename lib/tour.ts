@@ -14,7 +14,7 @@ export const TOUR_EVENTS: any[] = NORTH_TO_SOUTH.map((id) => EVENTS.find((e) => 
  *   reveal   14-22 % Argentina appears, then the provincial borders and the HUD
  *   stories  22-88 % six fires, north to south
  *   wide     88-93 % camera opens on the whole country
- *   epilogue 93-100 % clouds close completely, epilogue on top
+ *   epilogue 93-100 % clouds close completely, epilogue on them, then smoke into the sources
  */
 export type Kind = 'opening' | 'title' | 'reveal' | 'story' | 'wide' | 'epilogue';
 export type Section = { id: string; kind: Kind; vh: number; story?: number };
@@ -25,7 +25,7 @@ export const SECTIONS: Section[] = [
   { id: 'sec-reveal', kind: 'reveal', vh: 125 },
   ...TOUR_EVENTS.map((ev, i): Section => ({ id: 'sec-' + ev.id, kind: 'story', vh: 180, story: i })),
   { id: 'sec-wide', kind: 'wide', vh: 85 },
-  { id: 'sec-epilogue', kind: 'epilogue', vh: 160 },
+  { id: 'sec-epilogue', kind: 'epilogue', vh: 250 },
 ];
 
 /** Focal line, as a fraction of the viewport height. */
@@ -55,6 +55,8 @@ export type TourState = {
   smoke: number;
   /** Scroll-driven offset for embers and ash (0 while there is no smoke). */
   drift: number;
+  /** Opacity of the epilogue text: it fades out before the clouds turn to smoke. */
+  epi: number;
 };
 
 /**
@@ -76,7 +78,7 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     }
   }
   const sec = SECTIONS[idx];
-  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, titleDock: 0, chapter: -2, chapterT: 1, bank: 1, smoke: 0, drift: 0 };
+  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, titleDock: 0, chapter: -2, chapterT: 1, bank: 1, smoke: 0, drift: 0, epi: 1 };
   switch (sec.kind) {
     case 'opening':
       st.title = 1;
@@ -106,9 +108,11 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
       break;
     case 'epilogue':
       st.open = 1; st.borders = 1; st.chapter = 6;
-      st.close = seg(t, 0, 0.3);
+      // clouds close completely, the epilogue is read on them, it fades, then the clouds turn to smoke
+      st.close = seg(t, 0, 0.18);
       st.hud = st.close > 0 ? 0 : 1;
-      st.smoke = seg(t, 0.62, 0.8);
+      st.epi = 1 - seg(t, 0.6, 0.68);
+      st.smoke = seg(t, 0.68, 0.84);
       break;
   }
   if (reduced) {
@@ -119,6 +123,7 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     st.borders = st.borders > 0 ? 1 : 0;
     st.hud = st.hud > 0 ? 1 : 0;
     st.smoke = st.smoke > 0.5 ? 1 : 0;
+    st.epi = st.epi > 0.5 ? 1 : 0;
   }
   st.drift = st.smoke > 0 && !reduced ? Math.round(scrollY) : 0;
   return st;
