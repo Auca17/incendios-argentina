@@ -140,3 +140,24 @@ Las ilustraciones son esquemáticas, están hechas en código y dibujan un medio
 - En las capturas automáticas (escritorio 1440 px y móvil 390 px) no hubo errores de consola, pedidos fallidos ni desborde horizontal.
 - No se corrió una auditoría automática de accesibilidad completa; durante la revisión se comprobaron la navegación por teclado y el anuncio de cambios de pantalla (`aria-live`).
 - Los textos de la interfaz nuevos (frase de lectura, nota del mapa, aviso de años incompletos) no tienen fuente externa: describen los datos del propio sitio.
+
+## Rama de rediseño con nubes (`feat/scrollytelling-redesign`, 17/10/2026)
+
+Comprobaciones de la versión con recorrido guiado. Las fuentes no se volvieron a abrir en esta sesión: la sección de fuentes técnicas del sitio toma los estados de la tabla completa de arriba, y no marca como verificado nada que esa tabla no registre.
+
+Nota de coherencia: el resumen "100 % revisado y corregido" del comienzo de este archivo no coincide con la tabla completa, que todavía tiene filas en estado "Parcial" (Misiones, causa; Córdoba, 321.688 ha; Corrientes, Reserva del Iberá; Chubut, causa) y una fila "No coincide" (Misiones, lluvia). La persona autora tiene que revisar y decidir esa diferencia.
+
+| Comprobación | Comando | Resultado |
+|---|---|---|
+| `EVENTS` igual al original | `npm run test:events` | `EVENTS OK (6 events)` |
+| Datos y totales | `npm run check:data` | `DATA OK (24 JSON files identical to legacy)`; total 2.620.568; Chubut "semana 1 de 44 · 1.122 focos" |
+| Contraste WCAG AA (incluye los pares del recorrido medidos sobre el peor fondo: pod sobre nube iluminada, chip sobre foco más claro) | `node scripts/contrast.mjs` | 48 de 48 pares cumplen AA |
+| Determinismo del scroll (200 paradas, 2 s cada una, con saltos del HUD y del teclado) | `npm run test:scroll` | `SCROLL OK`: 1440 × 900, 86 posiciones repetidas comparadas, 0 diferencias; 390 × 844, 86 comparadas, 0 diferencias |
+| Nubes cerradas detrás del epílogo | `npm run test:scroll` | 0 píxeles no opacos en el 70 % × 80 % central, en los dos tamaños |
+| Errores de consola, pedidos fallidos y desborde horizontal (1440 × 900 y 390 × 844) | `node scripts/shots.mjs` | 0 errores de consola, 0 pedidos fallidos, sin desborde de página (en móvil, la tabla de fuentes se desplaza dentro de su propio contenedor) |
+
+Los colores del territorio son neutros: el proyecto no tiene datos de cobertura del suelo ni de biomas. Ninguna provincia se rellena como quemada: de los incendios ya visitados quedan un contorno apagado y sus focos reales.
+
+El test de determinismo compara el canvas del mapa, el de las nubes y una captura del HUD cada vez que se repite una posición de scroll. Corre Chrome con el canvas 2D por software, porque, si no, Chrome pasa el canvas de la GPU a la CPU después de varias lecturas y los dos rasterizadores suavizan los bordes distinto: eso daba diferencias que no venían del sitio.
+
+Rendimiento con la CPU frenada 4× (Chrome sin ventana, scroll continuo de 40 px por cuadro): unos 41 cuadros por segundo, con una mediana de 16,7 ms por cuadro, en 1440 × 900 y en 390 × 844. Con la página quieta no se redibuja nada. La memoria de JavaScript queda entre 11 y 13 MB.

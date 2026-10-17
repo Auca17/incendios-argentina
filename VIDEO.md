@@ -1,26 +1,27 @@
 # Lo que el fuego se llevó: guion del video (60 segundos)
 
-Grabación de pantalla en escritorio, 1440 × 900, en una ventana de incógnito, con el sitio de producción: `[URL de producción]`. Dejar las animaciones sin pausar. La locución es la de la persona autora y se lee tal cual.
+Grabación de pantalla en escritorio (1440 × 900), en una ventana de incógnito y sobre el sitio de producción: `[URL de producción]`. La locución es la de la persona autora y se lee tal cual. Hay que scrollear con la rueda, despacio y a ritmo parejo: todo lo que se ve depende de la posición del scroll.
 
 ## Antes de grabar
 
-- Ensayar la lectura en voz alta con cronómetro: el texto tiene unas 160 palabras y entra en 60 segundos solo a ritmo ágil. Si se pasa, recortar al final de las frases del segmento 4 antes que acelerar.
-- Nota sobre el gancho: el dato de 934.238 ha (INTA Corrientes) es "cobertura vegetal afectada", no superficie quemada. Por eso la frase dice "el fuego llegó a" y nunca "se quemaron".
+- Ensayar con cronómetro. El texto tiene unas 150 palabras. Si se pasa de tiempo, recortar el segmento 4 en vez de acelerar.
+- La cifra de Corrientes (934.238 ha, INTA) es "cobertura vegetal afectada", no superficie quemada. Por eso la locución dice "el fuego alcanzó".
 
 ## Guion
 
-| Tiempo | Pantalla | Qué mostrar | Locución |
-|---|---|---|---|
-| 0:00–0:11 | Inicio | Gancho. Mapa del reproductor de años detenido en 2022, con el este de Corrientes encendido. | "En febrero de 2022, el fuego llegó a casi el once por ciento de la provincia de Corrientes. Novecientas mil hectáreas. Y a los pocos meses, casi nadie se acordaba." |
-| 0:11–0:23 | Inicio | Qué es. Apretar ▶: el mapa recorre los años desde 2012. Que se vea el total de focos de la portada. | "Esto es Lo que el fuego se llevó. Cada punto que ves es un foco de calor detectado por satélite, con datos abiertos de la NASA, desde 2012 hasta hoy." |
-| 0:23–0:31 | Inicio | Por qué. Mantener la portada con el texto de apertura a la vista. | "Lo hice para que el fuego no sea solo una noticia que pasa, sino algo que se pueda mirar, comparar y recordar." |
-| 0:31–0:40 | Inicio, Explorar | Comparaciones. Elegir Corrientes en el ranking; cambiar "Período" a un trimestre (por ejemplo, T3) y ver cómo cambian el ranking y la serie. Pasar a "Comparar dos años" con 2019 y 2022: naranja, más focos; azul, menos. Dejar a la vista la frase de lectura, que nombra la provincia con mayor cambio. | "Elegís una provincia y ves su historia año a año. O ponés dos años frente a frente: naranja, más focos; azul, menos." |
-| 0:40–0:53 | Chubut | Las seis historias. Abrir Chubut con el punto de la navegación y scrollear despacio el texto: los focos reales se suman semana a semana en el mapa (se lee "semana N de M · focos · hasta el …"); en la escena avanza el fuego, el avión descarga, el helicóptero va y viene y avanzan los brigadistas. Subir un poco para mostrar que todo retrocede. | "Y adentro hay seis historias, de las sierras de Córdoba a la Patagonia. A medida que bajás pasan las semanas, aparecen los focos reales y se ve cómo se combatió cada incendio, con su fuente." |
-| 0:53–1:00 | Chubut o Cómo se hizo | Salvedad. Abrir el aviso "Focos de calor ≠ hectáreas quemadas · Escena esquemática" y dejarlo leíble. Cerrar con el título en pantalla. | "Un foco no es una hectárea quemada, y la app lo aclara. Porque contar bien el fuego también es cuidar." |
+| Tiempo | Qué mostrar | Locución |
+|---|---|---|
+| 0:00–0:08 | Pantalla de nubes, sin texto. Primer scroll: a la izquierda aparece el título y las nubes del centro se abren hacia la derecha. | "Seis incendios y datos satelitales de 2012 a 2026. Esto es Lo que el fuego se llevó." |
+| 0:08–0:16 | Las nubes terminan de abrirse: aparece Argentina y después se dibujan las provincias. | "Cada punto que vas a ver es un foco de calor que detectó un satélite de la NASA entre 2012 y 2026." |
+| 0:16–0:34 | Misiones y Corrientes. Scrollear despacio: el contador "semana N de M · focos" avanza y la escena de la derecha pasa del inicio al fuego y al combate. Abrir "Ver más" en Corrientes para mostrar las dos cifras que no coinciden. | "El recorrido va de norte a sur. En Corrientes, en 2022, el fuego alcanzó casi el once por ciento de la provincia, según el INTA. Otra fuente estima menos, y el sitio muestra las dos." |
+| 0:34–0:46 | Scrollear un poco hacia arriba y volver a bajar: el mapa y la escena retroceden y avanzan con el scroll. Saltar con el HUD a Chubut. | "Todo avanza y retrocede con el scroll. En Chubut, en 2026, según Infobae, más de quinientas personas lo combatieron con aviones y helicópteros." |
+| 0:46–0:54 | Plano general con los seis incendios en ceniza y las nubes cerrándose. | "Al final quedan solo los focos reales. Ninguna provincia se pinta entera como quemada." |
+| 0:54–1:00 | Epílogo sobre las nubes cerradas, con el aviso "un foco no es una hectárea quemada". Hacer clic en "Fuentes técnicas". | "Un foco no es una hectárea quemada. Cada cifra tiene su fuente." |
 
 Los tiempos suman 60 segundos.
 
-## Cuidado con los datos en pantalla
+## Cuidado con lo que se ve en pantalla
 
-- Cifras que se pueden ver al grabar: 2.620.568 focos en la portada; en Chubut al abrir, "semana 1 de 44 · 1.122 focos · hasta el 7 de enero de 2026".
-- La escena es una ilustración esquemática; dibuja el avión y el helicóptero en Chubut porque la fuente los nombra. No describirla como imagen real.
+- Al abrir Chubut (semana 1) el contador dice "semana 1 de 44 · 1.122 focos · hasta el 7 de enero de 2026".
+- Las escenas son ilustraciones esquemáticas y lo dicen en pantalla. Dibujan un avión solo en Chubut y Misiones, y un helicóptero solo en Chubut, porque son los medios que nombran las fuentes. No presentarlas como imágenes reales.
+- No mostrar fotos: el sitio no tiene.

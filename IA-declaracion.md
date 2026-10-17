@@ -69,6 +69,17 @@ Bajo la dirección de la persona autora, se trabajó con el asistente Antigravit
 - No se generaron imágenes ni ilustraciones con IA generativa: todos los elementos gráficos siguen siendo código SVG, canvas y CSS escrito a mano.
 - No se alteraron los totales de datos oficiales de NASA FIRMS ni los registros históricos verificados de `EVENTS`.
 
+## Sesión del 17 de octubre de 2026 (rama `feat/scrollytelling-redesign`, versión "nubes")
+
+Pendiente de revisión y firma de la persona autora.
+
+Sobre el rediseño que hizo otro asistente en esta rama, se trabajó con Claude Code (Anthropic, modelo Claude Opus 5.5) con este alcance:
+
+- **Retiros.** Salieron las 21 fotos sin licencia verificada, con su galería y su visor (ver `FOTOS.md`). También salieron los colores de biomas del mapa y el relleno de "carbón" de las provincias, porque el proyecto no tiene esos datos y sugerían superficie quemada. Se quitaron además el componente de biodiversidad y los textos del epílogo que no tenían fuente.
+- **Paridad.** La pantalla de exploración de la versión anterior se restauró sin cambios como ruta propia (`/explorar`). Los links viejos con hash siguen funcionando.
+- **Código nuevo.** El recorrido guiado: estado derivado solo del scroll, mapa en canvas con bordes provinciales y focos semanales, nubes dibujadas en canvas, pod de lectura, HUD, epílogo y sección de fuentes técnicas. Se sumó una prueba de determinismo del scroll (`scripts/test-scroll.mjs`). Las nubes, el mapa y las escenas están escritos en código: no son imágenes generadas por IA.
+- **Sin cambios.** Las cifras, causas y fuentes de `EVENTS` quedaron como estaban; las pruebas `test:events` y `check:data` lo comprueban.
+
 ## Alcance
 
 Este resumen cubre las sesiones de trabajo del 14 de octubre de 2026 (versión estática), la migración a Next.js del 15 de octubre de 2026 (tag `entrega-v1-2026-10-15`) y la actualización de biodiversidad y diseño editorial del 16 de octubre de 2026 (tag `entrega-v1-2026-10-16`). Las páginas de referencia (649 Héroes y Milla 201) se miraron solo como inspiración de diseño; ver `INSPIRACION.md`.
