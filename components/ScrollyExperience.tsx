@@ -1,18 +1,20 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { SECTIONS, TOUR_EVENTS } from '../lib/tour';
+import { FOCAL, SECTIONS, TOUR_EVENTS } from '../lib/tour';
+import { EVENTS } from '../lib/events';
+import { readAddress } from '../lib/exploreState';
 import { subscribe } from '../lib/scrollDriver';
 import TourMap from './TourMap';
 import CloudCurtain from './CloudCurtain';
 import TourStage from './TourStage';
 import TourHud from './TourHud';
 import StoryPod from './StoryPod';
+import ExploreSection from './ExploreSection';
 import Epilogue from './Epilogue';
 import CoverTitle from './CoverTitle';
 import SourcesSection from './SourcesSection';
 import styles from './ScrollyExperience.module.css';
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 const vh = (id: string) => ({ minHeight: SECTIONS.find((s) => s.id === id)!.vh + 'vh' });
 
 /** Scroll hint of the opening: visible only at the very top, gone as soon as the reader scrolls. */
@@ -30,13 +32,41 @@ function Cue() {
 }
 
 /**
- * The guided tour: clouds, title, Argentina revealed, six fires north to south, wide shot, epilogue
- * and the technical sources. All visible state derives from the scroll position (lib/tour.ts).
- * Links in the legacy hash format (#<n>&y=…&p=…&c=…) open the explorer, which still reads them.
+ * The guided tour: clouds, title, Argentina revealed, six fires north to south, wide shot, explore,
+ * epilogue and the technical sources. All visible state derives from the scroll position (lib/tour.ts).
  */
 export default function ScrollyExperience() {
   useEffect(() => {
-    if (/^#\d/.test(location.hash)) location.replace(BASE + '/explorar/' + location.hash);
+    const { go } = readAddress();
+    if (go === null || go === undefined) return;
+    let targetId = '';
+    if (go === 'explore') targetId = 'sec-explore';
+    else if (go === 'sources') targetId = 'fuentes';
+    else if (typeof go === 'number' && EVENTS[go]) targetId = 'sec-' + EVENTS[go].id;
+    if (!targetId) return;
+
+    const jump = () => {
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      const top = targetId === 'fuentes'
+        ? Math.ceil(el.getBoundingClientRect().top + window.scrollY)
+        : Math.ceil(el.getBoundingClientRect().top + window.scrollY - window.innerHeight * FOCAL) + 1;
+      window.scrollTo({ top, behavior: 'auto' });
+    };
+
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        requestAnimationFrame(() => {
+          jump();
+          requestAnimationFrame(jump);
+        });
+      });
+    } else {
+      requestAnimationFrame(() => {
+        jump();
+        requestAnimationFrame(jump);
+      });
+    }
   }, []);
 
   return (
@@ -73,6 +103,12 @@ export default function ScrollyExperience() {
                 superficie quemada: muestran dónde y cuándo hubo actividad de fuego.
               </p>
             </article>
+          </div>
+        </section>
+
+        <section id="sec-explore" className={styles.story} style={vh('sec-explore')} aria-label="Explorá año por año">
+          <div className={styles.podSlot}>
+            <ExploreSection />
           </div>
         </section>
 

@@ -125,6 +125,10 @@ const PAIRS = [
   U('tour: control border on chip over hot foci', 'var(--t-control)', 'tChip'),
   U('tour: control border on sources paper', 'var(--t-control)', 'tPaper'),
   U('tour: focus outline amber on pod', 'var(--accent)', 'tPod'),
+  U('explore: inactive bar #bf5b30 on cloud', '#bf5b30', 'tCloud'),
+  U('explore: lightest grid tone #f6b73c against its rim #240800', '#f6b73c', '#240800'),
+  U('map: hottest focus #ffd166 against its rim #240800', '#ffd166', '#240800'),
+  U('explore: active bar red on cloud', 'var(--t-red)', 'tCloud'),
 ];
 
 const rows = PAIRS.map((p) => {

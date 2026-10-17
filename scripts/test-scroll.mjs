@@ -105,6 +105,13 @@ await send('Page.navigate', { url: URL_ });
 await loaded;
 await sleep(2500);
 
+// Determinism: the tour must start with a clean address (no ?y= or ?p=) and the explore player idle
+const initialSearch = await evaluate('location.search');
+if (initialSearch.includes('y=') || initialSearch.includes('p=')) {
+  console.error('Determinism error: initial page contains explore query: ' + initialSearch);
+  done(1);
+}
+
 /* ---------- helpers ---------- */
 const tourEnd = await evaluate(`Math.floor(document.getElementById('fuentes').getBoundingClientRect().top + scrollY - innerHeight)`);
 const storyCount = 6;

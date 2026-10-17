@@ -13,10 +13,11 @@ export const TOUR_EVENTS: any[] = NORTH_TO_SOUTH.map((id) => EVENTS.find((e) => 
  *   title    8-14 %  title pod on the left, centre and right clouds start to part
  *   reveal   14-22 % Argentina appears, then the provincial borders and the HUD
  *   stories  22-88 % six fires, north to south
- *   wide     88-93 % camera opens on the whole country
+ *   wide     camera opens on the whole country
+ *   explore  year by year map, province series and ranking (state in the address)
  *   epilogue 93-100 % clouds close completely, epilogue on them, then smoke into the sources
  */
-export type Kind = 'opening' | 'title' | 'reveal' | 'story' | 'wide' | 'epilogue';
+export type Kind = 'opening' | 'title' | 'reveal' | 'story' | 'wide' | 'explore' | 'epilogue';
 export type Section = { id: string; kind: Kind; vh: number; story?: number };
 
 export const SECTIONS: Section[] = [
@@ -25,6 +26,7 @@ export const SECTIONS: Section[] = [
   { id: 'sec-reveal', kind: 'reveal', vh: 125 },
   ...TOUR_EVENTS.map((ev, i): Section => ({ id: 'sec-' + ev.id, kind: 'story', vh: 180, story: i })),
   { id: 'sec-wide', kind: 'wide', vh: 85 },
+  { id: 'sec-explore', kind: 'explore', vh: 190 },
   { id: 'sec-epilogue', kind: 'epilogue', vh: 250 },
 ];
 
@@ -45,7 +47,7 @@ export type TourState = {
   /** Title visibility, and how far it moved from the centre of the cover to the side (0..1). */
   title: number;
   titleDock: number;
-  /** -2 = South America, -1 = Argentina, 0..5 = fire, 6 = wide shot (all fires visited). */
+  /** -2 = South America, -1 = Argentina, 0..5 = fire, 6 = wide shot (all fires visited), 7 = explore by year. */
   chapter: number;
   /** Progress inside the fire (0..1); 1 outside the stories. */
   chapterT: number;
@@ -105,6 +107,10 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     case 'wide':
       st.open = 1; st.borders = 1; st.hud = 1;
       st.chapter = 6;
+      break;
+    case 'explore':
+      st.open = 1; st.borders = 1; st.hud = 1;
+      st.chapter = 7;
       break;
     case 'epilogue':
       st.open = 1; st.borders = 1; st.chapter = 6;

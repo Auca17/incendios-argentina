@@ -7,8 +7,8 @@ import { loadLegacy, buildFiles, OUT, LEGACY_DATA } from './lib-legacy.mjs';
 const legacy = loadLegacy();
 const expected = buildFiles(legacy);
 
-// 1. every JSON file equals the legacy content, and no stray files exist
-const onDisk = fs.readdirSync(OUT).filter((f) => f.endsWith('.json')).sort();
+// 1. every JSON file equals the legacy content, and no stray files exist (excluding base-map asset sudamerica.json)
+const onDisk = fs.readdirSync(OUT).filter((f) => f.endsWith('.json') && f !== 'sudamerica.json').sort();
 assert.deepStrictEqual(onDisk, Object.keys(expected).sort(), 'file set differs from legacy data');
 for (const [name, obj] of Object.entries(expected)) {
   assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(OUT, name), 'utf8')), obj, `${name} differs from legacy`);

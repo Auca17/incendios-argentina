@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { loadFoci, loadProvincias, type Foci } from '../lib/data';
+import { loadFoci, loadGrid, loadProvincias, type Foci } from '../lib/data';
+import { getExplore, setExplore, subscribeExplore } from '../lib/exploreState';
 import { fociWeek } from '../lib/fire';
 import { TOUR_EVENTS } from '../lib/tour';
 import { request, subscribe, type Frame } from '../lib/scrollDriver';
@@ -45,6 +46,9 @@ export const MAP_COLORS = {
   deep: '#e8401c',
   old: '#b3301a',
   visitedFocus: '#a62a16',
+  // year grid of the explore section (log scale, low to high)
+  grid: ['#f6b73c', '#ef7d22', '#d9441b', '#9c1f12'],
+  selected: '#111418',
 };
 const C = MAP_COLORS;
 
@@ -80,6 +84,20 @@ export default function TourMap() {
     img.onload = () => { if (live) { relief = img; lastKey = baseKey = ''; request(); } };
     img.src = BASE_PATH + '/map/sudamerica-ne2.webp';
     TOUR_EVENTS.forEach((ev) => loadFoci(ev.id).then((E) => { if (live) { foci.set(ev.id, E); request(); } }, () => {}));
+    const grids = new Map<number, { step: number; cells: [number, number, number][] }>();
+    const unsubExplore = subscribeExplore(() => request());
+    let chapterNow = -2;
+    let view = { scale: 1, ox: 0, oy: 0 };
+    // explore section: a click on a province selects it (the panel offers the same choice as a list)
+    const onClick = (e: MouseEvent) => {
+      if (chapterNow !== 7 || !provs.length) return;
+      const r = canvas.getBoundingClientRect();
+      const x = (e.clientX - r.left - view.ox) / view.scale, y = (e.clientY - r.top - view.oy) / view.scale;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      const hit = provs.find((p) => ctx.isPointInPath(p.path, x, y));
+      if (hit) setExplore({ prov: getExplore().prov === hit.name ? null : hit.name });
+    };
+    canvas.addEventListener('click', onClick);
 
     let w = 0, h = 0, dpr = 1;
     const resize = () => {
@@ -130,7 +148,15 @@ export default function TourMap() {
       const ev = st.chapter >= 0 && st.chapter <= 5 ? TOUR_EVENTS[st.chapter] : null;
       const E = ev ? foci.get(ev.id) : undefined;
       const week = E ? fociWeek(E, st.chapterT) : 0;
-      const key = [cam.map((v) => v.toFixed(4)).join(','), st.chapter, week, st.borders.toFixed(3), provs.length, foci.size, w, h].join('|');
+      chapterNow = st.chapter;
+      canvas.style.cursor = st.chapter === 7 ? 'pointer' : '';
+      const ex = getExplore();
+      if (st.chapter === 7 && !grids.has(ex.year)) {
+        grids.set(ex.year, { step: 0.25, cells: [] }); // placeholder until loaded
+        loadGrid(ex.year).then((g) => { if (live) { grids.set(ex.year, g); baseKey = lastKey = ''; request(); } }, () => {});
+      }
+      const exKey = st.chapter === 7 ? ex.year + ':' + (ex.prov || '') : '';
+      const key = [cam.map((v) => v.toFixed(4)).join(','), st.chapter, week, st.borders.toFixed(3), provs.length, foci.size, w, h, exKey].join('|');
       if (key !== lastKey) {
         lastKey = key;
         draw(st.chapter, week, st.borders);
@@ -169,6 +195,7 @@ export default function TourMap() {
       const oy = (h - spanY * scale) / 2 + c[3] * scale;
       const px = 1 / scale; // one CSS pixel in world units
       const world = (g: CanvasRenderingContext2D) => g.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * ox, dpr * oy);
+      view = { scale, ox, oy };
       if (base.width !== canvas.width || base.height !== canvas.height) {
         base.width = ash.width = canvas.width;
         base.height = ash.height = canvas.height;
@@ -176,7 +203,8 @@ export default function TourMap() {
       }
       const camKey = c.map((v) => v.toFixed(4)).join(',') + '|' + w + 'x' + h;
 
-      const bk = [camKey, chapter, borders.toFixed(3), provs.length, foci.size, !!relief, !!neighbours].join('|');
+      const ex = getExplore();
+      const bk = [camKey, chapter, borders.toFixed(3), provs.length, foci.size, !!relief, !!neighbours, chapter === 7 ? ex.year + ':' + (ex.prov || '') + ':' + (grids.get(ex.year)?.cells.length || 0) : ''].join('|');
       if (bk !== baseKey) {
         baseKey = bk;
         ashKey = '';
@@ -258,6 +286,11 @@ export default function TourMap() {
         provs.forEach((p) => g.stroke(p.path));
       }
 
+      if (chapter === 7) {
+        drawGrid(g, px);
+        return;
+      }
+
       // visited fires: dim outline + all their foci as embers
       const visited = chapter === 6 ? 6 : Math.max(0, chapter);
       for (let i = 0; i < visited; i++) {
@@ -269,6 +302,39 @@ export default function TourMap() {
         if (!Ev) continue;
         const W = weeksOf(v.id, Ev);
         for (let wk = 0; wk < Ev.weeks; wk++) cells(g, W[wk], Ev.step, px, C.visitedFocus, true);
+      }
+    };
+
+    /** Explore: foci of the chosen year in 0.25-degree cells (log colour scale) and the chosen province. */
+    const drawGrid = (g: CanvasRenderingContext2D, px: number) => {
+      const ex = getExplore();
+      const G = grids.get(ex.year);
+      if (G && G.cells.length) {
+        let max = 1;
+        for (const c of G.cells) if (c[2] > max) max = c[2];
+        const lm = Math.log(max + 1);
+        const s = G.step * 0.92;
+        // opaque dark rim (same as the foci): every tone keeps >= 3:1 against it, whatever the relief
+        // below (scripts/contrast.mjs checks the lightest tone)
+        for (const [lon, lat, n] of G.cells) {
+          const t = Math.log(n + 1) / lm;
+          const x = (lon - s / 2) * K, y = -lat - s / 2, w = s * K, h = s; // cells are given by their centre
+          g.fillStyle = C.rim;
+          g.fillRect(x - 0.8 * px, y - 0.8 * px, w + 1.6 * px, h + 1.6 * px);
+          g.fillStyle = C.grid[Math.min(3, Math.floor(t * 4))];
+          g.fillRect(x, y, w, h);
+        }
+      }
+      if (ex.prov) {
+        provs.forEach((p) => {
+          if (p.name !== ex.prov) return;
+          g.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+          g.lineWidth = 5 * px;
+          g.stroke(p.path);
+          g.strokeStyle = C.selected;
+          g.lineWidth = 2.2 * px;
+          g.stroke(p.path);
+        });
       }
     };
 
@@ -296,7 +362,7 @@ export default function TourMap() {
     };
 
     const unsub = subscribe(onFrame);
-    return () => { live = false; unsub(); ro.disconnect(); };
+    return () => { live = false; unsub(); unsubExplore(); ro.disconnect(); canvas.removeEventListener('click', onClick); };
   }, []);
 
   return (
