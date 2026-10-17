@@ -6,7 +6,7 @@
 // Drives headless Chrome over the DevTools protocol (Node's built-in WebSocket, no npm dependencies).
 // Random walk up and down the tour (jumps of 100 to 1200 px on a 100 px lattice, so positions repeat),
 // mixed with HUD dot clicks (scrollIntoView) and arrow-key jumps. After each stop it waits, then
-// fingerprints the map canvas, the cloud canvas and a screenshot of the HUD. Every time a scrollY
+// fingerprints the map canvas, the cloud canvas and the rendered HUD state. Every time a scrollY
 // comes back, the fingerprints must match the first visit. It also checks that the closed clouds of
 // the epilogue cover the centre of the viewport completely (no map pixel behind the epilogue text).
 // Exit code 1 on any mismatch, console error or failed request.
@@ -126,8 +126,17 @@ const fingerprint = async () => {
     const m = document.querySelector('canvas[data-tour-canvas="map"]');
     return { y: Math.round(scrollY), out, mapPng: ${DEBUG} ? m.toDataURL('image/png').split(',')[1] : '' };
   })()`);
+  // HUD state as rendered: visibility, active story, progress bar and the live-region text (a screenshot
+  // of its strip would also pick up the WebGL clouds behind it, which the canvas check already covers)
+  const hudState = await evaluate(`(() => {
+    const nav = document.querySelector('nav[aria-label]');
+    const cur = [...nav.querySelectorAll('button')].findIndex((b) => b.getAttribute('aria-current') === 'step');
+    const fill = nav.querySelector('span span');
+    return JSON.stringify([getComputedStyle(nav).visibility, getComputedStyle(nav).opacity, cur, fill && fill.style.transform,
+      document.querySelector('[aria-live=polite]')?.textContent]);
+  })()`);
   const hud = await send('Page.captureScreenshot', { format: 'png', clip: { x: MOBILE ? 0 : W - 200, y: 0, width: MOBILE ? W : 200, height: MOBILE ? 120 : H, scale: 1 } });
-  const hudHash = crypto.createHash('sha256').update(Buffer.from(hud.data, 'base64')).digest('hex').slice(0, 16);
+  const hudHash = crypto.createHash('sha256').update(hudState).digest('hex').slice(0, 16);
   return { y: canv.y, map: canv.out.map, clouds: canv.out.clouds, hud: hudHash, hudPng: hud.data, mapPng: canv.mapPng };
 };
 
