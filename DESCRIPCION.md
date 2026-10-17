@@ -6,4 +6,4 @@
 
 **Limitaciones.** Un foco de calor no equivale a una hectárea quemada ni a un incendio forestal, e incluye quemas agrícolas. El satélite no ve los fuegos breves ni los que quedan bajo las nubes. Las hectáreas y las causas vienen de los informes oficiales y de la prensa citados.
 
-**IA.** Código asistido por IA bajo dirección humana. No hay imágenes generadas por IA ni fotos.
+**IA.** Código asistido por IA bajo dirección humana. No hay imágenes generadas por IA. Se incluyen 4 fotografías documentales y satelitales con licencia abierta verificada en los pods de lectura (ver FOTOS.md).

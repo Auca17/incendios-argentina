@@ -24,4 +24,4 @@ Los tiempos suman 60 segundos.
 
 - Al abrir Chubut (semana 1) el contador dice "semana 1 de 44 · 1.122 focos · hasta el 7 de enero de 2026".
 - Las escenas son ilustraciones esquemáticas y lo dicen en pantalla. Dibujan un avión solo en Chubut y Misiones, y un helicóptero solo en Chubut, porque son los medios que nombran las fuentes. No presentarlas como imágenes reales.
-- No mostrar fotos: el sitio no tiene.
+- Las fotos documentales y satelitales con licencia verificada solo aparecen al abrir "Ver más" en Corrientes, Delta y Chubut; Misiones, Córdoba y Mendoza no tienen fotos.

@@ -138,6 +138,8 @@
 .photo { margin: 0; }
 .photo img { display: block; width: 100%; height: auto; border-radius: var(--r-1); }
 .photo figcaption { margin-top: var(--s-half); font-size: var(--fs-12); line-height: 1.45; color: var(--t-ink-2); }
+.photo figcaption a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.photo figcaption a:hover { color: var(--t-ink); }
 
 @media (prefers-reduced-motion: reduce) {
   .drawer { transition: none; }

@@ -4,6 +4,7 @@ import { loadProvinciaMes } from '../lib/data';
 import { ALT, fmt, monthSeries, type Fact } from '../lib/fire';
 import { CAUSE_BY } from '../lib/tour';
 import { remeasure } from '../lib/scrollDriver';
+import { STORY_PHOTOS } from '../lib/photos';
 import MonthChart from './MonthChart';
 import styles from './StoryPod.module.css';
 
@@ -100,6 +101,31 @@ export default function StoryPod({ ev, index, total }: Props) {
               incendios forestales: incluyen quemas agrícolas.
             </p>
           </div>
+
+          {STORY_PHOTOS[ev.id] && STORY_PHOTOS[ev.id].length > 0 && (
+            <div className={styles.photos}>
+              {STORY_PHOTOS[ev.id].map((p) => (
+                <figure key={p.src} className={styles.photo}>
+                  <img
+                    src={p.src}
+                    alt={p.alt}
+                    width={p.width}
+                    height={p.height}
+                    loading="lazy"
+                    onLoad={remeasure}
+                  />
+                  <figcaption>
+                    {p.credit}
+                    {p.licenseUrl && p.licenseText && (
+                      <a href={p.licenseUrl} target="_blank" rel="noopener noreferrer">
+                        {p.licenseText}
+                      </a>
+                    )}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          )}
 
         </div>
       </div>

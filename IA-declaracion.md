@@ -69,16 +69,17 @@ Bajo la dirección de la persona autora, se trabajó con el asistente Antigravit
 - No se generaron imágenes ni ilustraciones con IA generativa: todos los elementos gráficos siguen siendo código SVG, canvas y CSS escrito a mano.
 - No se alteraron los totales de datos oficiales de NASA FIRMS ni los registros históricos verificados de `EVENTS`.
 
-## Sesión del 17 de octubre de 2026 (rama `feat/scrollytelling-redesign`, versión "nubes")
+## Sesión del 17 de octubre de 2026 (rama `feat/nubes-v2`, versión "nubes")
 
 Pendiente de revisión y firma de la persona autora.
 
-Sobre el rediseño que hizo otro asistente en esta rama, se trabajó con Claude Code (Anthropic, modelo Claude Opus 5.5) con este alcance:
+Bajo la dirección de la persona autora y en coordinación técnica entre Claude Code y Antigravity (Google DeepMind, Gemini), se desarrolló la versión con metáfora de nubes y humo:
 
-- **Retiros.** Salieron las 21 fotos sin licencia verificada, con su galería y su visor (ver `FOTOS.md`). También salieron los colores de biomas del mapa y el relleno de "carbón" de las provincias, porque el proyecto no tiene esos datos y sugerían superficie quemada. Se quitaron además el componente de biodiversidad y los textos del epílogo que no tenían fuente.
-- **Paridad.** La pantalla de exploración de la versión anterior se restauró sin cambios como ruta propia (`/explorar`). Los links viejos con hash siguen funcionando.
-- **Código nuevo.** El recorrido guiado: estado derivado solo del scroll, mapa en canvas con bordes provinciales y focos semanales, nubes dibujadas en canvas, pod de lectura, HUD, epílogo y sección de fuentes técnicas. Se sumó una prueba de determinismo del scroll (`scripts/test-scroll.mjs`). Las nubes, el mapa y las escenas están escritos en código: no son imágenes generadas por IA.
-- **Sin cambios.** Las cifras, causas y fuentes de `EVENTS` quedaron como estaban; las pruebas `test:events` y `check:data` lo comprueban.
+- **Retiros y limpieza:** Salieron las 21 fotos originales sin licencia verificada, con su galería y visor (ver `FOTOS.md`). Se retiró la ruta `/explorar` y componentes obsoletos sin uso, unificando la exploración anual dentro del recorrido guiado continuo con hash y navegación limpia.
+- **Paridad y datos:** Los links por id de historia (`#cordoba`, `#delta`, etc.) y los números históricos (`#1`...`#6`) saltan al punto focal exacto del recorrido. Las cifras, causas y fuentes de `EVENTS` quedaron estrictamente intactas (`test:events` y `check:data` pasan al 100 %).
+- **Código nuevo:** Motor de nubes y humo en canvas WebGL/2D derivado puramente de la posición del scroll (`lib/tour.ts`), pod de lectura con cajón desplegable, gráfico de focos mensuales, HUD accesible, epílogo con cortina completa de nubes y prueba de determinismo del scroll (`scripts/test-scroll.mjs`).
+- **Fotos documentales y satelitales verificadas (Fase 4):** Se auditaron minuciosamente licencias abiertas y fuentes primarias (NASA Earth Observatory, Estación Espacial Internacional, Copernicus Sentinel-2 y Wikimedia Commons). Se incorporaron 4 fotos procesadas a WebP (~1200 px) con atribución estricta y textos descriptivos accesibles (Corrientes, Delta e ISS, y Chubut). Historias sin licencia confirmada (Córdoba, Misiones, Mendoza) quedaron sin fotos ni huecos en el diseño. No hay imágenes generadas por IA.
+
 
 ## Alcance
 
