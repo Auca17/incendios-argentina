@@ -3,26 +3,26 @@ import { useEffect, useRef } from 'react';
 import styles from './CloudCurtain.module.css';
 
 type Props = {
-  /** 0 = full clouds at opening, 1 = clouds parted */
+  /** 0 = full clouds covering Argentina partially, 1 = clouds parted */
   openProgress: number;
-  /** 0 = open, 1 = clouds returning for the epilogue */
+  /** 0 = open, 1 = clouds returning to close over Argentina before epilogue */
   closeProgress?: number;
 };
 
 /**
- * Atmospheric cloud curtain for opening and closing transitions.
- * - Opening: Starts with clouds over Argentina, opens naturally on scroll without buttons or indicators.
- * - Top-left title: "LO QUE EL FUEGO SE LLEVÓ" with subtle Argentine flag ribbon.
- * - Closing: Clouds return smoothly over the calcinated country before the epilogue.
+ * Atmospheric procedural cloud curtain over the persistent cartographic map.
+ * - Opening: Translucent cumulus clouds partially veil Argentina, parting smoothly as the user scrolls.
+ * - Closing: Clouds naturally return from left and right to veil Argentina after the wide shot.
+ * - Confined over the map stage (z-index: 10, behind narrative cards at z-index: 20).
  */
 export default function CloudCurtain({ openProgress, closeProgress = 0 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Compute effective cloud density (1 = fully covered, 0 = fully clear)
-  const isClosing = closeProgress > 0.01;
+  // Compute effective cloud density (1 = veil in place, 0 = fully parted)
+  const isClosing = closeProgress > 0.001;
   const density = isClosing
     ? Math.min(1, Math.max(0, closeProgress))
-    : Math.max(0, 1 - openProgress * 1.5);
+    : Math.max(0, 1 - openProgress * 1.4);
 
   const densityRef = useRef(density);
   densityRef.current = density;
@@ -34,20 +34,12 @@ export default function CloudCurtain({ openProgress, closeProgress = 0 }: Props)
     if (!ctx) return;
 
     let animId = 0;
-    let w = (cv.width = window.innerWidth);
-    let h = (cv.height = window.innerHeight);
 
-    const onResize = () => {
-      w = cv.width = window.innerWidth;
-      h = cv.height = window.innerHeight;
-    };
-    window.addEventListener('resize', onResize);
-
-    // Procedural soft cloud puffs
+    // Procedural atmospheric cloud puffs
     interface CloudPuff {
-      x: number;
-      y: number;
-      r: number;
+      xRatio: number; // 0..1 relative to canvas width
+      yRatio: number; // 0..1 relative to canvas height
+      rRatio: number; // relative size
       side: 'left' | 'right';
       vx: number;
       vy: number;
@@ -55,18 +47,17 @@ export default function CloudCurtain({ openProgress, closeProgress = 0 }: Props)
     }
 
     const puffs: CloudPuff[] = [];
-    const count = 34;
+    const count = 26;
     for (let i = 0; i < count; i++) {
       const isLeft = i % 2 === 0;
-      const x = isLeft ? Math.random() * (w * 0.55) : w * 0.45 + Math.random() * (w * 0.55);
       puffs.push({
-        x,
-        y: Math.random() * h,
-        r: Math.max(w, h) * (0.3 + Math.random() * 0.28),
+        xRatio: isLeft ? 0.05 + Math.random() * 0.45 : 0.50 + Math.random() * 0.45,
+        yRatio: Math.random(),
+        rRatio: 0.28 + Math.random() * 0.24,
         side: isLeft ? 'left' : 'right',
-        vx: (Math.random() - 0.5) * 0.2,
-        vy: -0.1 - Math.random() * 0.15,
-        alpha: 0.45 + Math.random() * 0.45,
+        vx: (Math.random() - 0.5) * 0.0003,
+        vy: -0.0002 - Math.random() * 0.0003,
+        alpha: 0.35 + Math.random() * 0.30, // Translucent: allows Argentina to be visible underneath
       });
     }
 
@@ -74,37 +65,47 @@ export default function CloudCurtain({ openProgress, closeProgress = 0 }: Props)
       animId = requestAnimationFrame(render);
       const curDensity = densityRef.current;
 
+      const w = cv.clientWidth;
+      const h = cv.clientHeight;
+      if (w <= 10 || h <= 10) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+        cv.width = Math.round(w * dpr);
+        cv.height = Math.round(h * dpr);
+      }
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
       if (curDensity <= 0.005) return;
 
-      const partingX = (1 - curDensity) * w * 0.65;
+      // Parting distance: clouds slide horizontally outwards
+      const partingX = (1 - curDensity) * w * 0.75;
 
       puffs.forEach((puff) => {
-        puff.x += puff.vx;
-        puff.y += puff.vy;
+        puff.xRatio += puff.vx;
+        puff.yRatio += puff.vy;
 
-        if (puff.y + puff.r < 0) puff.y = h + puff.r;
-        if (puff.y - puff.r > h) puff.y = -puff.r;
+        if (puff.yRatio < -0.3) puff.yRatio = 1.3;
+        if (puff.yRatio > 1.3) puff.yRatio = -0.3;
 
-        const drawX = puff.side === 'left' ? puff.x - partingX : puff.x + partingX;
-        const grad = ctx.createRadialGradient(
-          drawX,
-          puff.y,
-          puff.r * 0.05,
-          drawX,
-          puff.y,
-          puff.r
-        );
+        const px = puff.xRatio * w;
+        const py = puff.yRatio * h;
+        const r = Math.max(w, h) * puff.rRatio;
+
+        const drawX = puff.side === 'left' ? px - partingX : px + partingX;
+        const grad = ctx.createRadialGradient(drawX, py, r * 0.08, drawX, py, r);
 
         const a = puff.alpha * curDensity;
-        grad.addColorStop(0, `rgba(247, 244, 238, ${a * 0.95})`);
-        grad.addColorStop(0.45, `rgba(238, 232, 222, ${a * 0.8})`);
-        grad.addColorStop(0.75, `rgba(220, 210, 198, ${a * 0.4})`);
-        grad.addColorStop(1, 'rgba(220, 210, 198, 0)');
+        // Natural atmospheric cloud tones: ivory-mist center, soft fading edges
+        grad.addColorStop(0, `rgba(228, 222, 212, ${a * 0.75})`);
+        grad.addColorStop(0.40, `rgba(198, 190, 178, ${a * 0.50})`);
+        grad.addColorStop(0.75, `rgba(150, 142, 130, ${a * 0.20})`);
+        grad.addColorStop(1, 'rgba(150, 142, 130, 0)');
 
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(drawX, puff.y, puff.r, 0, Math.PI * 2);
+        ctx.arc(drawX, py, r, 0, Math.PI * 2);
         ctx.fill();
       });
     };
@@ -113,42 +114,20 @@ export default function CloudCurtain({ openProgress, closeProgress = 0 }: Props)
 
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener('resize', onResize);
     };
   }, []);
 
-  if (density <= 0.01) return null;
-
-  const headerOpacity = Math.max(0, 1 - openProgress * 2.2);
+  if (density <= 0.005) return null;
 
   return (
     <div
       className={styles.curtainWrap}
       style={{
-        pointerEvents: density > 0.6 ? 'auto' : 'none',
+        opacity: Math.min(1, density * 1.5),
       }}
-      aria-hidden={density <= 0.05}
+      aria-hidden="true"
     >
       <canvas ref={canvasRef} className={styles.cloudCanvas} />
-
-      {/* Elegant Opening Title with Argentine Flag Ribbon Detail */}
-      {!isClosing && headerOpacity > 0.01 && (
-        <header
-          className={styles.openingHeader}
-          style={{
-            opacity: headerOpacity,
-            transform: `translateY(-${openProgress * 40}px)`,
-          }}
-        >
-          <div className={styles.flagRibbon} aria-hidden="true">
-            <span className={styles.flagStripeSky} />
-            <span className={styles.flagStripeWhite} />
-            <span className={styles.flagStripeSky} />
-          </div>
-          <h1 className={styles.openingTitle}>Lo que el fuego se llevó</h1>
-          <p className={styles.openingKicker}>15 años de memoria ambiental · 2012–2026</p>
-        </header>
-      )}
     </div>
   );
 }

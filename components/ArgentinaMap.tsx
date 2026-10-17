@@ -1,15 +1,17 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { loadProvincias, loadFoci, type Foci } from '../lib/data';
-import { EVENTS } from '../lib/events';
+import PROVINCIAS_GEOJSON from '../public/data/provincias.json';
+import { ARGENTINA_VIEWBOX, ARGENTINA_STATIC_PATHS } from '../lib/argentinaStaticSvg';
+import { loadFoci, type Foci } from '../lib/data';
+import styles from './ArgentinaMap.module.css';
 
-// Argentina bounding box: [minLon, maxLon, minLat, maxLat]
-const LON0 = -73.8, LON1 = -53.4, LAT0 = -55.3, LAT1 = -21.6;
+// Argentina continental bounding box: [minLon, maxLon, minLat, maxLat]
+const LON0 = -73.6, LON1 = -53.6, LAT0 = -55.1, LAT1 = -21.7;
 const K = Math.cos((38 * Math.PI) / 180);
 const COUNTRY_BOX = [LON0, LON1, LAT0, LAT1];
 
 // Natural biome colors per province
-const BIOME_COLORS: Record<string, string> = {
+export const BIOME_COLORS: Record<string, string> = {
   'Misiones': '#264e32',
   'Corrientes': '#2d5a44',
   'Entre Ríos': '#335c46',
@@ -36,7 +38,7 @@ const BIOME_COLORS: Record<string, string> = {
   'Tierra del Fuego': '#33433e',
 };
 
-// Target regions in North-to-South order
+// Target regions in North-to-South sequence
 export const CHAPTER_CONFIG = [
   { id: 'misiones', name: 'Misiones', provs: ['Misiones'] },
   { id: 'corrientes', name: 'Corrientes', provs: ['Corrientes'] },
@@ -47,31 +49,28 @@ export const CHAPTER_CONFIG = [
 ];
 
 type Props = {
-  chapterIndex: number; // -1: Intro, 0..5: The 6 provinces, 6: Final wide view / Epilogue
-  chapterProgress: number; // 0 to 1 within the current active chapter
+  chapterIndex: number; // -1: Intro, 0..5: Provinces, 6: Full country wide shot / Epilogue
+  chapterProgress: number; // 0..1 within current chapter
   onProvinceClick?: (name: string) => void;
 };
 
-type PathItem = { name: string; path: Path2D; box: number[] };
+type PathItem = { name: string; path: Path2D };
 
 /**
- * Single persistent cartographic canvas for the whole experience.
- * Features:
- *  - Geographically accurate GeoJSON geometries for all 23 provinces + CABA.
- *  - Biome-based natural coloring that progressively transforms into charcoal black.
- *  - Persistent memory: completed provinces stay black with their fire foci indefinitely.
- *  - Smooth cinematic camera zoom/pan between full country and regional close-ups.
- *  - Real NASA satellite heat foci dots rendered on the darkened territory.
+ * Persistent Cartographic Canvas Scene with Progressive Rendering:
+ * 1. FRAME 0: Renders instant inline SVG with all 24 provinces & biome colors (never blank/white).
+ * 2. FRAME 1+: Hardware-accelerated HTML5 Canvas mounts, interpolates camera smoothly,
+ *    burns provinces into charcoal black irreversibly, and renders real NASA satellite fire pixels.
  */
 export default function ArgentinaMap({
   chapterIndex,
   chapterProgress,
-  onProvinceClick,
 }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const geoRef = useRef<any[]>([]);
-  const [geo, setGeo] = useState<any[]>([]);
-  const pathsRef = useRef<PathItem[]>([]);
+  const [canvasReady, setCanvasReady] = useState(false);
+
+  // Cached fire datasets
   const fociMapRef = useRef<Map<string, Foci>>(new Map());
 
   // Camera interpolation state: [minLon, maxLon, minLat, maxLat]
@@ -83,34 +82,27 @@ export default function ArgentinaMap({
   const chapterProgressRef = useRef(chapterProgress);
   chapterProgressRef.current = chapterProgress;
 
-  // 1. Load GeoJSON provinces and all 6 fire event datasets
+  // Pre-load satellite foci data asynchronously
   useEffect(() => {
     let active = true;
-
-    loadProvincias().then((fc) => {
-      if (!active) return;
-      geoRef.current = fc.features;
-      setGeo(fc.features);
-    });
-
     CHAPTER_CONFIG.forEach((c) => {
       loadFoci(c.id).then((foci) => {
         if (!active) return;
         fociMapRef.current.set(c.id, foci);
       });
     });
-
     return () => {
       active = false;
     };
   }, []);
 
-  // 2. Compute camera target bounding box
+  // Compute camera bounding box for active chapter
   const getBoxForProvinces = useCallback((provNames: string[]): number[] => {
+    const geo = (PROVINCIAS_GEOJSON as any).features || [];
     if (!geo.length || !provNames.length) return [...COUNTRY_BOX];
 
     let minLon = 180, maxLon = -180, minLat = 90, maxLat = -90;
-    geo.forEach((f) => {
+    geo.forEach((f: any) => {
       if (!provNames.includes(f.properties.name)) return;
       const g = f.geometry;
       const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
@@ -127,43 +119,47 @@ export default function ArgentinaMap({
     if (minLon > maxLon) return [...COUNTRY_BOX];
     const spanX = maxLon - minLon;
     const spanY = maxLat - minLat;
-    const padX = Math.max(spanX * 0.22, 0.6);
-    const padY = Math.max(spanY * 0.22, 0.6);
+    const padX = Math.max(spanX * 0.28, 0.8);
+    const padY = Math.max(spanY * 0.28, 0.8);
     return [minLon - padX, maxLon + padX, minLat - padY, maxLat + padY];
-  }, [geo]);
+  }, []);
 
   // Update target camera box based on active chapter
   useEffect(() => {
-    if (!geo.length || chapterIndex < 0 || chapterIndex >= CHAPTER_CONFIG.length) {
+    if (chapterIndex < 0 || chapterIndex >= CHAPTER_CONFIG.length) {
       targetCameraRef.current = [...COUNTRY_BOX];
     } else {
       const cfg = CHAPTER_CONFIG[chapterIndex];
       targetCameraRef.current = getBoxForProvinces(cfg.provs);
     }
-  }, [geo, chapterIndex, getBoxForProvinces]);
+  }, [chapterIndex, getBoxForProvinces]);
 
-  // 3. Animation loop & rendering
+  // Main 60 FPS Canvas rendering loop
   useEffect(() => {
     const cv = canvasRef.current;
-    if (!cv) return;
+    const cont = containerRef.current;
+    if (!cv || !cont) return;
     const ctx = cv.getContext('2d');
     if (!ctx) return;
 
     let animId = 0;
-    let dpr = window.devicePixelRatio || 1;
+    const geo = (PROVINCIAS_GEOJSON as any).features || [];
 
     const render = () => {
       animId = requestAnimationFrame(render);
 
-      const w = cv.clientWidth;
-      const h = cv.clientHeight;
-      if (w <= 0 || h <= 0) return;
+      // Read real layout dimensions from container
+      const w = cont.clientWidth;
+      const h = cont.clientHeight;
+      if (w <= 10 || h <= 10) return;
 
-      const expectedW = Math.round(w * dpr);
-      const expectedH = Math.round(h * dpr);
-      if (cv.width !== expectedW || cv.height !== expectedH) {
-        cv.width = expectedW;
-        cv.height = expectedH;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const targetW = Math.round(w * dpr);
+      const targetH = Math.round(h * dpr);
+
+      if (cv.width !== targetW || cv.height !== targetH) {
+        cv.width = targetW;
+        cv.height = targetH;
       }
 
       // Smooth camera interpolation (lerp)
@@ -174,10 +170,10 @@ export default function ArgentinaMap({
         curCam[i] += (tgtCam[i] - curCam[i]) * lerpSpeed;
       }
 
-      // Compute exact projection frame for the current camera view
+      // Compute projection frame
       const viewW = (curCam[1] - curCam[0]) * K;
       const viewH = curCam[3] - curCam[2];
-      const scale = Math.min(w / viewW, h / viewH) * 0.88;
+      const scale = Math.min(w / viewW, h / viewH) * 0.90;
       const ox = (w - viewW * scale) / 2;
       const oy = (h - viewH * scale) / 2;
 
@@ -186,9 +182,8 @@ export default function ArgentinaMap({
         oy + (curCam[3] - lat) * scale,
       ];
 
-      // Build SVG paths if not cached or camera moved
-      const geo = geoRef.current;
-      const paths = geo.map((f) => {
+      // Build Path2D objects for each province
+      const paths: PathItem[] = geo.map((f: any) => {
         const p = new Path2D();
         const g = f.geometry;
         const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
@@ -202,30 +197,27 @@ export default function ArgentinaMap({
             p.closePath();
           });
         });
-        return { name: f.properties.name as string, path: p, box: [] };
+        return { name: f.properties.name as string, path: p };
       });
-      pathsRef.current = paths;
 
-      // 4. DRAWING
+      // Clear with dark atmospheric background
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#0a0807';
+      ctx.fillRect(0, 0, w, h);
 
       const activeIdx = chapterIndexRef.current;
       const activeProgress = chapterProgressRef.current;
       const activeCfg = activeIdx >= 0 && activeIdx < CHAPTER_CONFIG.length ? CHAPTER_CONFIG[activeIdx] : null;
       const activeProvs = activeCfg ? activeCfg.provs : [];
 
-      // Determine carbon state per province
-      // If chapter > i: completed, persists in black (1.0)
-      // If chapter === i: darkens progressively (0.0 to 1.0)
-      // If chapter < i: unvisited natural biome (0.0)
+      // Persistent charcoal carbon state
       const carbonMap = new Map<string, number>();
       CHAPTER_CONFIG.forEach((cfg, i) => {
         let val = 0;
         if (activeIdx > i) {
-          val = 1; // Persistent charcoal black
+          val = 1; // Completed province persists in charcoal black
         } else if (activeIdx === i) {
-          val = Math.min(1, activeProgress * 1.6);
+          val = Math.min(1, activeProgress * 1.5);
         }
         cfg.provs.forEach((pName) => {
           const prev = carbonMap.get(pName) || 0;
@@ -233,13 +225,12 @@ export default function ArgentinaMap({
         });
       });
 
-      // A. Fill provinces (Natural biomes -> Charcoal Black)
+      // 1. Fill Provinces (Natural Biomes -> Charcoal Black)
       paths.forEach(({ name, path }) => {
         const baseColor = BIOME_COLORS[name] || '#455038';
         const carbon = carbonMap.get(name) || 0;
 
         if (carbon > 0.01) {
-          // Interpolate to charcoal black #0f0d0b
           ctx.fillStyle = carbon >= 0.99
             ? '#110f0e'
             : interpolateColor(baseColor, '#110f0e', carbon);
@@ -249,16 +240,16 @@ export default function ArgentinaMap({
         ctx.fill(path);
       });
 
-      // B. Stroke province boundaries
+      // 2. Stroke Provincial Boundaries
       ctx.lineJoin = 'round';
       paths.forEach(({ name, path }) => {
         const isActive = activeProvs.includes(name);
         const carbon = carbonMap.get(name) || 0;
 
         if (isActive) {
-          // Highlighted active territory
-          ctx.shadowColor = 'rgba(255, 140, 20, 0.9)';
-          ctx.shadowBlur = 12;
+          // Prominent glowing border for current province
+          ctx.shadowColor = 'rgba(255, 162, 54, 0.9)';
+          ctx.shadowBlur = 10;
           ctx.strokeStyle = '#ffa236';
           ctx.lineWidth = 2.4;
           ctx.stroke(path);
@@ -269,20 +260,20 @@ export default function ArgentinaMap({
           ctx.lineWidth = 1.0;
           ctx.stroke(path);
         } else {
-          // Natural soft territory border
+          // Subtle natural boundary
           ctx.strokeStyle = 'rgba(235, 225, 210, 0.28)';
           ctx.lineWidth = 0.75;
           ctx.stroke(path);
         }
       });
 
-      // C. Draw Fire Foci Pixels (accumulating and persistent!)
+      // 3. Render Real NASA Heat Foci Pixels
       CHAPTER_CONFIG.forEach((cfg, i) => {
         let fireP = 0;
         if (activeIdx > i) {
-          fireP = 1; // Persistent complete fire map
+          fireP = 1; // Completed fire map persists forever
         } else if (activeIdx === i) {
-          fireP = Math.max(0, (activeProgress - 0.18) / 0.82);
+          fireP = Math.max(0, (activeProgress - 0.15) / 0.85);
         }
 
         if (fireP <= 0.01) return;
@@ -291,7 +282,7 @@ export default function ArgentinaMap({
         if (!foci || !foci.cells) return;
 
         const maxWeek = Math.max(1, Math.floor(foci.weeks * fireP));
-        const dotSize = Math.max(scale * foci.step * K, 2.4);
+        const dotSize = Math.max(scale * foci.step * K, 2.6);
 
         foci.cells.forEach(([lon, lat, week]) => {
           if (week >= maxWeek) return;
@@ -299,16 +290,21 @@ export default function ArgentinaMap({
 
           const age = maxWeek - week;
           if (age < 2) {
-            ctx.fillStyle = '#ffea7a'; // Fresh bright flame
+            ctx.fillStyle = '#ffea7a'; // Bright yellow-orange flame
           } else if (age < 6) {
-            ctx.fillStyle = '#ff7a1a'; // Glowing ember
+            ctx.fillStyle = '#ff7a1a'; // Glowing hot ember
           } else {
-            ctx.fillStyle = '#b3300f'; // Darker burnt red
+            ctx.fillStyle = '#b3300f'; // Calcinated dark red
           }
 
           ctx.fillRect(px - dotSize / 2, py - dotSize / 2, dotSize, dotSize);
         });
       });
+
+      // Mark canvas as actively drawing
+      if (!canvasReady) {
+        setCanvasReady(true);
+      }
     };
 
     render();
@@ -316,21 +312,47 @@ export default function ArgentinaMap({
     return () => {
       cancelAnimationFrame(animId);
     };
-  }, []);
+  }, [canvasReady]);
+
+  const activeCfg = chapterIndex >= 0 && chapterIndex < CHAPTER_CONFIG.length ? CHAPTER_CONFIG[chapterIndex] : null;
+  const activeProvs = activeCfg ? activeCfg.provs : [];
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-[#0a0807]">
+    <div ref={containerRef} className={styles.mapContainer}>
+      {/* 1. FRAME-0 STATIC SVG FALLBACK: Guarantees Argentina is visible instantly without network delay */}
+      <svg
+        className={`${styles.fallbackSvg} ${canvasReady ? styles.fallbackHidden : styles.fallbackVisible}`}
+        viewBox={ARGENTINA_VIEWBOX}
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden={canvasReady}
+      >
+        <rect width="400" height="800" fill="#0a0807" />
+        {Object.entries(ARGENTINA_STATIC_PATHS).map(([pName, dStr]) => {
+          const baseColor = BIOME_COLORS[pName] || '#455038';
+          const isActive = activeProvs.includes(pName);
+          return (
+            <path
+              key={pName}
+              d={dStr}
+              fill={baseColor}
+              className={isActive ? styles.countryActive : styles.countryBorder}
+            />
+          );
+        })}
+      </svg>
+
+      {/* 2. PERSISTENT INTERACTIVE CANVAS: Smooth camera zoom, fire dots, and carbon transformation */}
       <canvas
         ref={canvasRef}
-        className="w-full h-full block"
+        className={styles.mapCanvas}
         role="img"
-        aria-label="Mapa cartográfico persistente de la República Argentina con monitoreo satelital de incendios"
+        aria-label="Mapa cartográfico interactivo de Argentina con detección satelital de incendios"
       />
     </div>
   );
 }
 
-/** Utility: simple hex/rgb color interpolation */
+/** Utility: Hex/RGB color interpolation */
 function interpolateColor(col1: string, col2: string, factor: number): string {
   const c1 = parseInt(col1.replace('#', ''), 16);
   const c2 = parseInt(col2.replace('#', ''), 16);

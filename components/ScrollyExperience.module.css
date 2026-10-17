@@ -35,16 +35,83 @@
   pointer-events: auto;
 }
 
-/* Opening spacer: allows the user to scroll through the cloud parting */
-.openingSpacer {
-  height: 90vh;
-  width: 100%;
-  pointer-events: none;
+/* Opening hero section (Document-flow based, never collides with stories) */
+.openingHeroSection {
+  min-height: 95vh;
+  display: flex;
+  align-items: center;
+  padding: var(--s-8) var(--s-4);
+}
+
+@media (min-width: 900px) {
+  .openingHeroSection {
+    width: clamp(480px, 40vw, 620px);
+    padding-left: clamp(24px, 4vw, 56px);
+  }
+}
+
+.openingCard {
+  background: rgba(14, 13, 12, 0.90);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--r-2);
+  padding: clamp(24px, 4vw, 36px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.flagRibbon {
+  display: flex;
+  flex-direction: column;
+  width: 32px;
+  height: 5px;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: var(--s-2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.flagStripeSky {
+  flex: 1;
+  background: #75aadb; /* Argentine Celeste */
+}
+
+.flagStripeWhite {
+  flex: 1;
+  background: #ffffff;
+}
+
+.openingTitle {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 4.5vw, 46px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: #fdfcf9;
+  text-transform: uppercase;
+  margin: 0 0 10px 0;
+}
+
+.openingKicker {
+  font-family: var(--font-mono);
+  font-size: var(--fs-12);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 var(--s-3) 0;
+}
+
+.openingLead {
+  font-size: var(--fs-15);
+  line-height: 1.6;
+  color: var(--text-2);
+  margin: 0;
 }
 
 /* Each story section */
 .storySectionWrap {
-  min-height: 105vh;
+  min-height: 110vh;
   padding: var(--s-8) var(--s-4);
   display: flex;
   align-items: center;
@@ -64,12 +131,64 @@
 }
 
 .storyDormant {
-  opacity: 0.85;
+  opacity: 0.75;
 }
 
-/* Wide shot spacer: user contemplates all 6 burned provinces before clouds close */
-.wideShotSpacer {
-  height: 80vh;
+/* Wide shot section: user contemplates all 6 burned provinces */
+.wideShotSection {
+  min-height: 90vh;
+  display: flex;
+  align-items: center;
+  padding: var(--s-8) var(--s-4);
+}
+
+@media (min-width: 900px) {
+  .wideShotSection {
+    width: clamp(480px, 40vw, 620px);
+    padding-left: clamp(24px, 4vw, 56px);
+  }
+}
+
+.wideShotCard {
+  background: rgba(14, 13, 12, 0.90);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--r-2);
+  padding: clamp(24px, 4vw, 36px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.wideShotBadge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-burnt);
+  margin-bottom: 8px;
+}
+
+.wideShotTitle {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3.5vw, 34px);
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fdfcf9;
+  margin: 0 0 var(--s-2) 0;
+}
+
+.wideShotText {
+  font-size: var(--fs-14);
+  line-height: 1.6;
+  color: var(--text-2);
+  margin: 0;
+}
+
+/* Closing clouds spacer */
+.closingCloudsSpacer {
+  height: 85vh;
   width: 100%;
   pointer-events: none;
 }
@@ -79,7 +198,7 @@
   position: relative;
   z-index: 50;
   width: 100%;
-  background: rgba(10, 8, 7, 0.96);
+  background: rgba(10, 8, 7, 0.97);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -118,32 +237,49 @@
   z-index: 2;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--s-2);
   background: transparent;
   border: none;
-  padding: 0;
+  padding: 4px;
   cursor: pointer;
   text-align: left;
+  transition: transform 0.2s ease;
+}
+
+.hudNode:hover {
+  transform: translateX(-4px);
 }
 
 .hudDot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #2a2420;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.25s ease;
+  background: #2b2824;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  transition: all 0.3s ease;
+}
+
+.hudPassed .hudDot {
+  background: var(--accent-burnt);
+  border-color: #ff8c3a;
+}
+
+.hudActive .hudDot {
+  background: var(--accent);
+  border-color: #ffffff;
+  box-shadow: 0 0 10px rgba(245, 165, 36, 0.8);
+  transform: scale(1.3);
 }
 
 .hudLabel {
   font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--muted);
+  font-size: var(--fs-12);
   letter-spacing: 0.05em;
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: all 0.2s ease;
+  color: var(--muted);
   white-space: nowrap;
+  opacity: 0;
+  transform: translateX(6px);
+  transition: all 0.25s ease;
   pointer-events: none;
 }
 
@@ -153,24 +289,20 @@
   transform: translateX(0);
 }
 
-.hudActive .hudDot {
-  background: var(--accent);
-  border-color: #fff;
-  box-shadow: 0 0 12px rgba(255, 176, 58, 0.85);
-  transform: scale(1.25);
-}
-
 .hudActive .hudLabel {
-  color: var(--text);
+  color: #fff;
   font-weight: 700;
 }
 
-.hudPassed .hudDot {
-  background: var(--accent-burnt);
-  border-color: var(--accent);
-}
+/* Mobile adjustments */
+@media (max-width: 899px) {
+  .fixedMapStage {
+    position: sticky;
+    top: 48px;
+    height: 45vh;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
 
-@media (max-width: 768px) {
   .timelineHud {
     display: none;
   }

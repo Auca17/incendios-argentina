@@ -1,8 +1,8 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { GEOGRAPHIC_EVENTS } from '../lib/slides';
 import type { StoryPhoto } from '../lib/photos';
-import ArgentinaMap, { CHAPTER_CONFIG } from './ArgentinaMap';
+import ArgentinaMap from './ArgentinaMap';
 import CloudCurtain from './CloudCurtain';
 import StorySection from './StorySection';
 import PhotoModal from './PhotoModal';
@@ -10,17 +10,18 @@ import Epilogue from './Epilogue';
 import TopBar from './TopBar';
 import styles from './ScrollyExperience.module.css';
 
-// 9 sequential milestones along the continuous 0 to 1 window scroll
+// 10 sequential milestones along the continuous 0 to 1 window scroll
 const MILESTONES = [
-  { id: 'opening', start: 0.00, end: 0.08, name: 'Argentina bajo las nubes' },
-  { id: 'misiones', start: 0.08, end: 0.22, name: 'Misiones' },
-  { id: 'corrientes', start: 0.22, end: 0.36, name: 'Corrientes' },
-  { id: 'cordoba', start: 0.36, end: 0.50, name: 'Córdoba' },
-  { id: 'delta', start: 0.50, end: 0.64, name: 'Delta del Paraná' },
-  { id: 'mendoza', start: 0.64, end: 0.78, name: 'Mendoza' },
-  { id: 'chubut', start: 0.78, end: 0.90, name: 'Chubut' },
-  { id: 'wide_shot', start: 0.90, end: 0.94, name: 'Memoria territorial' },
-  { id: 'epilogue', start: 0.94, end: 1.00, name: 'Epílogo y fuentes' },
+  { id: 'opening', start: 0.00, end: 0.10, name: 'Argentina bajo las nubes' },
+  { id: 'misiones', start: 0.10, end: 0.23, name: 'Misiones' },
+  { id: 'corrientes', start: 0.23, end: 0.36, name: 'Corrientes' },
+  { id: 'cordoba', start: 0.36, end: 0.49, name: 'Córdoba' },
+  { id: 'delta', start: 0.49, end: 0.62, name: 'Delta del Paraná' },
+  { id: 'mendoza', start: 0.62, end: 0.75, name: 'Mendoza' },
+  { id: 'chubut', start: 0.75, end: 0.86, name: 'Chubut' },
+  { id: 'wide_shot', start: 0.86, end: 0.92, name: 'Memoria territorial' },
+  { id: 'closing_clouds', start: 0.92, end: 0.96, name: 'El telón se cierra' },
+  { id: 'epilogue', start: 0.96, end: 1.00, name: 'Epílogo y fuentes' },
 ];
 
 export default function ScrollyExperience() {
@@ -70,7 +71,7 @@ export default function ScrollyExperience() {
   // Map state derivation:
   // -1: Opening (full country, natural biomes under clouds)
   // 0..5: Misiones, Corrientes, Córdoba, Delta, Mendoza, Chubut
-  // 6: Wide shot / Epilogue (full country with all 6 burned provinces)
+  // 6: Wide shot / Closing clouds / Epilogue (full country with all 6 burned provinces)
   let mapChapterIndex = -1;
   let mapChapterProgress = 0;
 
@@ -81,14 +82,18 @@ export default function ScrollyExperience() {
     mapChapterIndex = activeIndex - 1;
     mapChapterProgress = localProgress;
   } else {
-    // Wide shot and epilogue
+    // Wide shot, closing clouds, and epilogue
     mapChapterIndex = 6;
     mapChapterProgress = 1;
   }
 
-  // Cloud curtain parameters
+  // Cloud curtain parameters:
+  // - Opening (milestone 0): parts from 0 to 1
+  // - Stories (milestones 1..7): clouds are open (openProgress = 1, closeProgress = 0)
+  // - Closing (milestone 8): clouds return to close (closeProgress: 0 -> 1)
+  // - Epilogue (milestone 9): clouds closed (closeProgress = 1)
   const cloudOpenProgress = activeIndex === 0 ? localProgress : 1;
-  const cloudCloseProgress = activeIndex === 7 ? localProgress : activeIndex >= 8 ? 1 : 0;
+  const cloudCloseProgress = activeIndex === 8 ? localProgress : activeIndex >= 9 ? 1 : 0;
 
   const scrollToMilestone = useCallback((index: number) => {
     const m = MILESTONES[index] || MILESTONES[0];
@@ -102,7 +107,7 @@ export default function ScrollyExperience() {
       {/* Discrete Top Bar */}
       <TopBar index={activeIndex} count={MILESTONES.length} name={currentMilestone.name} />
 
-      {/* 1. PERSISTENT CARTOGRAPHIC SCENE (FIXED BACKGROUND) */}
+      {/* 1. PERSISTENT CARTOGRAPHIC STAGE (FIXED BACKGROUND) */}
       <div className={styles.fixedMapStage}>
         <ArgentinaMap
           chapterIndex={mapChapterIndex}
@@ -110,16 +115,29 @@ export default function ScrollyExperience() {
         />
       </div>
 
-      {/* 2. ATMOSPHERIC CLOUD CURTAIN (OPENING & CLOSING) */}
+      {/* 2. ATMOSPHERIC CLOUD CURTAIN (PASSIVE OPENING & CLOSING) */}
       <CloudCurtain
         openProgress={cloudOpenProgress}
         closeProgress={cloudCloseProgress}
       />
 
-      {/* 3. NARRATIVE STREAM (LEFT DESKTOP / STACKED MOBILE) */}
+      {/* 3. NARRATIVE STREAM (NATURAL DOCUMENT SCROLL FLOW) */}
       <div className={styles.narrativeTrack}>
-        {/* Spacer for Opening (clouds part as user scrolls through this range) */}
-        <div className={styles.openingSpacer} aria-hidden="true" />
+        {/* Section 0: Opening Screen (Title, Argentine ribbon, natural flow) */}
+        <section className={styles.openingHeroSection}>
+          <div className={styles.openingCard}>
+            <div className={styles.flagRibbon} aria-hidden="true">
+              <span className={styles.flagStripeSky} />
+              <span className={styles.flagStripeWhite} />
+              <span className={styles.flagStripeSky} />
+            </div>
+            <h1 className={styles.openingTitle}>Lo que el fuego se llevó</h1>
+            <p className={styles.openingKicker}>15 años de memoria ambiental · 2012–2026</p>
+            <p className={styles.openingLead}>
+              El territorio cuenta la historia. Desplazate hacia abajo para iniciar el recorrido de Norte a Sur por los grandes incendios y sus consecuencias en Argentina.
+            </p>
+          </div>
+        </section>
 
         {/* 6 Event Story Sections */}
         {GEOGRAPHIC_EVENTS.map((ev, evIdx) => {
@@ -141,8 +159,19 @@ export default function ScrollyExperience() {
           );
         })}
 
-        {/* Spacer for Final Wide Shot (user contemplates all burned provinces) */}
-        <div className={styles.wideShotSpacer} aria-hidden="true" />
+        {/* Spacer for Final Wide Shot: User contemplates all 6 burned provinces before clouds close */}
+        <div className={styles.wideShotSection}>
+          <div className={styles.wideShotCard}>
+            <span className={styles.wideShotBadge}>Memoria territorial</span>
+            <h2 className={styles.wideShotTitle}>Las marcas que quedan en el mapa</h2>
+            <p className={styles.wideShotText}>
+              Seis regiones calcinadas y más de 2,6 millones de focos registrados a lo largo de 15 años. Cada territorio conserva la huella del fuego antes del cierre del telón.
+            </p>
+          </div>
+        </div>
+
+        {/* Spacer for Closing Clouds transition */}
+        <div className={styles.closingCloudsSpacer} aria-hidden="true" />
 
         {/* Epilogue Section */}
         <div className={styles.epilogueWrap}>

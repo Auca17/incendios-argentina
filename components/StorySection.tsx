@@ -10,6 +10,9 @@ type Props = {
   onOpenPhoto: (photo: StoryPhoto) => void;
 };
 
+const FALLBACK_PHOTO_SVG =
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250"><rect width="100%" height="100%" fill="%23141210"/><circle cx="200" cy="115" r="28" fill="%232b2622"/><path d="M188 115a12 12 0 1 0 24 0 12 12 0 0 0-24 0" fill="%23c55221"/><text x="50%" y="165" fill="%239e948c" font-family="monospace" font-size="11" text-anchor="middle" letter-spacing="1">REGISTRO DOCUMENTAL</text></svg>';
+
 /**
  * Editorial narrative card for each province in the journey.
  * Clean, legible, high-contrast, strictly avoids walls of text or distracting cartoon animations.
@@ -20,6 +23,11 @@ export default function StorySection({ ev, index, total, onOpenPhoto }: Props) {
   const photo2 = getStoryPhoto(ev.id, 2);
 
   const mainFacts = ev.facts.slice(0, 3);
+
+  const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = FALLBACK_PHOTO_SVG;
+  };
 
   return (
     <article className={styles.storyCard}>
@@ -73,7 +81,13 @@ export default function StorySection({ ev, index, total, onOpenPhoto }: Props) {
             aria-label={`Ver fotografía ampliada: ${photo0.caption}`}
           >
             <div className={styles.thumbWrap}>
-              <img src={photo0.src} alt={photo0.caption} loading="lazy" className={styles.thumbImg} />
+              <img
+                src={photo0.src}
+                alt={photo0.caption}
+                loading="lazy"
+                className={styles.thumbImg}
+                onError={handleImgError}
+              />
               <span className={styles.zoomPill}>🔍 Ampliar</span>
             </div>
             <span className={styles.thumbCaption}>{photo0.caption}</span>
@@ -87,7 +101,13 @@ export default function StorySection({ ev, index, total, onOpenPhoto }: Props) {
             aria-label={`Ver fotografía ampliada: ${photo1.caption}`}
           >
             <div className={styles.thumbWrap}>
-              <img src={photo1.src} alt={photo1.caption} loading="lazy" className={styles.thumbImg} />
+              <img
+                src={photo1.src}
+                alt={photo1.caption}
+                loading="lazy"
+                className={styles.thumbImg}
+                onError={handleImgError}
+              />
               <span className={styles.zoomPill}>🔍 Ampliar</span>
             </div>
             <span className={styles.thumbCaption}>{photo1.caption}</span>
@@ -104,7 +124,13 @@ export default function StorySection({ ev, index, total, onOpenPhoto }: Props) {
             aria-label={`Ver fotografía ampliada: ${photo2.caption}`}
           >
             <div className={styles.thumbWrap}>
-              <img src={photo2.src} alt={photo2.caption} loading="lazy" className={styles.thumbImg} />
+              <img
+                src={photo2.src}
+                alt={photo2.caption}
+                loading="lazy"
+                className={styles.thumbImg}
+                onError={handleImgError}
+              />
               <span className={styles.zoomPill}>🔍 Ampliar</span>
             </div>
             <span className={styles.thumbCaption}>{photo2.caption}</span>

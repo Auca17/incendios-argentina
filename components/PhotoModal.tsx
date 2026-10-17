@@ -38,7 +38,16 @@ export default function PhotoModal({ photo, onClose }: Props) {
           ✕
         </button>
         <div className={styles.imgWrap}>
-          <img src={photo.src} alt={photo.caption} className={styles.img} />
+          <img
+            src={photo.src}
+            alt={photo.caption}
+            className={styles.img}
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src =
+                'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500"><rect width="100%" height="100%" fill="%23141210"/><circle cx="400" cy="230" r="40" fill="%232b2622"/><path d="M385 230a15 15 0 1 0 30 0 15 15 0 0 0-30 0" fill="%23c55221"/><text x="50%" y="300" fill="%239e948c" font-family="monospace" font-size="14" text-anchor="middle" letter-spacing="1">REGISTRO DOCUMENTAL NO DISPONIBLE</text></svg>';
+            }}
+          />
         </div>
         <div className={styles.meta}>
           <p className={styles.caption}>{photo.caption}</p>

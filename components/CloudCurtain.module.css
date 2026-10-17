@@ -1,11 +1,20 @@
 .curtainWrap {
   position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100vh;
-  z-index: 40;
+  top: 48px;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 10;
   overflow: hidden;
-  transition: opacity 0.4s ease;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* On desktop, confine the cloud curtain directly over the cartographic stage */
+@media (min-width: 900px) {
+  .curtainWrap {
+    left: clamp(480px, 40vw, 620px);
+  }
 }
 
 .cloudCanvas {
@@ -14,57 +23,4 @@
   width: 100%;
   height: 100%;
   display: block;
-}
-
-.openingHeader {
-  position: absolute;
-  top: clamp(32px, 6vh, 64px);
-  left: clamp(24px, 5vw, 64px);
-  z-index: 10;
-  max-width: 520px;
-  pointer-events: none;
-}
-
-/* Subtle Argentine Flag Ribbon */
-.flagRibbon {
-  display: flex;
-  flex-direction: column;
-  width: 32px;
-  height: 5px;
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: var(--s-2);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.flagStripeSky {
-  flex: 1;
-  background: #75aadb; /* Argentine Celeste */
-}
-
-.flagStripeWhite {
-  flex: 1;
-  background: #ffffff;
-}
-
-.openingTitle {
-  font-family: var(--font-display);
-  font-size: clamp(32px, 5vw, 48px);
-  font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-  color: #111827;
-  text-transform: uppercase;
-  margin: 0 0 8px 0;
-  text-shadow: 0 2px 12px rgba(255, 255, 255, 0.8);
-}
-
-.openingKicker {
-  font-family: var(--font-mono);
-  font-size: var(--fs-12);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #78350f;
-  margin: 0;
 }
