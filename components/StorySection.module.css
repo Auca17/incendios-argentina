@@ -1,17 +1,14 @@
-.storyCard {
-  background: rgba(12, 16, 24, 0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--r-2);
-  padding: clamp(20px, 3vw, 32px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 25px rgba(245, 165, 36, 0.06);
+.storyPod {
+  margin: 0;
+  width: 100%;
+}
+
+.storyContent {
   display: flex;
   flex-direction: column;
   gap: var(--s-3);
   color: var(--text);
-  max-width: 580px;
+  width: 100%;
 }
 
 .header {
@@ -48,11 +45,12 @@
 }
 
 .title {
-  font-family: var(--font-display);
-  font-size: clamp(22px, 2.5vw, 28px);
-  font-weight: 800;
-  line-height: 1.15;
-  color: var(--text);
+  font-family: var(--font-title);
+  font-size: clamp(22px, 2.5vw, 30px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #ffffff;
   margin: 0;
 }
 
@@ -82,12 +80,12 @@
 }
 
 .statNum {
-  font-family: var(--font-display);
-  font-size: clamp(32px, 4vw, 44px);
+  font-family: var(--font-title);
+  font-size: clamp(34px, 4.2vw, 48px);
   font-weight: 800;
   line-height: 1;
   color: var(--accent);
-  letter-spacing: -0.02em;
+  letter-spacing: 0.01em;
 }
 
 .statUnit {
@@ -99,6 +97,7 @@
 }
 
 .statLabel {
+  font-family: var(--font-sans);
   font-size: var(--fs-13);
   color: var(--text-2);
   line-height: 1.45;
@@ -106,6 +105,7 @@
 }
 
 .statSource {
+  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--muted);
   margin-top: 4px;
@@ -116,8 +116,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
+  font-family: var(--font-sans);
   font-size: var(--fs-14);
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--text-2);
 }
 

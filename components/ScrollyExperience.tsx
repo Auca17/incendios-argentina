@@ -7,6 +7,7 @@ import CloudCurtain from './CloudCurtain';
 import StorySection from './StorySection';
 import PhotoModal from './PhotoModal';
 import Epilogue from './Epilogue';
+import CloudPod from './CloudPod';
 import styles from './ScrollyExperience.module.css';
 
 // 10 sequential narrative milestones strictly aligned with DOM elements
@@ -79,12 +80,12 @@ export default function ScrollyExperience() {
       setActiveIdx(currentActive);
       setLocalProg(currentLocal);
 
-      // 3. Cloud close progress (before epilogue)
-      const closeEl = document.getElementById('sec-closing_clouds');
-      if (closeEl) {
-        const cRect = closeEl.getBoundingClientRect();
-        if (cRect.top < vh) {
-          const rawClose = (vh - cRect.top) / Math.max(1, vh - readingLine);
+      // 3. Cloud close progress (only closes after the user has scrolled past wide_shot towards epilogue)
+      const wideEl = document.getElementById('sec-wide_shot');
+      if (wideEl) {
+        const wRect = wideEl.getBoundingClientRect();
+        if (wRect.bottom < readingLine) {
+          const rawClose = (readingLine - wRect.bottom) / Math.max(1, vh * 0.7);
           setCloudCloseProgress(Math.min(1, Math.max(0, rawClose)));
         } else {
           setCloudCloseProgress(0);
@@ -170,22 +171,19 @@ export default function ScrollyExperience() {
 
       {/* 3. NARRATIVE STREAM (NATURAL DOCUMENT SCROLL FLOW) */}
       <div className={styles.narrativeTrack}>
-        {/* Section 0: Portada bajo las nubes */}
+        {/* Section 0: Portada bajo las nubes (Solo cielo y nubes cinematográficas) */}
         <section id="sec-opening" className={styles.openingHeroSection}>
-          <div className={styles.openingCard}>
-            <div className={styles.flagRibbon} aria-hidden="true">
+          <div className={styles.skyTitleOverlay}>
+            <div className={styles.skyFlagRibbon} aria-hidden="true">
               <span className={styles.flagStripeSky} />
               <span className={styles.flagStripeWhite} />
               <span className={styles.flagStripeSky} />
             </div>
-            <h1 className={styles.openingTitle}>Lo que el fuego se llevó</h1>
-            <p className={styles.openingKicker}>15 años de memoria ambiental · 2012–2026</p>
-            <p className={styles.openingLead}>
-              El territorio cuenta la historia. Desplazate hacia abajo para iniciar el recorrido de Norte a Sur por los grandes incendios y sus consecuencias en Argentina.
-            </p>
-            <div className={styles.scrollCue}>
-              <span className={styles.scrollCueText}>Desplazá para descender al territorio</span>
-              <span className={styles.scrollCueArrow} aria-hidden="true">↓</span>
+            <h1 className={styles.skyTitle}>Lo que el fuego se llevó</h1>
+            <p className={styles.skyKicker}>15 años de memoria ambiental · 2012–2026</p>
+            <div className={styles.skyScrollPrompt}>
+              <span className={styles.skyScrollText}>Desplazá para descender al territorio</span>
+              <span className={styles.skyScrollArrow} aria-hidden="true">↓</span>
             </div>
           </div>
         </section>
@@ -211,15 +209,15 @@ export default function ScrollyExperience() {
           );
         })}
 
-        {/* Section 7: Final Wide Shot (Contemplation of all 6 burned provinces) */}
+        {/* Section 7: Final Wide Shot (Contemplation on CloudPod) */}
         <div id="sec-wide_shot" className={styles.wideShotSection}>
-          <div className={styles.wideShotCard}>
+          <CloudPod variant="wide" className={styles.wideCloudPod}>
             <span className={styles.wideShotBadge}>Memoria territorial</span>
             <h2 className={styles.wideShotTitle}>Las marcas que quedan en el mapa</h2>
             <p className={styles.wideShotText}>
               Seis regiones calcinadas y más de 2,6 millones de focos registrados a lo largo de 15 años. Cada territorio conserva la huella del fuego antes del cierre del telón.
             </p>
-          </div>
+          </CloudPod>
         </div>
 
         {/* Section 8: Spacer for Closing Clouds veil */}

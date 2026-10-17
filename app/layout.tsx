@@ -1,17 +1,24 @@
 import type { Metadata, Viewport } from 'next';
-import { Chakra_Petch, JetBrains_Mono } from 'next/font/google';
+import { Cinzel, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
-const chakraPetch = Chakra_Petch({
+const cinzel = Cinzel({
+  subsets: ['latin'],
+  weight: ['600', '700', '800', '900'],
+  variable: '--font-cinzel',
+  display: 'swap',
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-chakra',
+  variable: '--font-jakarta',
   display: 'swap',
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-jetbrains',
   display: 'swap',
 });
@@ -34,7 +41,7 @@ export const viewport: Viewport = { themeColor: '#0a0a0a' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${chakraPetch.variable} ${jetbrainsMono.variable}`}>
+    <html lang="es" className={`${cinzel.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}>
       <body>{children}</body>
     </html>
   );

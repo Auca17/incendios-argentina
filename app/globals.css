@@ -1,8 +1,10 @@
 /* Design tokens. Spacing runs on an 8 px grid (4 px only for fine adjustments). */
 :root {
-  --font-display: var(--font-chakra, 'Chakra Petch', system-ui, -apple-system, sans-serif);
-  --font-mono: var(--font-jetbrains, 'JetBrains Mono', monospace);
-  --font: var(--font-display);
+  --font-display: var(--font-cinzel), 'Cinzel', Georgia, serif;
+  --font-title: var(--font-cinzel), 'Cinzel', Georgia, serif;
+  --font-sans: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains), 'JetBrains Mono', monospace;
+  --font: var(--font-sans);
 
   --bg: #0a0a0a;
   --text: #f4ede6;
