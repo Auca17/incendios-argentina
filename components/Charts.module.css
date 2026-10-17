@@ -1,6 +1,0 @@
-.bars, .season { display: block; width: 100%; height: auto; }
-.pick { cursor: pointer; transition: opacity 0.2s; }
-.pick:hover { opacity: 0.8; }
-.pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.legend2 { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-half); font-size: var(--fs-12); color: var(--muted); }
-.legend2 i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 2px; vertical-align: -1px; }
