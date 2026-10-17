@@ -67,25 +67,25 @@ var SKY = {
   mid: ['#4b5a66', '#59291a', '#423e3c'],
   low: ['#92877d', '#a2552d', '#6a5f56']
 };
-var SUN = { core: '#fffbeb', corona: '#f59e0b', coronaMid: '#dc2626', coronaEdge: '#7f1d1d', peak: '#b91c1c' };
+var SUN = { core: '#e8d9ae', corona: '#d4a05a', coronaMid: '#a8522a', coronaEdge: '#7a2c12', peak: '#b4431c' };
 var FIRE = {
-  base: '#7a2010', mid: '#cf5a1a', tip: '#f59e0b',      /* outer gradient: rich ruby, vibrant fire, bright amber */
-  layer: '#fbbf24', core: '#fffbeb',                    /* incandescent inner core */
-  glowIn: '#f59e0b', glowMid: '#b43403', glowOut: '#450a0a',
-  ember: '#fef08a', emberFall: '#ea580c', haze: '#ea580c', flare: '#f59e0b'
+  base: '#6e2a16', mid: '#b4521f', tip: '#d98c3c',      /* outer gradient: dull red, burnt orange, ochre */
+  layer: '#c9772e', core: '#efd9a0',                    /* inner tongue and hot core */
+  glowIn: '#d98c3c', glowMid: '#8a3416', glowOut: '#5a1a0a',
+  ember: '#dba25a', emberFall: '#c8602a', haze: '#c8602a', flare: '#d98c3c'
 };
-var SMOKE = ['#a8a29e', '#1c1917', '#78716c'];
-var WATER = { jetTop: '#f0fdf4', jetBot: '#38bdf8', jet: '#60a5fa', drop: '#bae6fd', fill: '#38bdf8' };
+var SMOKE = ['#a9a39e', '#221b18', '#7a7470'];
+var WATER = { jetTop: '#dfe9ef', jetBot: '#7aa6c0', jet: '#8fb8d0', drop: '#9dbdd0', fill: '#7fa9c4' };
 var AIR = { heli: '#a8432a', heliTail: '#823022', bucket: '#b86030', glass: '#8fb0c4', stripe: '#d9cfc4', plane: '#d8cec2', planeTail: '#a8432a', planeBelly: '#cfc6b9', planeGlass: '#86a8bd' };
 var CREW = { hose: '#a89650', body: '#b5562a', skin: '#d1a584', helmet: '#c9a23a', legA: '#3a3a46', legB: '#30303a', nozzle: '#2a2a2a' };
 var TAG = { bg: 'rgba(14,9,7,0.78)', stroke: 'rgba(200,160,110,0.25)', text: '#cfc5bb' };
 var LAND = {
-  chubut: { far: '#1e1b29', shadow: '#14111d', snow: '#f8fafc', mid: '#2d221c', tree: '#1e382b', ground: '#3e3223', lake: '#1a3440', lakeHi: '#38bdf8' },
-  misiones: { far: '#192b1d', crown0: '#142618', mid: '#224026', crown: '#2a5a2e', trunk: '#42241b', frond: '#3e7844', soil1: '#7c2d12', soil2: '#5f2010', soil3: '#45180c' },
-  corrientes: { far: '#182b22', palm: '#1c4028', frond: '#2b5c36', water: '#1a3644', waterLine: '#38bdf8', island: '#2f4f2c', ground: '#3a3426', pool: '#1e3e50', poolHi: '#60a5fa', pool2: '#1b3644', pool2Hi: '#38bdf8' },
-  delta: { far: '#1f2e24', river: '#203d4e', riverLine: '#60a5fa', mid: '#28442c', trunk: '#2e2118', crown: '#2f5636', droop: '#407446', ground: '#423727', channel: '#1e3848' },
-  mendoza: { far: '#3d2c20', ridge: '#573d2d', mid: '#4d372b', shrub: '#555e2e', ground: '#5c452e', cactus: '#4d6930', spine: '#fef08a' },
-  cordoba: { far: '#2d2432', far2: '#241c29', mid: '#3e2e22', trunk: '#332014', crown: '#42542a', blossom: '#facc15', ground: '#523c26', rock: '#3f3630', rockEdge: '#6b5e54' }
+  chubut: { far: '#262230', snow: '#a49cb0', mid: '#2a2018', tree: '#1f3322', ground: '#3a2e20', lake: '#23363f', lakeHi: '#3a5566' },
+  misiones: { far: '#1c2a1e', crown0: '#18241a', mid: '#233524', crown: '#2c4a2e', trunk: '#35201a', frond: '#3a5e3a', soil1: '#6a2e1c', soil2: '#53271a', soil3: '#3b1c14' },
+  corrientes: { far: '#1c2923', palm: '#1f3326', frond: '#2a4430', water: '#1f3340', waterLine: '#3a5668', island: '#2c3f2a', ground: '#322d22', pool: '#22384a', poolHi: '#31506a', pool2: '#20323f', pool2Hi: '#2d4a5e' },
+  delta: { far: '#222d26', river: '#25394a', riverLine: '#3b5668', mid: '#2a392a', trunk: '#241d15', crown: '#2a4230', droop: '#365238', ground: '#3b3224', channel: '#26394a' },
+  mendoza: { far: '#3a2c22', ridge: '#4a3a2e', mid: '#46342a', shrub: '#454628', ground: '#52402c', cactus: '#374428' },
+  cordoba: { far: '#2e2630', far2: '#262029', mid: '#372b22', trunk: '#2a1d14', crown: '#3a4426', ground: '#4a3825', rock: '#38302c', rockEdge: '#463e38' }
 };
 var GRASS = { misiones: '#33502a', corrientes: '#566a34', delta: '#6a7038', mendoza: '#7a6540', cordoba: '#94783f' };
 
@@ -103,7 +103,6 @@ function defs() {
     '<radialGradient id="sg-burng"><stop offset="0" stop-color="#0a0604"/><stop offset=".7" stop-color="#140a06"/><stop offset="1" stop-color="#22120a" stop-opacity="0"/></radialGradient>' +
     '<linearGradient id="sg-water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + WATER.jetTop + '" stop-opacity=".85"/><stop offset="1" stop-color="' + WATER.jetBot + '" stop-opacity="0"/></linearGradient>' +
     '<radialGradient id="sg-puff"><stop id="sg-pf0" offset="0" stop-opacity=".92"/><stop id="sg-pf1" offset=".55" stop-opacity=".55"/><stop id="sg-pf2" offset="1" stop-opacity="0"/></radialGradient>' +
-    '<radialGradient id="sg-steam-puff"><stop offset="0" stop-color="#ffffff" stop-opacity=".75"/><stop offset=".5" stop-color="#d4e6f1" stop-opacity=".4"/><stop offset="1" stop-color="#aed6f1" stop-opacity="0"/></radialGradient>' +
     '</defs>';
 }
 
@@ -111,106 +110,94 @@ function landscape(id, kind, lake) {
   var far = '', mid = '', ground = '', P: any;
 
   if (id === 'chubut') {
-    /* Patagonia: Andean cordillera with faceted shaded ridges, conifer forest and a mountain lake */
+    /* Patagonia: Andean cordillera, conifer forest and a mountain lake */
     P = LAND.chubut;
     far += '<path d="M0 168L32 136L64 148L108 94L136 128L172 108L218 142L268 84L304 126L348 104L388 138L400 130V220H0Z" fill="' + P.far + '"/>';
-    far += '<path d="M64 148L108 94L124 114L86 142ZM172 108L218 142L194 130ZM268 84L304 126L288 116ZM348 104L388 138L370 126Z" fill="' + P.shadow + '" opacity=".6"/>';
-    far += '<path d="M100 104L108 94L118 105L110 102ZM258 93L268 84L280 96L270 91ZM340 111L348 104L356 112Z" fill="' + P.snow + '" opacity=".85"/>';
-    far += '<path d="M108 94v12M268 84v14M348 104v10" stroke="' + P.snow + '" stroke-width="1.2" opacity=".7"/>';
+    far += '<path d="M100 104L108 94L118 105L110 102ZM258 93L268 84L280 96L270 91ZM340 111L348 104L356 112Z" fill="' + P.snow + '" opacity=".6"/>';
     mid += '<path d="M0 192Q110 166 220 184T400 178V300H0Z" fill="' + P.mid + '"/>';
-    for (var c = 0; c < 24; c++) {
-      var cx = 4 + c * 16.5 + rnd(c + 90) * 5, cy = 186 - Math.sin(c * 0.45) * 8, h = 18 + rnd(c + 91) * 12;
-      mid += '<g>' +
-        '<path d="M' + n1(cx) + ' ' + n1(cy) + 'v4" stroke="#2a1f18" stroke-width="1.6"/>' +
-        '<path class="sg-tree" data-x="' + cx + '" data-y="' + cy + '" d="M' + n1(cx) + ' ' + n1(cy - h) + 'l' + n1(h * 0.28) + ' ' + n1(h) + 'h' + n1(-h * 0.56) + 'Z" fill="' + P.tree + '"/>' +
-        '</g>';
+    for (var c = 0; c < 22; c++) {
+      var cx = 6 + c * 18 + rnd(c + 90) * 6, cy = 186 - Math.sin(c * 0.45) * 8, h = 16 + rnd(c + 91) * 10;
+      mid += '<path class="sg-tree" data-x="' + cx + '" data-y="' + cy + '" d="M' + n1(cx) + ' ' + n1(cy - h) + 'l' + n1(h * 0.28) + ' ' + n1(h) + 'h' + n1(-h * 0.56) + 'Z" fill="' + P.tree + '"/>';
     }
     ground += '<path d="M0 216Q110 200 230 212T400 206V300H0Z" fill="' + P.ground + '"/>';
     if (lake) {
-      ground += '<ellipse cx="355" cy="225" rx="55" ry="9" fill="' + P.lake + '"/><ellipse cx="355" cy="225" rx="36" ry="4" fill="' + P.lakeHi + '" opacity=".65"/>';
-      ground += '<path d="M328 224h52M342 227h28" stroke="' + P.lakeHi + '" stroke-width="1.2" opacity=".6"/>';
+      ground += '<ellipse cx="355" cy="225" rx="55" ry="9" fill="' + P.lake + '"/><ellipse cx="355" cy="225" rx="36" ry="4" fill="' + P.lakeHi + '" opacity=".6"/>';
     }
 
   } else if (id === 'misiones') {
     /* Selva Misionera: layered canopy, palmito palms and tierra colorada */
     P = LAND.misiones;
     far += '<path d="M0 170Q70 156 140 165T280 158T400 164V220H0Z" fill="' + P.far + '"/>';
-    for (var t = 0; t < 24; t++) {
-      var tx = t * 17 + rnd(t + 40) * 5, r = 11 + rnd(t + 41) * 9;
+    for (var t = 0; t < 22; t++) {
+      var tx = t * 19 + rnd(t + 40) * 5, r = 10 + rnd(t + 41) * 8;
       far += '<ellipse class="sg-tree" data-x="' + n1(tx) + '" data-y="166" cx="' + n1(tx) + '" cy="' + n1(166 - r * 0.3) + '" rx="' + n1(r) + '" ry="' + n1(r * 0.55) + '" fill="' + P.crown0 + '"/>';
     }
     mid += '<path d="M0 190Q110 176 230 186T400 182V300H0Z" fill="' + P.mid + '"/>';
-    for (var m = 0; m < 15; m++) {
-      var mx = 8 + m * 27 + rnd(m + 80) * 7, my = 186 - (m % 3) * 7, mr = 16 + rnd(m + 81) * 9;
+    for (var m = 0; m < 14; m++) {
+      var mx = 10 + m * 29 + rnd(m + 80) * 8, my = 186 - (m % 3) * 7, mr = 15 + rnd(m + 81) * 9;
       mid += '<g transform="translate(' + n1(mx) + ' ' + n1(my) + ')">' +
         '<path d="M0 0V-14" stroke="' + P.trunk + '" stroke-width="2.8"/>' +
         '<ellipse class="sg-tree" data-x="' + n1(mx) + '" data-y="' + n1(my) + '" cx="0" cy="-18" rx="' + n1(mr) + '" ry="' + n1(mr * 0.52) + '" fill="' + P.crown + '"/>' +
-        '<path d="M-10 -22l10 5l10 -5M-8 -25l8 5l8 -5" stroke="' + P.frond + '" stroke-width="1.8" fill="none"/>' +
+        '<path d="M-8 -23l8 6l8 -6M-6 -26l6 6l6 -6" stroke="' + P.frond + '" stroke-width="1.6" fill="none"/>' +
         '</g>';
     }
     ground += '<path d="M0 206Q120 194 240 204T400 200V300H0Z" fill="' + P.soil1 + '"/>';
     ground += '<path d="M0 230Q110 220 230 228T400 224V300H0Z" fill="' + P.soil2 + '"/>';
     ground += '<path d="M0 262Q100 256 220 260T400 258V300H0Z" fill="' + P.soil3 + '"/>';
-    ground += '<path d="M20 216q60-6 120 4t140-2t120 6" stroke="#9a3412" stroke-width="1.2" fill="none" opacity=".5"/>';
 
   } else if (id === 'corrientes') {
     /* Esteros del Iberá: open wetlands, water mirrors and caranday palms */
     P = LAND.corrientes;
     far += '<rect y="180" width="400" height="28" fill="' + P.far + '"/>';
-    [18, 55, 95, 145, 195, 245, 295, 345, 385].forEach(function (px, i) {
+    [24, 75, 135, 195, 255, 315, 375].forEach(function (px, i) {
       var py = 182 + (i % 2) * 2;
       far += '<g transform="translate(' + px + ' ' + py + ')">' +
-        '<path d="M0 0V-18" stroke="' + P.palm + '" stroke-width="1.6"/>' +
-        '<path d="M-9-22l9 4l9-4M-10-19l10 4l10-4M0-24v6" stroke="' + P.frond + '" stroke-width="1.4" fill="none"/>' +
+        '<path d="M0 0V-16" stroke="' + P.palm + '" stroke-width="1.5"/>' +
+        '<path d="M-8-20l8 5l8-5M-9-17l9 4l9-4" stroke="' + P.frond + '" stroke-width="1.3" fill="none"/>' +
         '</g>';
     });
     mid += '<rect y="192" width="400" height="24" fill="' + P.water + '"/>';
-    mid += '<path d="M0 200H400" stroke="' + P.waterLine + '" stroke-width="1.8" opacity=".7"/>';
-    mid += '<path d="M20 205h60M180 204h70M310 206h60" stroke="#7dd3fc" stroke-width="1.2" opacity=".6"/>';
-    [[45, 201, 32], [145, 200, 42], [260, 202, 48], [360, 201, 35]].forEach(function (e) {
-      mid += '<ellipse class="sg-tree" data-x="' + e[0] + '" data-y="' + e[1] + '" cx="' + e[0] + '" cy="' + e[1] + '" rx="' + e[2] + '" ry="5.5" fill="' + P.island + '"/>';
+    mid += '<path d="M0 202H400" stroke="' + P.waterLine + '" stroke-width="2" opacity=".6"/>';
+    [[55, 201, 38], [165, 200, 50], [285, 202, 55]].forEach(function (e) {
+      mid += '<ellipse class="sg-tree" data-x="' + e[0] + '" data-y="' + e[1] + '" cx="' + e[0] + '" cy="' + e[1] + '" rx="' + e[2] + '" ry="5" fill="' + P.island + '"/>';
     });
     ground += '<path d="M0 210H400V300H0Z" fill="' + P.ground + '"/>';
-    ground += '<ellipse cx="130" cy="234" rx="88" ry="13" fill="' + P.pool + '"/><ellipse cx="130" cy="234" rx="54" ry="5" fill="' + P.poolHi + '" opacity=".6"/>';
-    ground += '<path d="M90 234h80M105 237h50" stroke="' + P.waterLine + '" stroke-width="1.2" opacity=".5"/>';
-    ground += '<ellipse cx="310" cy="252" rx="78" ry="11" fill="' + P.pool2 + '"/><ellipse cx="310" cy="252" rx="46" ry="4.5" fill="' + P.pool2Hi + '" opacity=".55"/>';
+    ground += '<ellipse cx="130" cy="234" rx="85" ry="12" fill="' + P.pool + '"/><ellipse cx="130" cy="234" rx="50" ry="4.5" fill="' + P.poolHi + '" opacity=".55"/>';
+    ground += '<ellipse cx="310" cy="252" rx="75" ry="10" fill="' + P.pool2 + '"/><ellipse cx="310" cy="252" rx="42" ry="4" fill="' + P.pool2Hi + '" opacity=".5"/>';
 
   } else if (id === 'delta') {
     /* Delta del Paraná: river channel, weeping willows and reedbanks */
     P = LAND.delta;
     far += '<path d="M0 178Q100 172 200 176T400 174V205H0Z" fill="' + P.far + '"/>';
     far += '<rect y="190" width="400" height="16" fill="' + P.river + '"/>';
-    far += '<path d="M0 196H400" stroke="' + P.riverLine + '" stroke-width="2" opacity=".65"/>';
+    far += '<path d="M0 196H400" stroke="' + P.riverLine + '" stroke-width="1.8" opacity=".55"/>';
     mid += '<path d="M0 200Q110 192 230 198T400 194V300H0Z" fill="' + P.mid + '"/>';
-    [18, 62, 115, 172, 230, 288, 345, 388].forEach(function (wx, i) {
+    [22, 68, 120, 180, 240, 298, 356].forEach(function (wx, i) {
       var wy = 196 + (i % 2) * 3;
       mid += '<g transform="translate(' + wx + ' ' + wy + ')">' +
-        '<path d="M0 0Q-2 -8 0 -16M0 -16Q-8 -22 -14 -26M0 -16Q8 -22 14 -26" stroke="' + P.trunk + '" stroke-width="2.2" fill="none"/>' +
-        '<path class="sg-tree" data-x="' + wx + '" data-y="' + wy + '" d="M-19 -26Q-10 -37 0 -37Q10 -37 19 -26Q15 -13 0 -13Q-15 -13 -19 -26Z" fill="' + P.crown + '"/>' +
-        '<path d="M-14 -22v10M-7 -20v13M0 -18v14M7 -20v13M14 -22v10" stroke="' + P.droop + '" stroke-width="1.3"/>' +
+        '<path d="M0 0Q-2 -8 0 -16M0 -16Q-8 -22 -14 -26M0 -16Q8 -22 14 -26" stroke="' + P.trunk + '" stroke-width="2" fill="none"/>' +
+        '<path class="sg-tree" data-x="' + wx + '" data-y="' + wy + '" d="M-18 -26Q-10 -36 0 -36Q10 -36 18 -26Q14 -14 0 -14Q-14 -14 -18 -26Z" fill="' + P.crown + '"/>' +
+        '<path d="M-12 -22v8M-6 -20v10M6 -20v10M12 -22v8" stroke="' + P.droop + '" stroke-width="1.2"/>' +
         '</g>';
     });
     ground += '<path d="M0 208H400V300H0Z" fill="' + P.ground + '"/>';
-    ground += '<path d="M0 234Q90 226 180 232T360 228L400 234V248L360 242Q180 246 90 240L0 248Z" fill="' + P.channel + '"/>';
-    ground += '<path d="M10 238q80-6 160 2t180-2" stroke="' + P.riverLine + '" stroke-width="1.4" fill="none" opacity=".5"/>';
+    ground += '<path d="M0 234Q90 226 180 232T360 228L400 234V246L360 240Q180 244 90 238L0 246Z" fill="' + P.channel + '"/>';
 
   } else if (id === 'mendoza') {
     /* Mendoza: arid Precordillera, dry washes, jarilla and cardón cacti */
     P = LAND.mendoza;
     far += '<path d="M0 172L42 144L82 158L138 120L194 150L242 130L298 156L348 124L400 152V220H0Z" fill="' + P.far + '"/>';
-    far += '<path d="M42 144L82 158L62 165ZM138 120L194 150L166 160ZM242 130L298 156L270 162ZM348 124L400 152L374 158Z" fill="#2d1f16" opacity=".5"/>';
-    far += '<path d="M0 178L42 150L82 164L138 128M194 156L242 136L298 162M348 132L400 160" stroke="' + P.ridge + '" stroke-width="2.2" fill="none"/>';
+    far += '<path d="M0 178L42 150L82 164L138 128M194 156L242 136L298 162M348 132L400 160" stroke="' + P.ridge + '" stroke-width="2" fill="none"/>';
     mid += '<path d="M0 198Q110 182 230 196T400 190V300H0Z" fill="' + P.mid + '"/>';
-    for (var j = 0; j < 14; j++) {
-      var jx = 10 + j * 28 + rnd(j + 30) * 8, jy = 194 + rnd(j + 31) * 6;
-      mid += '<ellipse class="sg-tree" data-x="' + n1(jx) + '" data-y="' + n1(jy) + '" cx="' + n1(jx) + '" cy="' + n1(jy) + '" rx="11" ry="5.5" fill="' + P.shrub + '"/>';
+    for (var j = 0; j < 12; j++) {
+      var jx = 12 + j * 32 + rnd(j + 30) * 8, jy = 194 + rnd(j + 31) * 6;
+      mid += '<ellipse class="sg-tree" data-x="' + n1(jx) + '" data-y="' + n1(jy) + '" cx="' + n1(jx) + '" cy="' + n1(jy) + '" rx="10" ry="5" fill="' + P.shrub + '"/>';
     }
     ground += '<path d="M0 210Q110 196 230 208T400 202V300H0Z" fill="' + P.ground + '"/>';
-    [[55, 230, 1.15], [140, 240, 0.95], [240, 234, 1.05], [330, 232, 1.1]].forEach(function (c) {
+    [[65, 230, 1.1], [150, 240, 0.9], [330, 232, 1]].forEach(function (c) {
       var cx = c[0], cy = c[1], ck = c[2];
       ground += '<g transform="translate(' + cx + ' ' + cy + ') scale(' + ck + ')">' +
-        '<path d="M0 0V-22M-7-14H0M-7-20V-14M7-12H0M7-18V-12" stroke="' + P.cactus + '" stroke-width="3.5" stroke-linecap="round" fill="none"/>' +
-        '<path d="M-2-22v22M-7-19v5M7-17v5" stroke="' + P.spine + '" stroke-width="1" opacity=".8"/>' +
+        '<path d="M0 0V-20M-6-13H0M-6-18V-13M6-11H0M6-16V-11" stroke="' + P.cactus + '" stroke-width="3" stroke-linecap="round" fill="none"/>' +
         '</g>';
     });
 
@@ -218,19 +205,17 @@ function landscape(id, kind, lake) {
     /* Córdoba: Sierras Chicas ridges, espinillos with umbrella crowns, granite rocks */
     P = LAND.cordoba;
     far += '<path d="M0 170Q65 142 135 158T275 142T400 160V220H0Z" fill="' + P.far + '"/>';
-    far += '<path d="M75 152Q125 140 175 150T315 136T400 150V220H75Z" fill="' + P.far2 + '" opacity=".75"/>';
+    far += '<path d="M75 152Q125 140 175 150T315 136T400 150V220H75Z" fill="' + P.far2 + '" opacity=".7"/>';
     mid += '<path d="M0 196Q100 178 210 192T400 184V300H0Z" fill="' + P.mid + '"/>';
-    [[24, 198, 1], [84, 202, 1.2], [152, 196, .95], [220, 200, 1.15], [288, 196, 1.05], [356, 200, 1.25]].forEach(function (a) {
+    [[28, 198, 1], [90, 202, 1.15], [162, 196, .9], [230, 200, 1.1], [298, 196, 1], [362, 200, 1.2]].forEach(function (a) {
       var ex = a[0], ey = a[1], ek = a[2];
       mid += '<g transform="translate(' + ex + ' ' + ey + ') scale(' + ek + ')">' +
-        '<path d="M0 0Q-3 -7 0 -13M0 -13Q-7 -17 -14 -22M0 -13Q7 -17 14 -22" stroke="' + P.trunk + '" stroke-width="2.4" fill="none"/>' +
-        '<ellipse class="sg-tree" data-x="' + ex + '" data-y="' + ey + '" cx="0" cy="-22" rx="17" ry="6.5" fill="' + P.crown + '"/>' +
-        '<circle cx="-8" cy="-23" r="2" fill="' + P.blossom + '" opacity=".85"/><circle cx="6" cy="-22" r="2.2" fill="' + P.blossom + '" opacity=".85"/>' +
+        '<path d="M0 0Q-3 -7 0 -13M0 -13Q-7 -17 -13 -21M0 -13Q7 -17 13 -21" stroke="' + P.trunk + '" stroke-width="2.2" fill="none"/>' +
+        '<ellipse class="sg-tree" data-x="' + ex + '" data-y="' + ey + '" cx="0" cy="-21" rx="16" ry="6" fill="' + P.crown + '"/>' +
         '</g>';
     });
     ground += '<path d="M0 212Q110 198 230 210T400 204V300H0Z" fill="' + P.ground + '"/>';
-    ground += '<path d="M25 258l22-7l15 9l-11 7h-18ZM135 268l20-9l18 5l-9 7h-22ZM255 256l26-7l16 11l-13 7h-22ZM335 272l18-7l15 7l-9 5Z" fill="' + P.rock + '" stroke="' + P.rockEdge + '" stroke-width="1.3"/>';
-    ground += '<path d="M26 257l20-6l13 8M136 267l18-8l16 4M256 255l24-6l14 10" stroke="#78716c" stroke-width="1" opacity=".7"/>';
+    ground += '<path d="M25 258l22-7l15 9l-11 7h-18ZM135 268l20-9l18 5l-9 7h-22ZM255 256l26-7l16 11l-13 7h-22ZM335 272l18-7l15 7l-9 5Z" fill="' + P.rock + '" stroke="' + P.rockEdge + '" stroke-width="1.2"/>';
   }
 
   return { far: far, mid: mid, ground: ground };
@@ -286,7 +271,7 @@ function crewSVG(i) {
 }
 
 /* Same drop over the fire, but a steeper climb-out that clears the helicopter refilling at the lake. */
-var PLANE_PATH_HELI = 'M-80 128C40 140 140 166 240 164S380 48 520 10';
+var PLANE_PATH_HELI = 'M-80 128C40 140 140 166 240 164S370 30 520 -30';
 var PLANE_PATH = 'M-80 128C40 140 140 166 240 164S420 118 520 70', PLANE_IN = S_FIGHT, PLANE_OUT = 0.9;
 var HELI_KEYS = [[0.69, 450, 60], [0.74, 355, 174], [0.77, 355, 174], [0.83, 246, 116], [0.86, 232, 114], [0.91, 355, 174], [0.935, 355, 174], [0.985, 204, 114], [1, 196, 112]];
 var HELI_DIPS = [[0.74, 0.77], [0.91, 0.935]], HELI_DROPS = [[0.83, 0.865], [0.985, 1.01]];
@@ -300,8 +285,8 @@ function create(o) {
   var oPt = ORIGIN[id] || ORIGIN[kind] || [220, 230];
   var burnX = oPt[0];
 
-  var s = '<svg class="scene" viewBox="0 -15 400 315" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + (o.aria || 'Ilustración esquemática del incendio') + '">' + defs();
-  s += '<rect x="0" y="-30" width="400" height="340" fill="url(#sg-sky)"/>';
+  var s = '<svg class="scene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice" role="img" aria-label="' + (o.aria || 'Ilustración esquemática del incendio') + '">' + defs();
+  s += '<rect width="400" height="300" fill="url(#sg-sky)"/>';
   /* Radiant sun with luminous corona */
   s += '<g id="sg-sun"><circle cx="330" cy="88" r="42" fill="url(#sg-suncorona)"/><circle id="sg-sunc" cx="330" cy="88" r="14" fill="' + SUN.core + '"/></g>';
 
@@ -339,18 +324,15 @@ function create(o) {
   s += '<g id="sg-hdrops" opacity="0">';
   for (var d = 0; d < 14; d++) s += '<circle r="' + n1(1.4 + rnd(d + 200) * 1.2) + '" fill="' + WATER.drop + '"/>';
   s += '</g>';
-  s += '<g id="sg-steam" opacity="0">';
-  for (var st = 0; st < 8; st++) s += '<circle r="12" fill="url(#sg-steam-puff)"/>';
-  s += '</g>';
 
   for (var c = 0; c < nCrew; c++) s += '<path id="sg-j' + c + '" d="M0 0" stroke="' + WATER.jet + '" stroke-width="2" fill="none" stroke-dasharray="3 5" stroke-linecap="round" opacity="0"/>';
   for (c = 0; c < nCrew; c++) s += crewSVG(c);
   if (means.plane) s += '<path id="sg-ppath" d="' + (means.heli ? PLANE_PATH_HELI : PLANE_PATH) + '" stroke="rgba(255,240,220,.28)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + PLANE;
   if (means.heli) s += '<path id="sg-hpath" d="M' + HELI_KEYS.map(function (k) { return k[1] + ' ' + k[2]; }).join('L') + '" stroke="rgba(255,240,220,.22)" stroke-width="1" stroke-dasharray="3 5" fill="none" opacity="0"/>' + HELI;
 
-  /* Sleek minimal HUD badge, bottom-centre: the top band and the right edge are cropped by the slice rule on narrow boxes, the bottom centre never is */
+  /* Sleek minimal HUD badge */
   if (o.label !== false) {
-    s += '<g id="sg-label" opacity="0" transform="translate(252 276)">' +
+    s += '<g id="sg-label" opacity="0" transform="translate(386 16)">' +
       '<rect id="sg-badge-bg" x="-104" y="0" width="104" height="22" rx="11" fill="rgba(14,9,7,0.92)" stroke="rgba(200,130,60,0.38)" stroke-width="1"/>' +
       '<circle cx="-93" cy="11" r="3.2" fill="' + FIRE.mid + '"/>' +
       '<text id="sg-count" x="-82" y="14.8" font-size="10" fill="#f4eae3" font-weight="700" font-family="system-ui, sans-serif">0 ' + (o.unit || 'ha') + '</text></g>';
@@ -368,7 +350,6 @@ function create(o) {
       s0: q('sg-s0'), s1: q('sg-s1'), s2: q('sg-s2'), sun: q('sg-sun'), sunc: q('sg-sunc'), burn: q('sg-burn'), haze: q('sg-haze'), label: q('sg-label'), count: q('sg-count'),
       far: q('sg-far'), mid: q('sg-mid'), pf: [q('sg-pf0'), q('sg-pf1'), q('sg-pf2')],
       flare: q('sg-flare'), pwater: q('sg-pwater'), hdrops: q('sg-hdrops'),
-      steam: q('sg-steam'), steamPuffs: Array.prototype.slice.call(svg.querySelectorAll('#sg-steam circle')),
       heli: q('sg-heli'), hflip: q('sg-hflip'), helibody: q('sg-helibody'), rot: q('sg-rot'), trot: q('sg-trot'), hpath: q('sg-hpath'),
       rope: q('sg-rope'), bucket: q('sg-bucket'), bfill: q('sg-bfill'),
       plane: q('sg-plane'), prop: q('sg-prop'), ppath: q('sg-ppath'),
@@ -474,7 +455,6 @@ function create(o) {
       m.j.setAttribute('opacity', (on * 0.9).toFixed(2));
     });
 
-    var steamPlane = false, steamPlaneX = 0;
     /* Aerial hydrant plane */
     if (R.plane) {
       var pu = ease(seg(s, PLANE_IN, PLANE_END)), pt = R.ppath.getPointAtLength(R.plen * pu), vis = s > PLANE_IN && s < PLANE_END;
@@ -485,11 +465,8 @@ function create(o) {
       var release = vis && pt.x > 140 && pt.x < (means.heli ? 290 : 350); /* stop short of the lake when a helicopter refills there */
       R.pwater.setAttribute('opacity', release ? '0.85' : '0');
       R.pwater.setAttribute('points', [[pt.x - 2, pt.y + 9], [pt.x + 10, pt.y + 9], [pt.x - 25, GROUND - 22], [pt.x - 90, GROUND - 22]].map(function (q) { return n1(q[0]) + ',' + n1(q[1]); }).join(' '));
-      steamPlane = release;
-      steamPlaneX = pt.x - 55;
     }
 
-    var steamHeli = false, steamHeliX = 0;
     /* Aerial helicopter with helibalde */
     if (R.heli) {
       var hp = track(HELI_KEYS, s), hvis = s > HELI_KEYS[0][0];
@@ -508,26 +485,6 @@ function create(o) {
         var u = frac(s * 40 + i / R.drops.length), y0 = hp.y + rope + 10;
         el.setAttribute('cx', n1(hp.x + (rnd(i + 300) - 0.5) * 12 + u * 4)); el.setAttribute('cy', n1(y0 + u * Math.max(10, GROUND - 24 - y0)));
       });
-      steamHeli = !!drop;
-      steamHeliX = hp.x;
-    }
-
-    /* Volumetric steam/vapor billowing when water hits the fire on the ground */
-    if (R.steam) {
-      var steamOn = steamPlane || steamHeli;
-      var stX = steamPlane ? steamPlaneX : steamHeliX;
-      R.steam.setAttribute('opacity', steamOn ? '1' : '0');
-      if (steamOn) {
-        R.steamPuffs.forEach(function (el, i) {
-          var u = frac(s * 16 + i / R.steamPuffs.length);
-          var sx = stX + (rnd(i + 700) - 0.5) * 36 + (u - 0.5) * 16;
-          var sy = (GROUND - 24) - u * 32;
-          el.setAttribute('cx', n1(sx));
-          el.setAttribute('cy', n1(sy));
-          el.setAttribute('r', n1(6 + u * 16));
-          el.setAttribute('opacity', ((1 - u) * 0.75).toFixed(2));
-        });
-      }
     }
   }
 

@@ -12,28 +12,25 @@
   pointer-events: auto;
   max-width: 100%;
   padding: var(--s-half) var(--s-2);
-  border: 1px solid rgba(197, 82, 33, 0.4);
-  border-radius: var(--r-1);
-  background: rgba(14, 12, 10, 0.94);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  border: 0;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--ring-ui);
   color: var(--text-2);
-  font-family: var(--font-display);
   font-size: var(--fs-12);
   line-height: 1.5;
   text-align: left;
   white-space: normal;
   cursor: pointer;
-  transition: border-color 0.2s var(--ease);
 }
-.capsule:hover, .capsule[aria-expanded='true'] { border-color: var(--accent); }
+.capsule:hover, .capsule[aria-expanded='true'] { box-shadow: 0 0 0 1px var(--ring-strong); }
 .popover {
   pointer-events: auto;
   width: min(360px, calc(100vw - var(--s-4)));
   padding: var(--s-2);
-  background: rgba(14, 12, 10, 0.96);
-  border-radius: var(--r-1);
-  border: 1px solid rgba(197, 82, 33, 0.4);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  background: var(--card);
+  border-radius: var(--r-2);
+  box-shadow: 0 0 0 1px var(--ring);
   font-size: var(--fs-14);
   color: var(--text-2);
   display: grid;
@@ -42,20 +39,12 @@
 .close {
   justify-self: end;
   padding: var(--s-half) var(--s-2);
-  border: 1px solid rgba(197, 82, 33, 0.4);
-  border-radius: var(--r-1);
-  background: rgba(197, 82, 33, 0.15);
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent-soft);
   color: var(--accent);
-  font-family: var(--font-display);
   font-size: var(--fs-12);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s var(--ease);
-}
-.close:hover {
-  background: rgba(197, 82, 33, 0.3);
 }
 
 @media (max-width: 899.98px) {

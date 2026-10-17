@@ -4,7 +4,6 @@ import type { Slide } from '../lib/slides';
 import { createScene } from '../lib/scene';
 import { stageCaption } from '../lib/fire';
 import { useReducedMotion } from '../lib/motion';
-import BiodiversityCard from './BiodiversityCard';
 import styles from './ScenePanel.module.css';
 
 type Props = { s: number; stage: number; slide: Slide };
@@ -23,7 +22,7 @@ export default function ScenePanel({ s, stage, slide }: Props) {
     () =>
       ev
         ? createScene({
-            still: false,
+            still: reduced,
             id: ev.id,
             kind: ev.cause.kind,
             means: ev.means || { crew: 3 },
@@ -32,7 +31,7 @@ export default function ScenePanel({ s, stage, slide }: Props) {
             aria: 'Ilustración esquemática: cómo empezó, cómo creció y cómo se combatió el incendio de ' + ev.region,
           })
         : null,
-    [ev],
+    [ev, reduced],
   );
 
   /* mount, then keep ambient motion running only while the scene is on screen and the tab is visible */
@@ -58,8 +57,8 @@ export default function ScenePanel({ s, stage, slide }: Props) {
     };
   }, [scene]);
 
-  /* scroll drives the scene continuously (forward and backward) */
-  const sEff = s;
+  /* reduced motion: still frames chosen so each stage shows its means */
+  const sEff = reduced ? [0.18, 0.5, 0.8][stage] : s;
   useEffect(() => {
     scene?.update(sEff);
     scrolling.current = true;
@@ -80,9 +79,6 @@ export default function ScenePanel({ s, stage, slide }: Props) {
           <b>{lead}</b>
           {rest}
         </span>
-      </div>
-      <div className={styles.bioSlot}>
-        <BiodiversityCard storyId={ev.id} />
       </div>
     </section>
   );

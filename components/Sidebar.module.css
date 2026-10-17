@@ -1,6 +1,5 @@
 .side {
   overflow-y: auto;
-  overflow-x: hidden;
   min-height: 0;
   --side-pad: var(--s-3);
   padding: 0 var(--side-pad);

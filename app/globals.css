@@ -1,24 +1,16 @@
 /* Design tokens. Spacing runs on an 8 px grid (4 px only for fine adjustments). */
 :root {
-  --font-display: var(--font-cinzel), 'Cinzel', Georgia, serif;
-  --font-title: var(--font-cinzel), 'Cinzel', Georgia, serif;
-  --font-sans: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  --font: var(--font-sans);
-
   --bg: #0a0a0a;
-  --text: #f4ede6;
-  --text-2: #d1c7bd;
-  --muted: #9e948c;
-  --accent: #f5a524; /* primary warm amber accent */
-  --accent-burnt: #c55221; /* secondary burnt orange editorial accent */
+  --text: #f2ece6;
+  --text-2: #cfc6bd;
+  --muted: #9a918a;
+  --accent: #f5a524; /* the single amber accent */
   --accent-soft: rgba(245, 165, 36, 0.16);
 
-  --card: rgba(14, 13, 12, 0.92); /* opaque cards with warm editorial dark undertone */
+  --card: rgba(10, 10, 10, 0.88); /* opaque cards: no backdrop-filter anywhere */
   --ring: rgba(255, 255, 255, 0.14);
-  --ring-ui: rgba(255, 255, 255, 0.4); /* borders that identify a control: 3:1 on dark surfaces */
+  --ring-ui: rgba(255, 255, 255, 0.4); /* borders that identify a control: 3:1 on the dark surfaces */
   --ring-strong: rgba(245, 165, 36, 0.6);
-  --ring-burnt: rgba(197, 82, 33, 0.45);
 
   --s-half: 4px;
   --s-1: 8px;
@@ -37,8 +29,8 @@
   --fs-40: 40px;
   --fs-56: 56px;
 
-  --r-1: 6px;
-  --r-2: 12px;
+  --r-1: 8px;
+  --r-2: 16px;
   --topbar-h: 48px;
   --side-w: clamp(340px, 28vw, 440px);
   --scene-w: clamp(300px, 40vw, 800px);
@@ -47,52 +39,21 @@
   --aviso-h-m: 32px;
   --mobile-stage-h: calc(45dvh - var(--topbar-h-m) - var(--aviso-h-m));
 
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-* {
-  box-sizing: border-box;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(197, 82, 33, 0.45) transparent;
-}
-html {
-  margin: 0;
-  overflow-x: hidden;
-}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
 body {
-  margin: 0;
-  min-height: 100%;
-  overflow-x: hidden;
   background: var(--bg);
   color: var(--text);
   font: 400 var(--fs-16) / 1.5 var(--font);
-  letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
 }
-
-/* Custom sleek webkit scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(197, 82, 33, 0.45);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
-}
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-h1, h2, h3, h4, p, ul { margin: 0; }
-h1, h2, h3, h4 {
-  font-family: var(--font-display);
-  letter-spacing: 0.02em;
-}
+/* The explorer is an app shell: only its own columns scroll. */
+html:has([data-app-shell]), html:has([data-app-shell]) body { overflow: hidden; }
+h1, h2, h3, p, ul { margin: 0; }
 button { font: inherit; color: inherit; }
 a { color: var(--accent); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
