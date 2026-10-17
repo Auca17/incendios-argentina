@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { subscribe } from '../lib/scrollDriver';
-import { DESKTOP, GUTTER, podWidth } from '../lib/tourLayout';
+import { titleBox } from '../lib/tourLayout';
 import styles from './CoverTitle.module.css';
 
 /**
@@ -15,15 +15,10 @@ export default function CoverTitle() {
   useEffect(() => subscribe(({ st, vw, vh }) => {
     const el = ref.current;
     if (!el) return;
-    const mobile = vw < DESKTOP;
-    const width = mobile ? vw - 2 * 16 : podWidth(vw);
     const d = st.titleDock * st.titleDock * (3 - 2 * st.titleDock); // eased
-    const s0 = mobile ? 1.05 : 1.45; // scale in the middle of the cover
-    const cx = (vw - width * s0) / 2, cy = vh * (mobile ? 0.3 : 0.34);
-    const dx = mobile ? 16 : GUTTER, dy = mobile ? vh * 0.44 + 24 : 72;
-    const s = s0 + (1 - s0) * d;
-    el.style.width = width + 'px';
-    el.style.transform = `translate(${(cx + (dx - cx) * d).toFixed(1)}px, ${(cy + (dy - cy) * d).toFixed(1)}px) scale(${s.toFixed(4)})`;
+    const b = titleBox(vw, vh, d);
+    el.style.width = b.width + 'px';
+    el.style.transform = `translate(${b.x.toFixed(1)}px, ${b.y.toFixed(1)}px) scale(${b.scale.toFixed(4)})`;
     el.style.opacity = st.title.toFixed(3);
     el.style.visibility = st.title > 0 ? 'visible' : 'hidden';
     el.dataset.dock = d > 0.5 ? '1' : '0';

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { SECTIONS, TOUR_EVENTS } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
 import TourMap from './TourMap';
@@ -35,18 +35,16 @@ function Cue() {
  * Links in the legacy hash format (#<n>&y=…&p=…&c=…) open the explorer, which still reads them.
  */
 export default function ScrollyExperience() {
-  const [paused, setPaused] = useState(false);
-
   useEffect(() => {
     if (/^#\d/.test(location.hash)) location.replace(BASE + '/explorar/' + location.hash);
   }, []);
 
   return (
-    <div className={styles.root} data-paused={paused ? '' : undefined}>
+    <div className={styles.root}>
       <TourMap />
       <TourStage />
       <CloudCurtain />
-      <TourHud paused={paused} onPause={() => setPaused((p) => !p)} />
+      <TourHud />
 
       <main className={styles.track}>
         <section id="sec-opening" className={styles.opening} style={vh('sec-opening')}>

@@ -53,6 +53,13 @@
   border: 0;
   background: transparent;
 }
+/* caption on a chip: the map behind it is light */
+.scene > section > div:last-child {
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-2);
+  background: var(--t-chip);
+  color: var(--t-text-2);
+}
 
 @media (max-width: 1023.98px) {
   .notice {

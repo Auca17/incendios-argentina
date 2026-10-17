@@ -49,28 +49,8 @@
   font-weight: 700;
 }
 
-/* ambient scene motion (transform/opacity only); scroll still decides the state */
-.scenebox :global(.amb-fl) { transform-box: fill-box; transform-origin: 50% 100%; animation: amb-fl 1.3s ease-in-out infinite alternate; }
-@keyframes amb-fl {
-  0% { transform: none; }
-  33% { transform: scale(1.03, 0.96) skewX(2deg); }
-  66% { transform: scale(0.97, 1.04) skewX(-2deg); }
-  100% { transform: scale(1.02, 1) skewX(1deg); }
-}
-.scenebox :global(.amb-gl) { animation: amb-gl 1.7s ease-in-out infinite alternate; }
-@keyframes amb-gl { from { opacity: 0.8; } to { opacity: 1; } }
-.scenebox :global(.amb-sm) { animation: amb-sm 7s ease-in-out infinite alternate; }
-@keyframes amb-sm {
-  from { transform: translate(0, 0); opacity: 1; }
-  to { transform: translate(var(--sx, 16px), -10px); opacity: 0.55; }
-}
-.scenebox :global(.amb-em) { opacity: 0; animation: amb-em 3s linear infinite; }
-@keyframes amb-em {
-  0% { transform: translate(0, 0); opacity: 0; }
-  15% { opacity: 1; }
-  100% { transform: translate(var(--dx, 0), var(--dy, -50px)); opacity: 0; }
-}
-.scenebox :global(svg.scene.paused) * { animation-play-state: paused !important; }
+/* no ambient motion: the scene is a pure function of the scroll position; embers stay lit */
+.scenebox :global(.amb-em) { opacity: 0.85; }
 @media (prefers-reduced-motion: reduce) {
   .scenebox :global(svg.scene) * { animation: none !important; }
   .scenebox :global(.amb-em) { opacity: 0; }

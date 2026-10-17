@@ -77,26 +77,7 @@
   white-space: nowrap;
 }
 
-.tools {
-  display: grid;
-  justify-items: end;
-  gap: var(--s-1);
-}
-.tool {
-  display: grid;
-  place-items: center;
-  min-width: 40px;
-  height: 40px;
-  padding: 0 var(--s-1);
-  border: 1px solid var(--t-control);
-  border-radius: 999px;
-  background: var(--t-chip);
-  color: var(--t-text);
-  font: 600 var(--fs-12) / 1 var(--t-font-read);
-  text-decoration: none;
-  cursor: pointer;
-}
-.tool:hover { border-color: var(--t-amber); }
+
 
 @media (max-width: 1023.98px) {
   .hud {
@@ -112,6 +93,4 @@
   .dots { grid-auto-flow: column; gap: 0; }
   .dot { width: 28px; height: 32px; }
   .label { display: none; }
-  .tools { grid-auto-flow: column; gap: var(--s-half); }
-  .tool { min-width: 32px; height: 32px; }
 }

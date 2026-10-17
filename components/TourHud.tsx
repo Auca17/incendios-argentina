@@ -2,10 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FOCAL, SECTIONS, TOUR_EVENTS } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
-import SourcesLink from './SourcesLink';
 import styles from './TourHud.module.css';
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 const FIRST_STORY = SECTIONS.findIndex((s) => s.kind === 'story');
 
 /** Scrolls so the start of a section sits on the focal line (t = 0: first week of a fire). */
@@ -18,11 +16,11 @@ export function goToSection(i: number) {
 }
 
 /**
- * Right-hand HUD: one dot per fire (label only on the active one), a thin progress line, a pause
- * button for the ambient scene motion, and links to the explorer and to the sources. Hidden during
- * the opening. Arrow keys left/right move between fires (PgUp/PgDn keep their native scrolling).
+ * Right-hand HUD: one dot per fire (label only on the active one) and a thin progress line. Hidden on
+ * the cover and over the closed clouds of the epilogue. Arrow keys left/right move between fires
+ * (PgUp/PgDn keep their native scrolling).
  */
-export default function TourHud({ paused, onPause }: { paused: boolean; onPause: () => void }) {
+export default function TourHud() {
   const [state, setState] = useState({ chapter: -1, visible: false, idx: 0 });
   const bar = useRef<HTMLSpanElement>(null);
   const idxRef = useRef(0);
@@ -85,21 +83,6 @@ export default function TourHud({ paused, onPause }: { paused: boolean; onPause:
             );
           })}
         </ol>
-        <div className={styles.tools}>
-          <button
-            type="button"
-            className={styles.tool}
-            aria-pressed={paused}
-            aria-label={paused ? 'Reanudar la animación de las escenas' : 'Pausar la animación de las escenas'}
-            onClick={onPause}
-          >
-            <span aria-hidden="true">{paused ? '▶' : 'II'}</span>
-          </button>
-          <a className={styles.tool} href={BASE + '/explorar/#0'} aria-label="Explorar los datos por año y provincia">
-            <span aria-hidden="true">≡</span>
-          </a>
-          <SourcesLink className={styles.tool} label="Fuentes" />
-        </div>
       </nav>
       <p className="sr-only" aria-live="polite">
         {active ? `Historia ${state.chapter + 1} de 6: ${active.region}, ${active.when}` : ''}

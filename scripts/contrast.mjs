@@ -53,6 +53,10 @@ const S = {
   tChip: over(parse('var(--t-chip)'), parse('#ffd27a')),
   tChipCloud: over(parse('var(--t-chip)'), parse('#fdfbf7')),
   tPaper: parse('var(--t-paper)'),
+  // reading text sits on the flat interior of the cloud bank (CloudCurtain: rgb .972 .975 .978)
+  tCloud: [248, 249, 249, 1],
+  // cover title: the shader keeps a sunlit patch behind it (rgb .985 .985 .98)
+  tCloudShade: [251, 251, 250, 1],
   tAmber: parse('var(--t-amber)'),
 };
 
@@ -90,6 +94,13 @@ const PAIRS = [
   U('focus outline accent on page', 'var(--accent)', 'page'),
   U('focus outline accent on #1a1a1a fields', 'var(--accent)', 'field'),
   U('inactive nav dot (muted, .7) on card', 'rgba(154, 145, 138, 0.7)', 'card'),
+  // guided tour (home): text on the cloud
+  T('tour: ink on the cloud interior', 'var(--t-ink)', 'tCloud', 16),
+  T('tour: ink-2 on the cloud interior', 'var(--t-ink-2)', 'tCloud', 14),
+  T('tour: red figures and labels on the cloud', 'var(--t-red)', 'tCloud', 14),
+  T('tour: cover title ink on the sunlit patch', 'var(--t-ink)', 'tCloudShade', 56),
+  T('tour: cover subtitle red on the sunlit patch (24 px bold)', 'var(--t-red)', 'tCloudShade', 24, true),
+  U('tour: Ver más border (ink) on the cloud', 'var(--t-ink)', 'tCloud'),
   // guided tour (home)
   T('tour: title text on pod over lit cloud', 'var(--t-text)', 'tPod', 24, true),
   T('tour: body text-2 on pod over lit cloud', 'var(--t-text-2)', 'tPod', 16),

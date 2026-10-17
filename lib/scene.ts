@@ -333,9 +333,10 @@ function create(o) {
   /* Sleek minimal HUD badge */
   if (o.label !== false) {
     s += '<g id="sg-label" opacity="0" transform="translate(386 16)">' +
-      '<rect id="sg-badge-bg" x="-104" y="0" width="104" height="22" rx="11" fill="rgba(14,9,7,0.92)" stroke="rgba(200,130,60,0.38)" stroke-width="1"/>' +
-      '<circle cx="-93" cy="11" r="3.2" fill="' + FIRE.mid + '"/>' +
-      '<text id="sg-count" x="-82" y="14.8" font-size="10" fill="#f4eae3" font-weight="700" font-family="system-ui, sans-serif">0 ' + (o.unit || 'ha') + '</text></g>';
+      '<rect id="sg-badge-bg" x="-132" y="0" width="132" height="22" rx="11" fill="rgba(14,9,7,0.92)" stroke="rgba(200,130,60,0.38)" stroke-width="1"/>' +
+      '<circle cx="-121" cy="11" r="3.2" fill="' + FIRE.mid + '"/>' +
+      // a fixed total: the sources give no time series of the burnt area, so the figure never runs
+      '<text id="sg-count" x="-110" y="14.8" font-size="10" fill="#f4eae3" font-weight="700" font-family="system-ui, sans-serif">Total: ' + fmt(o.hectares || 0) + ' ' + (o.unit || 'ha') + '</text></g>';
   }
   /* Always-visible tag, bottom-left (wide boxes crop the top band by the slice rule, never the ground): this is a schematic drawing, not a depiction of the real fire */
   s += '<g id="sg-tag" transform="translate(10 276)" pointer-events="none">' +
@@ -414,7 +415,6 @@ function create(o) {
     R.burn.setAttribute('rx', n1(burnR * bt)); R.burn.setAttribute('ry', n1(burnR * 0.28 * bt));
     if (R.label) {
       R.label.setAttribute('opacity', seg(s, 0.02, 0.07).toFixed(2));
-      R.count.textContent = fmt((o.hectares || 0) * ease(seg(s, 0.05, 0.6))) + ' ' + (o.unit || 'ha');
     }
 
     var lits = [], sizes = R.flames.map(function (q, i) {

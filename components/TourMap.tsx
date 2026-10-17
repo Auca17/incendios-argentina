@@ -32,7 +32,8 @@ type Box = [number, number, number, number]; // minLon, maxLon, minLat, maxLat
 type Prov = { name: string; path: Path2D; box: Box };
 
 export const MAP_COLORS = {
-  sea: '#5288a4', // matches the deep sea at the edges of the relief image
+  sea: '#5184a2', // average deep sea along the edges of the relief image
+  seaClear: 'rgba(81, 132, 162, 0)',
   neighbour: 'rgba(20, 24, 28, 0.35)',
   province: '12, 12, 12',
   visited: 'rgba(70, 22, 12, 0.7)',
@@ -228,7 +229,21 @@ export default function TourMap() {
       world(g);
       if (relief) {
         g.imageSmoothingQuality = 'high';
-        g.drawImage(relief, RELIEF[0] * K, -RELIEF[3], (RELIEF[1] - RELIEF[0]) * K, RELIEF[3] - RELIEF[2]);
+        const x0 = RELIEF[0] * K, x1 = RELIEF[1] * K, y0 = -RELIEF[3], y1 = -RELIEF[2];
+        g.drawImage(relief, x0, y0, x1 - x0, y1 - y0);
+        // fade the image edges into the uniform sea around it, so there is no seam
+        const f = 3; // degrees
+        const fade = (gx0: number, gy0: number, gx1: number, gy1: number, rx: number, ry: number, rw: number, rh: number) => {
+          const gr = g.createLinearGradient(gx0, gy0, gx1, gy1);
+          gr.addColorStop(0, C.sea);
+          gr.addColorStop(1, C.seaClear);
+          g.fillStyle = gr;
+          g.fillRect(rx, ry, rw, rh);
+        };
+        fade(x0, 0, x0 + f, 0, x0, y0, f, y1 - y0);
+        fade(x1, 0, x1 - f, 0, x1 - f, y0, f, y1 - y0);
+        fade(0, y0, 0, y0 + f, x0, y0, x1 - x0, f);
+        fade(0, y1, 0, y1 - f, x0, y1 - f, x1 - x0, f);
       }
       g.lineJoin = 'round';
       if (neighbours) {

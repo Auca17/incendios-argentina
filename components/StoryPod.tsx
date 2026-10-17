@@ -1,19 +1,23 @@
 'use client';
 import { useEffect, useId, useState } from 'react';
 import { loadProvinciaMes } from '../lib/data';
-import { ALT, fmt, monthSeries } from '../lib/fire';
+import { ALT, fmt, monthSeries, type Fact } from '../lib/fire';
 import { CAUSE_BY } from '../lib/tour';
 import { remeasure } from '../lib/scrollDriver';
 import MonthChart from './MonthChart';
-import SourcesLink from './SourcesLink';
 import styles from './StoryPod.module.css';
 
 type Props = { ev: any; index: number; total: number };
 
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+/** All the facts of a fire, as EVENTS lists them (figure + text, both from the cited source). */
+const facts = (ev: any): Fact[] => (ev.facts as string[][]).map((f) => ({ figure: f[0], text: f[1] }));
+
 /**
  * Reading pod of one fire. Closed: place and date, headline, the cause quoted with its source, the
- * hero figure with its source and "Ver más". Open (in place, 250 ms): how it was fought according to
- * the source, the monthly satellite chart and the second figure when the sources differ.
+ * hero figure as a fixed total with its source and "Ver más". Open (in place, 250 ms): how it was
+ * fought and the facts, as the cited sources give them, the second figure when the sources differ and
+ * the monthly satellite chart.
  */
 export default function StoryPod({ ev, index, total }: Props) {
   const [open, setOpen] = useState(false);
@@ -44,9 +48,8 @@ export default function StoryPod({ ev, index, total }: Props) {
         <p className={styles.num}>
           {fmt(ev.hero.value)} <span className={styles.unit}>{ev.hero.unit === 'hectáreas' ? 'ha' : ev.hero.unit}</span>
         </p>
-        <p className={styles.figLabel}>
-          {ev.hero.label} <span className={styles.src}>Según {ev.hero.src}.</span>
-        </p>
+        <span className={styles.total}>Total según {ev.hero.src}</span>
+        <p className={styles.figLabel}>{cap(ev.hero.unit)} {ev.hero.label}</p>
       </div>
 
       <button
@@ -70,6 +73,13 @@ export default function StoryPod({ ev, index, total }: Props) {
           <h3 className={styles.h3}>Cómo se combatió</h3>
           <p className={styles.body}>{ev.response}</p>
 
+          <h3 className={styles.h3}>Lo que dicen las fuentes</h3>
+          <ul className={styles.facts}>
+            {facts(ev).map((f) => (
+              <li key={f.figure}><b>{f.figure}</b><span>{f.text}</span></li>
+            ))}
+          </ul>
+
           {alt && (
             <>
               <h3 className={styles.h3}>Las fuentes no coinciden</h3>
@@ -91,7 +101,6 @@ export default function StoryPod({ ev, index, total }: Props) {
             </p>
           </div>
 
-          <SourcesLink className={styles.sources} />
         </div>
       </div>
     </article>

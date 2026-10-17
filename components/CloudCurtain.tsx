@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { subscribe, type Frame } from '../lib/scrollDriver';
-import { DESKTOP, podRight } from '../lib/tourLayout';
+import { DESKTOP, podRight, titleBox } from '../lib/tourLayout';
 import styles from './CloudCurtain.module.css';
 
 /*
@@ -34,6 +34,7 @@ uniform vec3 uBank;      // mode (0 none, 1 left column, 2 bottom band), edge in
 uniform vec2 uCenter;    // opening centre in CSS px
 uniform float uSmoke;
 uniform float uDrift;
+uniform vec4 uGlow;      // sunlit patch behind the cover title: centre xy, radii zw (CSS px); 0 radius = none
 out vec4 outColor;
 
 float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -80,7 +81,7 @@ void main() {
 
   // curtain: radial distance from the opening centre, broken up by the cloud density
   vec2 rel = (q - uCenter) / (0.62 * uView);
-  float g = length(rel);
+  float g = min(length(rel), 1.0); // corners open with the outer ring: nothing lingers at 0
   float F = 0.85 * g + 0.95 * (d - 0.5);
   // threshold grows a little faster than the opening, so the open area grows at an even pace
   float R = mix(-0.62, 1.25, pow(1.0 - uCov, 0.75));
@@ -94,8 +95,8 @@ void main() {
   if (uBank.x > 0.5) {
     float along = uBank.x < 1.5 ? q.y : q.x;
     float across = uBank.x < 1.5 ? uBank.y - q.x : q.y - uBank.y;
-    float wobble = (billow(vec2(along / 140.0, 3.7)) - 0.75) * 70.0;
-    inside = across + wobble + (d - 0.5) * 90.0; // reaches at most ~88 px past the edge (BANK_EDGE)
+    float wobble = (billow(vec2(along / 140.0, 3.7)) - 0.75) * 55.0;
+    inside = across + wobble + (d - 0.5) * 80.0; // puffy edge: within about +-60 px of uBank.y
     float b = smoothstep(-12.0, 12.0, inside) * uBank.z;
     if (b > a) { a = b; depth = max(depth, smoothstep(0.0, 220.0, inside)); }
   }
@@ -111,8 +112,15 @@ void main() {
   vec3 litC = vec3(1.0, 0.995, 0.985);
   vec3 col = mix(shadowC, litC, light);
   // calm, bright interior under the text (contrast for dark type)
-  float calm = smoothstep(60.0, 200.0, inside) * (1.0 - curtain);
-  col = mix(col, vec3(0.965, 0.968, 0.972), calm * 0.9);
+  // flat bright interior under the text (contrast for dark type), shaded puffs only along the edge
+  float calm = smoothstep(0.0, 34.0, inside) * (1.0 - curtain);
+  col = mix(col, vec3(0.972, 0.975, 0.978), calm);
+
+  // sunlit patch behind the cover title: the clouds there stay bright, so the text keeps its contrast
+  if (uGlow.z > 0.0) {
+    float gl = 1.0 - smoothstep(0.75, 1.0, length((q - uGlow.xy) / uGlow.zw));
+    col = mix(col, vec3(0.985, 0.985, 0.98), gl * a);
+  }
 
   // smoke palette
   if (uSmoke > 0.0) {
@@ -181,7 +189,7 @@ export default function CloudCurtain() {
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     const U = (n: string) => gl.getUniformLocation(prog, n);
-    const u = { view: U('uView'), ratio: U('uRatio'), cov: U('uCov'), bank: U('uBank'), center: U('uCenter'), smoke: U('uSmoke'), drift: U('uDrift') };
+    const u = { view: U('uView'), ratio: U('uRatio'), cov: U('uCov'), bank: U('uBank'), center: U('uCenter'), smoke: U('uSmoke'), drift: U('uDrift'), glow: U('uGlow') };
 
     let w = 0, h = 0, ratio = 0.5, lastKey = '';
     const onFrame = (f: Frame) => {
@@ -196,7 +204,7 @@ export default function CloudCurtain() {
       const { st } = f;
       const cov = coverageOf(st.open, st.close);
       const mobile = w < DESKTOP;
-      const key = [cov.toFixed(4), st.bank.toFixed(3), st.smoke.toFixed(4), Math.round(st.drift)].join('|');
+      const key = [cov.toFixed(4), st.bank.toFixed(3), st.smoke.toFixed(4), Math.round(st.drift), st.title.toFixed(3), st.titleDock.toFixed(4)].join('|');
       if (key === lastKey) return false;
       lastKey = key;
       canvas.dataset.coverage = cov.toFixed(4);
@@ -205,10 +213,16 @@ export default function CloudCurtain() {
       gl.uniform2f(u.view, w, h);
       gl.uniform1f(u.ratio, ratio);
       gl.uniform1f(u.cov, cov);
-      gl.uniform3f(u.bank, mobile ? 2 : 1, mobile ? h * 0.44 + 24 : podRight(w) + 24, st.bank);
+      gl.uniform3f(u.bank, mobile ? 2 : 1, mobile ? h * 0.44 + 24 : podRight(w) + 70, st.bank);
       gl.uniform2f(u.center, mobile ? w / 2 : (podRight(w) + w) / 2, mobile ? h * 0.25 : h / 2);
       gl.uniform1f(u.smoke, st.smoke);
       gl.uniform1f(u.drift, st.drift);
+      if (st.title > 0) {
+        const d = st.titleDock * st.titleDock * (3 - 2 * st.titleDock);
+        const b = titleBox(w, h, d);
+        const tw = b.width * b.scale;
+        gl.uniform4f(u.glow, b.x + tw / 2, b.y + b.height / 2, tw * 0.78, b.height * 1.1);
+      } else gl.uniform4f(u.glow, 0, 0, 0, 0);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);

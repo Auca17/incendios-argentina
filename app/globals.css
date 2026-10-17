@@ -62,14 +62,14 @@
   --t-control: rgba(195, 204, 213, 0.55); /* control borders: 3:1 on the dark surfaces */
   --t-font-title: var(--font-rocker), Georgia, serif;
   --t-ink: #111418; /* text on white clouds */
-  --t-ink-2: #2b333d;
+  --t-ink-2: #1f262e; /* secondary text on clouds: >= 4.5:1 even on the darkest cloud shade */
   --t-red: #b3261e;
   --t-font-read: var(--font-jakarta), system-ui, sans-serif;
   --t-font-mono: var(--font-jetbrains), ui-monospace, monospace;
   --t-pod-w: clamp(340px, 30vw, 460px);
   --t-scene-w: clamp(280px, 26vw, 400px);
   --t-hud-w: 72px;
-  --t-map-left: calc(32px + var(--t-pod-w) + 88px);
+  --t-map-left: calc(32px + var(--t-pod-w) + 136px);
   --t-stage-h: 44svh;
 }
 @media (max-width: 1023.98px) {

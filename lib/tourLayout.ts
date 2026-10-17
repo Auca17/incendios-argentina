@@ -9,7 +9,7 @@ export const DESKTOP = 1024;
 export const GUTTER = 32;
 export const HUD_W = 72;
 /** Room the cloud bank takes past the reading column (its puffy edge). */
-export const BANK_EDGE = 88;
+export const BANK_EDGE = 136;
 
 export const podWidth = (w: number) => clamp(w * 0.3, 340, 460);
 export const podRight = (w: number) => GUTTER + podWidth(w);
@@ -21,4 +21,20 @@ export function mapRect(w: number, chapter: number): [number, number] {
   const left = podRight(w) + BANK_EDGE;
   const right = chapter >= 0 && chapter <= 5 ? w - HUD_W - sceneWidth(w) - 24 : w - HUD_W;
   return [left, right];
+}
+
+/**
+ * Cover title placement for a dock progress d (0 = middle of the cover, 1 = reading column):
+ * top-left corner, unscaled width and scale. Shared by the title and by the clouds, which keep a
+ * sunlit patch behind it so the text always sits on bright cloud.
+ */
+export function titleBox(vw: number, vh: number, d: number) {
+  const mobile = vw < DESKTOP;
+  const width = mobile ? vw - 32 : podWidth(vw);
+  const s0 = mobile ? 1.05 : 1.45;
+  const cx = (vw - width * s0) / 2, cy = vh * (mobile ? 0.3 : 0.34);
+  const dx = mobile ? 16 : GUTTER, dy = mobile ? vh * 0.44 + 24 : 72;
+  const scale = s0 + (1 - s0) * d;
+  const height = (mobile ? 150 : 190) * scale;
+  return { x: cx + (dx - cx) * d, y: cy + (dy - cy) * d, width, scale, height };
 }
