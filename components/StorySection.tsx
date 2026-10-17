@@ -1,5 +1,4 @@
 'use client';
-import { getStoryPhoto, type StoryPhoto } from '../lib/photos';
 import CountUp from './CountUp';
 import CloudPod from './CloudPod';
 import styles from './StorySection.module.css';
@@ -8,27 +7,15 @@ type Props = {
   ev: any;
   index: number;
   total: number;
-  onOpenPhoto: (photo: StoryPhoto) => void;
 };
 
-const FALLBACK_PHOTO_SVG =
-  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250"><rect width="100%" height="100%" fill="%23141210"/><circle cx="200" cy="115" r="28" fill="%232b2622"/><path d="M188 115a12 12 0 1 0 24 0 12 12 0 0 0-24 0" fill="%23c55221"/><text x="50%" y="165" fill="%239e948c" font-family="monospace" font-size="11" text-anchor="middle" letter-spacing="1">REGISTRO DOCUMENTAL</text></svg>';
 
 /**
  * Editorial narrative card for each province in the journey.
  * Inscribed directly on a sculpted organic cloud/smoke pod.
  */
-export default function StorySection({ ev, index, total, onOpenPhoto }: Props) {
-  const photo0 = getStoryPhoto(ev.id, 0);
-  const photo1 = getStoryPhoto(ev.id, 1);
-  const photo2 = getStoryPhoto(ev.id, 2);
-
+export default function StorySection({ ev, index, total }: Props) {
   const mainFacts = ev.facts.slice(0, 3);
-
-  const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.onerror = null;
-    e.currentTarget.src = FALLBACK_PHOTO_SVG;
-  };
 
   return (
     <CloudPod className={styles.storyPod}>
@@ -72,72 +59,6 @@ export default function StorySection({ ev, index, total, onOpenPhoto }: Props) {
             ))}
           </div>
         )}
-
-        {/* Documentary Photographs (Click to enlarge) */}
-        <div className={styles.photosGrid}>
-          {photo0 && (
-            <button
-              type="button"
-              className={styles.photoThumbCard}
-              onClick={() => onOpenPhoto(photo0)}
-              aria-label={`Ampliar imagen: ${photo0.caption}`}
-            >
-              <div className={styles.thumbWrap}>
-                <img
-                  src={photo0.src}
-                  alt={photo0.caption}
-                  loading="lazy"
-                  className={styles.thumbImg}
-                  onError={handleImgError}
-                />
-                <span className={styles.zoomPill}>🔍 Ampliar</span>
-              </div>
-              <span className={styles.thumbCaption}>{photo0.caption}</span>
-            </button>
-          )}
-
-          {photo1 && (
-            <button
-              type="button"
-              className={styles.photoThumbCard}
-              onClick={() => onOpenPhoto(photo1)}
-              aria-label={`Ampliar imagen: ${photo1.caption}`}
-            >
-              <div className={styles.thumbWrap}>
-                <img
-                  src={photo1.src}
-                  alt={photo1.caption}
-                  loading="lazy"
-                  className={styles.thumbImg}
-                  onError={handleImgError}
-                />
-                <span className={styles.zoomPill}>🔍 Ampliar</span>
-              </div>
-              <span className={styles.thumbCaption}>{photo1.caption}</span>
-            </button>
-          )}
-
-          {photo2 && (
-            <button
-              type="button"
-              className={styles.photoThumbCard}
-              onClick={() => onOpenPhoto(photo2)}
-              aria-label={`Ampliar imagen: ${photo2.caption}`}
-            >
-              <div className={styles.thumbWrap}>
-                <img
-                  src={photo2.src}
-                  alt={photo2.caption}
-                  loading="lazy"
-                  className={styles.thumbImg}
-                  onError={handleImgError}
-                />
-                <span className={styles.zoomPill}>🔍 Ampliar</span>
-              </div>
-              <span className={styles.thumbCaption}>{photo2.caption}</span>
-            </button>
-          )}
-        </div>
 
         {/* Transition hint */}
         <footer className={styles.footerPrompt} aria-hidden="true">

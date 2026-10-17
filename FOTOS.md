@@ -44,8 +44,16 @@ Cada foto nueva se agrega a la tabla de abajo antes de publicarla.
 
 ## Fotos incorporadas
 
-| Archivo | Incendio | Pie | Autor | URL de origen | Licencia | Fecha de verificación |
-|---|---|---|---|---|---|---|
-| `public/img/verified/cordoba-fuego.jpg` | Córdoba | Columnas de humo y focos activos sobre las Sierras de Córdoba registrados por el satélite Terra (MODIS). | NASA Worldview / Terra MODIS | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Wildfires_in_Cordoba_Province,_Argentina.jpg) | Dominio público (NASA) | 2026-10-15 |
-| `public/img/verified/delta-fuego.jpg` | Delta | Frente de fuego sobre los pastizales y humedales del Delta del Paraná durante el operativo de combate. | Parques Nacionales / Min. de Ambiente y Desarrollo Sostenible | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Incendio_en_delta_del_paran%C3%A1_2020_-_Parques_Nacionales.jpg) | CC BY 4.0 | 2026-10-15 |
-| `public/img/verified/corrientes-fuego.jpg` | Corrientes | Vista satelital de alta resolución (Landsat 9) de los focos de calor y cicatrices de fuego en torno a los Esteros del Iberá. | Lauren Dauphin / NASA Earth Observatory & USGS | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Wildfires_Ravage_Corrientes_as_seen_by_Landsat_9.jpg) | Dominio público (NASA/USGS) | 2026-10-15 |
+Ninguna. El sitio no muestra fotos.
+
+## Retiradas de la rama de rediseño (`feat/scrollytelling-redesign`)
+
+En la rama de rediseño se habían vuelto a agregar las 18 fotos de la tabla de arriba (en `public/img/stories/`) y otras tres con una licencia declarada que la persona autora no comprobó. Todas se retiraron, junto con la galería, el visor y el botón "Ampliar". Si alguna de estas tres se quiere usar, primero hay que abrir la página de origen, confirmar la licencia y completar la tabla de arriba.
+
+| Archivo | Incendio | Origen declarado | Licencia declarada | Estado |
+|---|---|---|---|---|
+| `public/img/verified/cordoba-fuego.jpg` | Córdoba | Wikimedia Commons, NASA Terra MODIS | Dominio público (NASA) | retirada: licencia sin verificar por la persona autora |
+| `public/img/verified/delta-fuego.jpg` | Delta | Wikimedia Commons, Parques Nacionales | CC BY 4.0 | retirada: licencia sin verificar por la persona autora |
+| `public/img/verified/corrientes-fuego.jpg` | Corrientes | Wikimedia Commons, NASA Earth Observatory / USGS (Landsat 9) | Dominio público (NASA/USGS) | retirada: licencia sin verificar por la persona autora |
+
+Los archivos siguen en el historial local de Git de las ramas `next` y `feat/scrollytelling-redesign`, que no se publicaron. Antes de publicar esas ramas conviene reescribir ese historial o publicar solo una rama limpia.

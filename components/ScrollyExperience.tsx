@@ -1,11 +1,9 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { GEOGRAPHIC_EVENTS } from '../lib/slides';
-import type { StoryPhoto } from '../lib/photos';
+import { TOUR_EVENTS as GEOGRAPHIC_EVENTS } from '../lib/tour';
 import ArgentinaMap from './ArgentinaMap';
 import CloudCurtain from './CloudCurtain';
 import StorySection from './StorySection';
-import PhotoModal from './PhotoModal';
 import Epilogue from './Epilogue';
 import CloudPod from './CloudPod';
 import styles from './ScrollyExperience.module.css';
@@ -29,7 +27,6 @@ export default function ScrollyExperience() {
   const [localProg, setLocalProg] = useState(0);
   const [cloudOpenProgress, setCloudOpenProgress] = useState(0);
   const [cloudCloseProgress, setCloudCloseProgress] = useState(0);
-  const [modalPhoto, setModalPhoto] = useState<StoryPhoto | null>(null);
 
   // Robust, DOM-driven 60 FPS scroll synchronization (never desyncs on any screen)
   useEffect(() => {
@@ -203,7 +200,6 @@ export default function ScrollyExperience() {
                 ev={ev}
                 index={evIdx}
                 total={GEOGRAPHIC_EVENTS.length}
-                onOpenPhoto={(p) => setModalPhoto(p)}
               />
             </div>
           );
@@ -256,8 +252,6 @@ export default function ScrollyExperience() {
         </div>
       </nav>
 
-      {/* 5. ACCESSIBLE PHOTO LIGHTBOX MODAL */}
-      <PhotoModal photo={modalPhoto} onClose={() => setModalPhoto(null)} />
     </div>
   );
 }

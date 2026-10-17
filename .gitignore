@@ -3,13 +3,9 @@ data-raw/
 *.csv
 *.zip
 
-# Photos
-/img/
-public/img/*
-!public/img/verified/
-!public/img/verified/**
-!public/img/stories/
-!public/img/stories/**
+# Photos withdrawn (no verified license). See FOTOS.md; never commit them again.
+img/
+public/img/
 
 # Local tooling and working notes
 .atl/
