@@ -5,40 +5,52 @@ import { ARGENTINA_VIEWBOX, ARGENTINA_STATIC_PATHS } from '../lib/argentinaStati
 import { loadFoci, type Foci } from '../lib/data';
 import styles from './ArgentinaMap.module.css';
 
-// Argentina continental bounding box: [minLon, maxLon, minLat, maxLat]
-const LON0 = -73.6, LON1 = -53.6, LAT0 = -55.1, LAT1 = -21.7;
+// Argentina continental + South Atlantic Ocean bounding box: [minLon, maxLon, minLat, maxLat]
+// Extended eastward (-49.0) and southward (-56.5) to capture the Atlantic maritime shelf & Tierra del Fuego
+const LON0 = -75.2, LON1 = -49.0, LAT0 = -56.5, LAT1 = -21.0;
 const K = Math.cos((38 * Math.PI) / 180);
 const COUNTRY_BOX = [LON0, LON1, LAT0, LAT1];
 
-// Natural biome colors per province
+// Stylized natural landscape & biome palette (continuous, borderless terrain)
 export const BIOME_COLORS: Record<string, string> = {
-  'Misiones': '#264e32',
-  'Corrientes': '#2d5a44',
-  'Entre Ríos': '#335c46',
-  'Santa Fe': '#445938',
-  'Chaco': '#4c5732',
-  'Formosa': '#465530',
-  'Santiago del Estero': '#505234',
-  'Córdoba': '#5a5336',
-  'San Luis': '#5e5439',
-  'Buenos Aires': '#425838',
-  'Ciudad de Buenos Aires': '#3e5538',
-  'La Pampa': '#525238',
-  'Mendoza': '#665542',
-  'San Juan': '#6a5845',
-  'La Rioja': '#685644',
-  'Catamarca': '#6d5d4b',
-  'Tucumán': '#325236',
-  'Salta': '#4a533c',
-  'Jujuy': '#5a5746',
-  'Neuquén': '#484f42',
-  'Río Negro': '#564e42',
-  'Chubut': '#4e483e',
-  'Santa Cruz': '#4a443a',
-  'Tierra del Fuego': '#33433e',
+  // Nordeste: Selva subtropical, humedales y vegetación exuberante
+  'Misiones': '#1d4525',
+  'Corrientes': '#244d34',
+  'Entre Ríos': '#2b5438',
+
+  // Centro y llanura pampeana: Pastizales, campos y sierras
+  'Santa Fe': '#3b4d2f',
+  'Buenos Aires': '#36492c',
+  'Ciudad de Buenos Aires': '#33442a',
+  'Córdoba': '#524b33',
+  'La Pampa': '#494830',
+
+  // Chaco y Norte: Parque chaqueño, monte y transición
+  'Chaco': '#46502e',
+  'Formosa': '#424d2c',
+  'Santiago del Estero': '#4d4b30',
+
+  // Noroeste (NOA): Yungas a valles andinos
+  'Tucumán': '#29482e',
+  'Salta': '#444d36',
+  'Jujuy': '#53503c',
+
+  // Cuyo y Oeste: Tierras áridas, desérticas, ocres y cordillera
+  'Mendoza': '#63533e',
+  'San Juan': '#695742',
+  'La Rioja': '#685641',
+  'Catamarca': '#6c5a45',
+  'San Luis': '#5a5036',
+
+  // Patagonia: Estepas frías, mesetas y bosques andino-patagónicos
+  'Neuquén': '#44483a',
+  'Río Negro': '#4c4538',
+  'Chubut': '#433e33',
+  'Santa Cruz': '#3e3930',
+  'Tierra del Fuego': '#283632',
 };
 
-// Target regions in North-to-South sequence
+// Target narrative regions in North-to-South sequence
 export const CHAPTER_CONFIG = [
   { id: 'misiones', name: 'Misiones', provs: ['Misiones'] },
   { id: 'corrientes', name: 'Corrientes', provs: ['Corrientes'] },
@@ -49,18 +61,21 @@ export const CHAPTER_CONFIG = [
 ];
 
 type Props = {
-  chapterIndex: number; // -1: Intro, 0..5: Provinces, 6: Full country wide shot / Epilogue
-  chapterProgress: number; // 0..1 within current chapter
+  chapterIndex: number; // -1: Intro, 0..5: Active province, 6: Full country wide shot / Epilogue
+  chapterProgress: number; // 0..1 deterministic progress in current chapter
   onProvinceClick?: (name: string) => void;
 };
 
 type PathItem = { name: string; path: Path2D };
 
 /**
- * Persistent Cartographic Canvas Scene with Progressive Rendering:
- * 1. FRAME 0: Renders instant inline SVG with all 24 provinces & biome colors (never blank/white).
- * 2. FRAME 1+: Hardware-accelerated HTML5 Canvas mounts, interpolates camera smoothly,
- *    burns provinces into charcoal black irreversibly, and renders real NASA satellite fire pixels.
+ * Persistent Cartographic Canvas Scene:
+ * - Unified, continuous geographic landmass without pre-marked administrative borders.
+ * - Dynamic South Atlantic Ocean maritime shelf and deep water backdrop.
+ * - Progressive boundary drawing on the active province with warm amber accent glow (#ffa236).
+ * - Progressive irreversible carbon darkening with persistent memory.
+ * - Real satellite fire pixels (NASA FIRMS) accumulating on calcinated areas.
+ * - Frame-0 static SVG fallback guarantees zero blank screen.
  */
 export default function ArgentinaMap({
   chapterIndex,
@@ -70,10 +85,10 @@ export default function ArgentinaMap({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvasReady, setCanvasReady] = useState(false);
 
-  // Cached fire datasets
+  // Cached NASA fire datasets
   const fociMapRef = useRef<Map<string, Foci>>(new Map());
 
-  // Camera interpolation state: [minLon, maxLon, minLat, maxLat]
+  // Deterministic camera interpolation: [minLon, maxLon, minLat, maxLat]
   const cameraRef = useRef<number[]>([...COUNTRY_BOX]);
   const targetCameraRef = useRef<number[]>([...COUNTRY_BOX]);
 
@@ -82,7 +97,7 @@ export default function ArgentinaMap({
   const chapterProgressRef = useRef(chapterProgress);
   chapterProgressRef.current = chapterProgress;
 
-  // Pre-load satellite foci data asynchronously
+  // Pre-load satellite foci data
   useEffect(() => {
     let active = true;
     CHAPTER_CONFIG.forEach((c) => {
@@ -119,8 +134,8 @@ export default function ArgentinaMap({
     if (minLon > maxLon) return [...COUNTRY_BOX];
     const spanX = maxLon - minLon;
     const spanY = maxLat - minLat;
-    const padX = Math.max(spanX * 0.28, 0.8);
-    const padY = Math.max(spanY * 0.28, 0.8);
+    const padX = Math.max(spanX * 0.32, 0.9);
+    const padY = Math.max(spanY * 0.32, 0.9);
     return [minLon - padX, maxLon + padX, minLat - padY, maxLat + padY];
   }, []);
 
@@ -148,7 +163,6 @@ export default function ArgentinaMap({
     const render = () => {
       animId = requestAnimationFrame(render);
 
-      // Read real layout dimensions from container
       const w = cont.clientWidth;
       const h = cont.clientHeight;
       if (w <= 10 || h <= 10) return;
@@ -173,7 +187,7 @@ export default function ArgentinaMap({
       // Compute projection frame
       const viewW = (curCam[1] - curCam[0]) * K;
       const viewH = curCam[3] - curCam[2];
-      const scale = Math.min(w / viewW, h / viewH) * 0.90;
+      const scale = Math.min(w / viewW, h / viewH) * 0.92;
       const ox = (w - viewW * scale) / 2;
       const oy = (h - viewH * scale) / 2;
 
@@ -200,9 +214,29 @@ export default function ArgentinaMap({
         return { name: f.properties.name as string, path: p };
       });
 
-      // Clear with dark atmospheric background
+      // 1. Maritime & Atmospheric Environment Backdrop (South Atlantic Ocean & Orbital Depth)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.fillStyle = '#0a0807';
+      const oceanGrad = ctx.createLinearGradient(0, 0, w, h);
+      oceanGrad.addColorStop(0, '#06090e'); // Deep space-earth shadow
+      oceanGrad.addColorStop(0.55, '#08121f'); // Atlantic oceanic depth
+      oceanGrad.addColorStop(1, '#050c16'); // Southern ocean deep blue-slate
+      ctx.fillStyle = oceanGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Subtle Atlantic continental shelf bathymetric glow
+      const oceanCenter = project(-58.0, -42.0);
+      const shelfGlow = ctx.createRadialGradient(
+        oceanCenter[0],
+        oceanCenter[1],
+        scale * 2,
+        oceanCenter[0],
+        oceanCenter[1],
+        scale * 16
+      );
+      shelfGlow.addColorStop(0, 'rgba(20, 48, 76, 0.28)');
+      shelfGlow.addColorStop(0.65, 'rgba(10, 26, 42, 0.12)');
+      shelfGlow.addColorStop(1, 'rgba(6, 9, 14, 0)');
+      ctx.fillStyle = shelfGlow;
       ctx.fillRect(0, 0, w, h);
 
       const activeIdx = chapterIndexRef.current;
@@ -210,7 +244,10 @@ export default function ArgentinaMap({
       const activeCfg = activeIdx >= 0 && activeIdx < CHAPTER_CONFIG.length ? CHAPTER_CONFIG[activeIdx] : null;
       const activeProvs = activeCfg ? activeCfg.provs : [];
 
-      // Persistent charcoal carbon state
+      // Carbon state per province:
+      // - Prior visited chapters: 1.0 (permanently calcinated charcoal)
+      // - Active chapter: 0.0 -> 1.0 progressive darkening
+      // - Unvisited chapters: 0.0 (natural landscape)
       const carbonMap = new Map<string, number>();
       CHAPTER_CONFIG.forEach((cfg, i) => {
         let val = 0;
@@ -225,7 +262,8 @@ export default function ArgentinaMap({
         });
       });
 
-      // 1. Fill Provinces (Natural Biomes -> Charcoal Black)
+      // 2. FILL PROVINCES (Continuous Natural Biomes -> Charcoal Black)
+      // Note: NO gaps, seamless landmass
       paths.forEach(({ name, path }) => {
         const baseColor = BIOME_COLORS[name] || '#455038';
         const carbon = carbonMap.get(name) || 0;
@@ -240,34 +278,34 @@ export default function ArgentinaMap({
         ctx.fill(path);
       });
 
-      // 2. Stroke Provincial Boundaries
+      // 3. CONTINENTAL COASTLINE & ACCENT CONTOURS (NO PRE-MARKED PROVINCE BORDERS!)
+      // Unvisited provinces have NO border strokes, appearing as a unified continuous geography.
       ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
       paths.forEach(({ name, path }) => {
         const isActive = activeProvs.includes(name);
         const carbon = carbonMap.get(name) || 0;
 
         if (isActive) {
-          // Prominent glowing border for current province
-          ctx.shadowColor = 'rgba(255, 162, 54, 0.9)';
-          ctx.shadowBlur = 10;
+          // Fase B: Active province contour appears with progressive warm amber glow
+          const strokeWidth = 2.0 + Math.sin(Date.now() * 0.004) * 0.4;
+          ctx.shadowColor = 'rgba(255, 162, 54, 0.95)';
+          ctx.shadowBlur = 12;
           ctx.strokeStyle = '#ffa236';
-          ctx.lineWidth = 2.4;
+          ctx.lineWidth = strokeWidth;
           ctx.stroke(path);
           ctx.shadowBlur = 0;
         } else if (carbon > 0.8) {
-          // Burned border memory
-          ctx.strokeStyle = 'rgba(197, 82, 33, 0.45)';
+          // Fase E: Completed province retains discrete burnt calcinated border memory
+          ctx.strokeStyle = 'rgba(197, 82, 33, 0.40)';
           ctx.lineWidth = 1.0;
           ctx.stroke(path);
-        } else {
-          // Subtle natural boundary
-          ctx.strokeStyle = 'rgba(235, 225, 210, 0.28)';
-          ctx.lineWidth = 0.75;
-          ctx.stroke(path);
         }
+        // NOTE: Unvisited provinces are intentionally NOT stroked, achieving continuous geography!
       });
 
-      // 3. Render Real NASA Heat Foci Pixels
+      // 4. RENDER REAL NASA SATELLITE HEAT FOCI PIXELS
       CHAPTER_CONFIG.forEach((cfg, i) => {
         let fireP = 0;
         if (activeIdx > i) {
@@ -290,18 +328,18 @@ export default function ArgentinaMap({
 
           const age = maxWeek - week;
           if (age < 2) {
-            ctx.fillStyle = '#ffea7a'; // Bright yellow-orange flame
+            ctx.fillStyle = '#ffea7a'; // Bright flame core
           } else if (age < 6) {
-            ctx.fillStyle = '#ff7a1a'; // Glowing hot ember
+            ctx.fillStyle = '#ff7a1a'; // Glowing ember
           } else {
-            ctx.fillStyle = '#b3300f'; // Calcinated dark red
+            ctx.fillStyle = '#b3300f'; // Burnt dark red
           }
 
           ctx.fillRect(px - dotSize / 2, py - dotSize / 2, dotSize, dotSize);
         });
       });
 
-      // Mark canvas as actively drawing
+      // Mark canvas as ready once initial frame has completed
       if (!canvasReady) {
         setCanvasReady(true);
       }
@@ -319,14 +357,14 @@ export default function ArgentinaMap({
 
   return (
     <div ref={containerRef} className={styles.mapContainer}>
-      {/* 1. FRAME-0 STATIC SVG FALLBACK: Guarantees Argentina is visible instantly without network delay */}
+      {/* FRAME-0 STATIC SVG FALLBACK: Continuous landmass without interior borders */}
       <svg
         className={`${styles.fallbackSvg} ${canvasReady ? styles.fallbackHidden : styles.fallbackVisible}`}
         viewBox={ARGENTINA_VIEWBOX}
         preserveAspectRatio="xMidYMid meet"
         aria-hidden={canvasReady}
       >
-        <rect width="400" height="800" fill="#0a0807" />
+        <rect width="400" height="800" fill="#08121f" />
         {Object.entries(ARGENTINA_STATIC_PATHS).map(([pName, dStr]) => {
           const baseColor = BIOME_COLORS[pName] || '#455038';
           const isActive = activeProvs.includes(pName);
@@ -335,18 +373,18 @@ export default function ArgentinaMap({
               key={pName}
               d={dStr}
               fill={baseColor}
-              className={isActive ? styles.countryActive : styles.countryBorder}
+              className={isActive ? styles.countryActive : styles.countrySeamless}
             />
           );
         })}
       </svg>
 
-      {/* 2. PERSISTENT INTERACTIVE CANVAS: Smooth camera zoom, fire dots, and carbon transformation */}
+      {/* PERSISTENT INTERACTIVE CANVAS: Smooth camera zoom, fire foci & continuous biomes */}
       <canvas
         ref={canvasRef}
         className={styles.mapCanvas}
         role="img"
-        aria-label="Mapa cartográfico interactivo de Argentina con detección satelital de incendios"
+        aria-label="Mapa cartográfico continuo de la República Argentina con monitoreo satelital de incendios"
       />
     </div>
   );

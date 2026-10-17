@@ -1,20 +1,12 @@
 .curtainWrap {
   position: fixed;
-  top: 48px;
-  right: 0;
-  left: 0;
-  bottom: 0;
-  z-index: 10;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 15;
   overflow: hidden;
   pointer-events: none;
   transition: opacity 0.3s ease;
-}
-
-/* On desktop, confine the cloud curtain directly over the cartographic stage */
-@media (min-width: 900px) {
-  .curtainWrap {
-    left: clamp(480px, 40vw, 620px);
-  }
 }
 
 .cloudCanvas {

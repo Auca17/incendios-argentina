@@ -3,17 +3,19 @@ import { useEffect, useRef } from 'react';
 import styles from './CloudCurtain.module.css';
 
 type Props = {
-  /** 0 = full clouds covering Argentina partially, 1 = clouds parted */
+  /** 0 = full cloud cover over Argentina, 1 = clouds parted */
   openProgress: number;
   /** 0 = open, 1 = clouds returning to close over Argentina before epilogue */
   closeProgress?: number;
 };
 
 /**
- * Atmospheric procedural cloud curtain over the persistent cartographic map.
- * - Opening: Translucent cumulus clouds partially veil Argentina, parting smoothly as the user scrolls.
- * - Closing: Clouds naturally return from left and right to veil Argentina after the wide shot.
- * - Confined over the map stage (z-index: 10, behind narrative cards at z-index: 20).
+ * Cinematic edge-to-edge procedural cloud veil for Opening and Epilogue closing.
+ * - Portada: A majestic, dense yet soft white atmospheric cloud blanket spanning edge-to-edge.
+ * - Argentina is subtly recognizable through breaks in the cloud cover.
+ * - Sincronizado: Clouds part outwards to left & right smoothly with scroll as camera approaches Misiones.
+ * - Return: After the wide shot, clouds billow back in to veil the continent before the epilogue.
+ * - Canvas remains permanently mounted for instant 60 FPS bidirectional responsiveness.
  */
 export default function CloudCurtain({ openProgress, closeProgress = 0 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -34,30 +36,40 @@ export default function CloudCurtain({ openProgress, closeProgress = 0 }: Props)
     if (!ctx) return;
 
     let animId = 0;
+    let w = (cv.width = window.innerWidth);
+    let h = (cv.height = window.innerHeight);
 
-    // Procedural atmospheric cloud puffs
+    const onResize = () => {
+      w = cv.width = window.innerWidth;
+      h = cv.height = window.innerHeight;
+    };
+    window.addEventListener('resize', onResize);
+
+    // Multi-layered procedural cumulus puffs spanning edge-to-edge
     interface CloudPuff {
-      xRatio: number; // 0..1 relative to canvas width
-      yRatio: number; // 0..1 relative to canvas height
+      xRatio: number; // 0..1 relative to viewport width
+      yRatio: number; // 0..1 relative to viewport height
       rRatio: number; // relative size
       side: 'left' | 'right';
       vx: number;
       vy: number;
       alpha: number;
+      lightness: number;
     }
 
     const puffs: CloudPuff[] = [];
-    const count = 26;
+    const count = 46;
     for (let i = 0; i < count; i++) {
       const isLeft = i % 2 === 0;
       puffs.push({
-        xRatio: isLeft ? 0.05 + Math.random() * 0.45 : 0.50 + Math.random() * 0.45,
-        yRatio: Math.random(),
-        rRatio: 0.28 + Math.random() * 0.24,
+        xRatio: isLeft ? Math.random() * 0.58 : 0.42 + Math.random() * 0.58,
+        yRatio: Math.random() * 1.05,
+        rRatio: 0.26 + Math.random() * 0.32,
         side: isLeft ? 'left' : 'right',
-        vx: (Math.random() - 0.5) * 0.0003,
-        vy: -0.0002 - Math.random() * 0.0003,
-        alpha: 0.35 + Math.random() * 0.30, // Translucent: allows Argentina to be visible underneath
+        vx: (Math.random() - 0.5) * 0.0004,
+        vy: -0.00015 - Math.random() * 0.00025,
+        alpha: 0.45 + Math.random() * 0.42,
+        lightness: 238 + Math.floor(Math.random() * 17),
       });
     }
 
@@ -65,22 +77,11 @@ export default function CloudCurtain({ openProgress, closeProgress = 0 }: Props)
       animId = requestAnimationFrame(render);
       const curDensity = densityRef.current;
 
-      const w = cv.clientWidth;
-      const h = cv.clientHeight;
-      if (w <= 10 || h <= 10) return;
-
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
-        cv.width = Math.round(w * dpr);
-        cv.height = Math.round(h * dpr);
-      }
-
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      if (curDensity <= 0.005) return;
+      if (curDensity <= 0.002) return;
 
-      // Parting distance: clouds slide horizontally outwards
-      const partingX = (1 - curDensity) * w * 0.75;
+      // Parting distance: clouds billow outwards laterally
+      const partingX = (1 - curDensity) * w * 0.85;
 
       puffs.forEach((puff) => {
         puff.xRatio += puff.vx;
@@ -97,11 +98,13 @@ export default function CloudCurtain({ openProgress, closeProgress = 0 }: Props)
         const grad = ctx.createRadialGradient(drawX, py, r * 0.08, drawX, py, r);
 
         const a = puff.alpha * curDensity;
-        // Natural atmospheric cloud tones: ivory-mist center, soft fading edges
-        grad.addColorStop(0, `rgba(228, 222, 212, ${a * 0.75})`);
-        grad.addColorStop(0.40, `rgba(198, 190, 178, ${a * 0.50})`);
-        grad.addColorStop(0.75, `rgba(150, 142, 130, ${a * 0.20})`);
-        grad.addColorStop(1, 'rgba(150, 142, 130, 0)');
+        const l = puff.lightness;
+
+        // Illuminated cloud tones: pure white bright crests, soft ivory body, fading mist borders
+        grad.addColorStop(0, `rgba(${l}, ${l}, ${l}, ${a * 0.85})`);
+        grad.addColorStop(0.35, `rgba(${l - 12}, ${l - 10}, ${l - 8}, ${a * 0.65})`);
+        grad.addColorStop(0.70, `rgba(185, 192, 200, ${a * 0.28})`);
+        grad.addColorStop(1, 'rgba(170, 180, 190, 0)');
 
         ctx.fillStyle = grad;
         ctx.beginPath();
@@ -114,16 +117,18 @@ export default function CloudCurtain({ openProgress, closeProgress = 0 }: Props)
 
     return () => {
       cancelAnimationFrame(animId);
+      window.removeEventListener('resize', onResize);
     };
   }, []);
 
-  if (density <= 0.005) return null;
+  const visible = density > 0.002;
 
   return (
     <div
       className={styles.curtainWrap}
       style={{
         opacity: Math.min(1, density * 1.5),
+        visibility: visible ? 'visible' : 'hidden',
       }}
       aria-hidden="true"
     >

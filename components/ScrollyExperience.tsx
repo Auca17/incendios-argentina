@@ -7,18 +7,17 @@ import CloudCurtain from './CloudCurtain';
 import StorySection from './StorySection';
 import PhotoModal from './PhotoModal';
 import Epilogue from './Epilogue';
-import TopBar from './TopBar';
 import styles from './ScrollyExperience.module.css';
 
 // 10 sequential milestones along the continuous 0 to 1 window scroll
 const MILESTONES = [
   { id: 'opening', start: 0.00, end: 0.10, name: 'Argentina bajo las nubes' },
-  { id: 'misiones', start: 0.10, end: 0.23, name: 'Misiones' },
-  { id: 'corrientes', start: 0.23, end: 0.36, name: 'Corrientes' },
-  { id: 'cordoba', start: 0.36, end: 0.49, name: 'Córdoba' },
-  { id: 'delta', start: 0.49, end: 0.62, name: 'Delta del Paraná' },
-  { id: 'mendoza', start: 0.62, end: 0.75, name: 'Mendoza' },
-  { id: 'chubut', start: 0.75, end: 0.86, name: 'Chubut' },
+  { id: 'misiones', start: 0.10, end: 0.22, name: 'Misiones' },
+  { id: 'corrientes', start: 0.22, end: 0.35, name: 'Corrientes' },
+  { id: 'cordoba', start: 0.35, end: 0.48, name: 'Córdoba' },
+  { id: 'delta', start: 0.48, end: 0.61, name: 'Delta del Paraná' },
+  { id: 'mendoza', start: 0.61, end: 0.74, name: 'Mendoza' },
+  { id: 'chubut', start: 0.74, end: 0.86, name: 'Chubut' },
   { id: 'wide_shot', start: 0.86, end: 0.92, name: 'Memoria territorial' },
   { id: 'closing_clouds', start: 0.92, end: 0.96, name: 'El telón se cierra' },
   { id: 'epilogue', start: 0.96, end: 1.00, name: 'Epílogo y fuentes' },
@@ -48,7 +47,7 @@ export default function ScrollyExperience() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Determine active milestone index & local progress
+  // Determine active milestone index & local progress (deterministic & bidirectional)
   let activeIndex = 0;
   let localProgress = 0;
 
@@ -66,18 +65,22 @@ export default function ScrollyExperience() {
     localProgress = 1;
   }
 
-  const currentMilestone = MILESTONES[activeIndex] || MILESTONES[0];
-
-  // Map state derivation:
-  // -1: Opening (full country, natural biomes under clouds)
-  // 0..5: Misiones, Corrientes, Córdoba, Delta, Mendoza, Chubut
-  // 6: Wide shot / Closing clouds / Epilogue (full country with all 6 burned provinces)
+  // Synchronized map state:
+  // - -1: Opening (full country under clouds, approaching Misiones as clouds part)
+  // - 0..5: Misiones, Corrientes, Córdoba, Delta, Mendoza, Chubut
+  // - 6: Wide shot / Closing clouds / Epilogue (full country with all 6 burned provinces)
   let mapChapterIndex = -1;
   let mapChapterProgress = 0;
 
   if (activeIndex === 0) {
-    mapChapterIndex = -1;
-    mapChapterProgress = localProgress;
+    // Synchronize: In the second half of opening (localProgress > 0.4), begin smooth approach to Misiones
+    if (localProgress > 0.45) {
+      mapChapterIndex = 0;
+      mapChapterProgress = (localProgress - 0.45) / 0.55 * 0.25;
+    } else {
+      mapChapterIndex = -1;
+      mapChapterProgress = localProgress;
+    }
   } else if (activeIndex >= 1 && activeIndex <= 6) {
     mapChapterIndex = activeIndex - 1;
     mapChapterProgress = localProgress;
@@ -88,10 +91,10 @@ export default function ScrollyExperience() {
   }
 
   // Cloud curtain parameters:
-  // - Opening (milestone 0): parts from 0 to 1
-  // - Stories (milestones 1..7): clouds are open (openProgress = 1, closeProgress = 0)
-  // - Closing (milestone 8): clouds return to close (closeProgress: 0 -> 1)
-  // - Epilogue (milestone 9): clouds closed (closeProgress = 1)
+  // - Opening: parts laterally from 0 to 1
+  // - Stories (milestones 1..7): clouds parted (openProgress = 1, closeProgress = 0)
+  // - Closing (milestone 8): clouds return from sides (closeProgress: 0 -> 1)
+  // - Epilogue (milestone 9): clouds closed over map (closeProgress = 1)
   const cloudOpenProgress = activeIndex === 0 ? localProgress : 1;
   const cloudCloseProgress = activeIndex === 8 ? localProgress : activeIndex >= 9 ? 1 : 0;
 
@@ -104,10 +107,7 @@ export default function ScrollyExperience() {
 
   return (
     <div className={styles.appRoot}>
-      {/* Discrete Top Bar */}
-      <TopBar index={activeIndex} count={MILESTONES.length} name={currentMilestone.name} />
-
-      {/* 1. PERSISTENT CARTOGRAPHIC STAGE (FIXED BACKGROUND) */}
+      {/* 1. PERSISTENT CARTOGRAPHIC SCENE (FULL-BLEED BACKGROUND) */}
       <div className={styles.fixedMapStage}>
         <ArgentinaMap
           chapterIndex={mapChapterIndex}
@@ -115,7 +115,7 @@ export default function ScrollyExperience() {
         />
       </div>
 
-      {/* 2. ATMOSPHERIC CLOUD CURTAIN (PASSIVE OPENING & CLOSING) */}
+      {/* 2. ATMOSPHERIC CLOUD CURTAIN (FULL-BLEED OPENING & CLOSING) */}
       <CloudCurtain
         openProgress={cloudOpenProgress}
         closeProgress={cloudCloseProgress}
@@ -123,7 +123,7 @@ export default function ScrollyExperience() {
 
       {/* 3. NARRATIVE STREAM (NATURAL DOCUMENT SCROLL FLOW) */}
       <div className={styles.narrativeTrack}>
-        {/* Section 0: Opening Screen (Title, Argentine ribbon, natural flow) */}
+        {/* Section 0: Portada bajo las nubes */}
         <section className={styles.openingHeroSection}>
           <div className={styles.openingCard}>
             <div className={styles.flagRibbon} aria-hidden="true">
@@ -159,7 +159,7 @@ export default function ScrollyExperience() {
           );
         })}
 
-        {/* Spacer for Final Wide Shot: User contemplates all 6 burned provinces before clouds close */}
+        {/* Section 7: Final Wide Shot (Contemplation of all 6 burned provinces) */}
         <div className={styles.wideShotSection}>
           <div className={styles.wideShotCard}>
             <span className={styles.wideShotBadge}>Memoria territorial</span>
@@ -170,16 +170,16 @@ export default function ScrollyExperience() {
           </div>
         </div>
 
-        {/* Spacer for Closing Clouds transition */}
+        {/* Spacer for Closing Clouds veil */}
         <div className={styles.closingCloudsSpacer} aria-hidden="true" />
 
-        {/* Epilogue Section */}
+        {/* Section 9: Epilogue and verified open data sources */}
         <div className={styles.epilogueWrap}>
           <Epilogue />
         </div>
       </div>
 
-      {/* 4. DISCRETE RIGHT TIMELINE HUD */}
+      {/* 4. DISCRETE RIGHT TIMELINE HUD (Minimalist nav dots) */}
       <nav className={styles.timelineHud} aria-label="Progreso del relato geográfico">
         <div className={styles.timelineTrack}>
           {MILESTONES.slice(1, 7).map((m, i) => {
