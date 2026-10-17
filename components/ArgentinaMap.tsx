@@ -91,6 +91,7 @@ export default function ArgentinaMap({
   // Deterministic camera interpolation: [minLon, maxLon, minLat, maxLat]
   const cameraRef = useRef<number[]>([...COUNTRY_BOX]);
   const targetCameraRef = useRef<number[]>([...COUNTRY_BOX]);
+  const cameraVelRef = useRef<number[]>([0, 0, 0, 0]);
 
   const chapterIndexRef = useRef(chapterIndex);
   chapterIndexRef.current = chapterIndex;
@@ -176,12 +177,18 @@ export default function ArgentinaMap({
         cv.height = targetH;
       }
 
-      // Smooth camera interpolation (lerp)
+      // Cinematic camera tracking with physical inertia & critically damped deceleration
       const curCam = cameraRef.current;
       const tgtCam = targetCameraRef.current;
-      const lerpSpeed = 0.085;
+      const camVel = cameraVelRef.current;
+
+      const springTension = 0.052;
+      const springFriction = 0.78;
+
       for (let i = 0; i < 4; i++) {
-        curCam[i] += (tgtCam[i] - curCam[i]) * lerpSpeed;
+        const force = (tgtCam[i] - curCam[i]) * springTension;
+        camVel[i] = (camVel[i] + force) * springFriction;
+        curCam[i] += camVel[i];
       }
 
       // Compute projection frame
