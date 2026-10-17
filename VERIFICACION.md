@@ -1,5 +1,7 @@
 # Verificación de cifras y causas
 
+> **Nota de la persona autora (17/10/2026).** Este archivo se completa recién cuando la página esté terminada y aprobada. Primero se cierra el producto (página, storytelling, información); después se hacen el video, la verificación y la declaración. Las fuentes, la verificación y la declaración de uso de IA se presentan en el formulario de inscripción (Google Form), no en la página, así que no hace falta aclararlo en cada etapa ni volver a preguntarlo. El historial de Git no se limpia: se publica en `main` solo lo que funciona y se usa; lo que se descartó en ramas anteriores no forma parte del producto final.
+
 Revisión hecha el 14/10/2026 contra cada fuente citada en el sitio. **Verificado** significa que la fuente se abrió y el texto aparece en ella. **Parcial** significa que aparece, pero con un matiz que hay que revisar. **No coincide** significa que la fuente no dice lo que muestra el sitio. Ningún texto del sitio se cambió a partir de esta revisión: las diferencias quedan anotadas para que las decida la persona autora.
 
 Las notas de prensa se leyeron con un extractor automático de texto. El informe de Córdoba (PDF) y la nota de Misiones Online se descargaron y se buscó cada cifra en su texto.

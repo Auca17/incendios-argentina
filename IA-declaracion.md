@@ -1,5 +1,7 @@
 # Declaración de uso de IA
 
+> **Nota de la persona autora (17/10/2026).** Este archivo se completa recién cuando la página esté terminada y aprobada. Primero se cierra el producto (página, storytelling, información); después se hacen el video, la verificación y la declaración. Las fuentes, la verificación y la declaración de uso de IA se presentan en el formulario de inscripción (Google Form), no en la página, así que no hace falta aclararlo en cada etapa ni volver a preguntarlo. El historial de Git no se limpia: se publica en `main` solo lo que funciona y se usa; lo que se descartó en ramas anteriores no forma parte del producto final.
+
 Este documento resume cómo se usó la inteligencia artificial en este repositorio. Lo redactó el asistente y lo revisa y firma la persona autora.
 
 ## Herramienta
