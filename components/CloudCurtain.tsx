@@ -36,6 +36,8 @@ uniform float uSmoke;
 uniform float uDrift;
 uniform vec4 uGlow;      // sunlit patch behind the cover title: centre xy, radii zw (CSS px); 0 radius = none
 uniform vec3 uColumn;    // flat bright column behind the epilogue: centre x, half width, strength
+uniform float uZoom;     // fly-through: the curtain's clouds grow from the opening centre (1 = none)
+uniform float uAsh;      // first hint of the fire on the white clouds: falling ash and a few embers
 out vec4 outColor;
 
 float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -76,20 +78,34 @@ float density(vec2 q) {
   return smoothstep(0.1, 0.9, 0.72 * s + 0.38 * mass);
 }
 
+// light from above: shade a puff by the normal of the density field at p (e = sample step)
+float lightAt(vec2 p, float d, float e, float depth) {
+  float dx = density(p + vec2(e, 0.0)) - d;
+  float dy = density(p + vec2(0.0, e)) - d;
+  vec3 n = normalize(vec3(-dx * 6.0, -dy * 6.0, 1.0));
+  vec3 L = normalize(vec3(-0.25, -0.8, 0.55)); // up-left (screen y grows downwards)
+  return clamp(dot(n, L) * 0.85 + 0.2 + 0.25 * d + 0.15 * depth, 0.0, 1.0);
+}
+
 void main() {
   vec2 q = vec2(gl_FragCoord.x, uView.y * uRatio - gl_FragCoord.y) / uRatio; // CSS px, y down
-  float d = density(q);
+  // the curtain is sampled zoomed in around the opening centre: as it opens the camera flies through
+  vec2 qz = uCenter + (q - uCenter) / uZoom;
+  float dz = density(qz);
+  float d0 = density(q); // the bank never zooms: it is static
 
   // curtain: radial distance from the opening centre, broken up by the cloud density
   vec2 rel = (q - uCenter) / (0.62 * uView);
   float g = min(length(rel), 1.0); // corners open with the outer ring: nothing lingers at 0
-  float F = 0.85 * g + 0.95 * (d - 0.5);
+  float F = 0.85 * g + 0.95 * (dz - 0.5);
   // threshold grows a little faster than the opening, so the open area grows at an even pace
   float R = mix(-0.62, 1.25, pow(1.0 - uCov, 0.75));
   // a soft fringe, then a firmer edge: puffs read crisp without popping
   float a = smoothstep(0.08, 0.92, smoothstep(R, R + 0.26, F));
   float curtain = a;
   float depth = smoothstep(R, R + 0.6, F);
+  float light = lightAt(qz, dz, 12.0 / uZoom, depth);
+  float d = dz;
 
   // static bank behind the text
   float inside = -1e4;
@@ -97,18 +113,15 @@ void main() {
     float along = uBank.x < 1.5 ? q.y : q.x;
     float across = uBank.x < 1.5 ? uBank.y - q.x : q.y - uBank.y;
     float wobble = (billow(vec2(along / 140.0, 3.7)) - 0.75) * 55.0;
-    inside = across + wobble + (d - 0.5) * 80.0; // puffy edge: within about +-60 px of uBank.y
+    inside = across + wobble + (d0 - 0.5) * 80.0; // puffy edge: within about +-60 px of uBank.y
     float b = smoothstep(-12.0, 12.0, inside) * uBank.z;
-    if (b > a) { a = b; depth = max(depth, smoothstep(0.0, 220.0, inside)); }
+    if (b > a) {
+      a = b;
+      d = d0;
+      light = lightAt(q, d0, 12.0, max(depth, smoothstep(0.0, 220.0, inside)));
+    }
   }
 
-  // light from above: shade each puff by the normal of the density field
-  float e = 12.0;
-  float dx = density(q + vec2(e, 0.0)) - d;
-  float dy = density(q + vec2(0.0, e)) - d;
-  vec3 n = normalize(vec3(-dx * 6.0, -dy * 6.0, 1.0));
-  vec3 L = normalize(vec3(-0.25, -0.8, 0.55)); // up-left (screen y grows downwards)
-  float light = clamp(dot(n, L) * 0.85 + 0.2 + 0.25 * d + 0.15 * depth, 0.0, 1.0);
   vec3 shadowC = vec3(0.5, 0.57, 0.68);
   vec3 litC = vec3(1.0, 0.995, 0.985);
   vec3 col = mix(shadowC, litC, light);
@@ -124,9 +137,23 @@ void main() {
   }
 
   // flat bright column behind the epilogue text once the clouds have closed (puffy edges stay at the sides)
+  float cm = 0.0;
   if (uColumn.z > 0.0) {
-    float cm = 1.0 - smoothstep(uColumn.y - 60.0, uColumn.y + 30.0, abs(q.x - uColumn.x) + (d - 0.5) * 60.0);
+    cm = 1.0 - smoothstep(uColumn.y - 60.0, uColumn.y + 30.0, abs(q.x - uColumn.x) + (d - 0.5) * 60.0);
     col = mix(col, vec3(0.972, 0.975, 0.978), cm * uColumn.z);
+  }
+
+  // first hint of the fire: grey ash falling on the white clouds and a few embers, with the scroll
+  if (uAsh > 0.0) {
+    vec2 aq = q + vec2(uDrift * 0.06, uDrift * 0.45);
+    vec2 acell = floor(aq / 26.0);
+    float ah = hash(acell + 41.0);
+    vec2 ac = (acell + 0.25 + 0.5 * vec2(hash(acell + 6.1), hash(acell + 1.7))) * 26.0;
+    float fleck = ah < 0.09 ? smoothstep(2.2, 0.6, length(aq - ac)) : 0.0;
+    float spark = ah > 0.995 ? smoothstep(3.0, 0.5, length(aq - ac)) : 0.0;
+    float k = uAsh * (1.0 - cm * uColumn.z); // never over the epilogue text
+    col = mix(col, vec3(0.32, 0.31, 0.3), fleck * 0.7 * k);
+    col = mix(col, vec3(1.0, 0.42, 0.14), spark * k);
   }
 
   // smoke palette
@@ -196,7 +223,7 @@ export default function CloudCurtain() {
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     const U = (n: string) => gl.getUniformLocation(prog, n);
-    const u = { view: U('uView'), ratio: U('uRatio'), cov: U('uCov'), bank: U('uBank'), center: U('uCenter'), smoke: U('uSmoke'), drift: U('uDrift'), glow: U('uGlow'), column: U('uColumn') };
+    const u = { view: U('uView'), ratio: U('uRatio'), cov: U('uCov'), bank: U('uBank'), center: U('uCenter'), smoke: U('uSmoke'), drift: U('uDrift'), glow: U('uGlow'), column: U('uColumn'), zoom: U('uZoom'), ash: U('uAsh') };
 
     let w = 0, h = 0, ratio = 0.5, lastKey = '';
     const onFrame = (f: Frame) => {
@@ -211,7 +238,7 @@ export default function CloudCurtain() {
       const { st } = f;
       const cov = coverageOf(st.open, st.close);
       const mobile = w < DESKTOP;
-      const key = [cov.toFixed(4), st.bank.toFixed(3), st.smoke.toFixed(4), Math.round(st.drift), st.title.toFixed(3), st.titleDock.toFixed(4), st.close.toFixed(4)].join('|');
+      const key = [cov.toFixed(4), st.bank.toFixed(3), st.smoke.toFixed(4), Math.round(st.drift), st.title.toFixed(3), st.titleDock.toFixed(4), st.close.toFixed(4), st.ash.toFixed(3)].join('|');
       if (key === lastKey) return false;
       lastKey = key;
       canvas.dataset.coverage = cov.toFixed(4);
@@ -224,6 +251,9 @@ export default function CloudCurtain() {
       gl.uniform2f(u.center, mobile ? w / 2 : (podRight(w) + w) / 2, mobile ? h * 0.25 : h / 2);
       gl.uniform1f(u.smoke, st.smoke);
       gl.uniform1f(u.drift, st.drift);
+      // fly-through: the closed curtain is seen from afar; as it opens it grows past the camera
+      gl.uniform1f(u.zoom, f.reduced ? 1 : 1 + 0.7 * Math.pow(1 - cov, 2));
+      gl.uniform1f(u.ash, st.ash);
       if (st.title > 0) {
         const d = st.titleDock * st.titleDock * (3 - 2 * st.titleDock);
         const b = titleBox(w, h, d);

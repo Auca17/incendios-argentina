@@ -57,13 +57,16 @@ export type TourState = {
   smoke: number;
   /** Scroll-driven offset for embers and ash (0 while there is no smoke). */
   drift: number;
+  /** Falling ash on the white clouds, before the smoke (0..1). */
+  ash: number;
   /** Opacity of the epilogue text: it fades out before the clouds turn to smoke. */
   epi: number;
 };
 
 /**
  * Pure state for a focal position. `tops` and `heights` are the cached document offsets of SECTIONS.
- * With `reduced` (prefers-reduced-motion) the clouds and the title jump to still frames per stage.
+ * With `reduced` (prefers-reduced-motion) nothing travels (the title fades in place, the camera cuts),
+ * but every fade stays continuous with the scroll: no jumps.
  */
 export function tourState(focal: number, tops: number[], heights: number[], reduced = false, scrollY = 0): TourState {
   let idx = 0;
@@ -80,7 +83,7 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     }
   }
   const sec = SECTIONS[idx];
-  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, titleDock: 0, chapter: -2, chapterT: 1, bank: 1, smoke: 0, drift: 0, epi: 1 };
+  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, titleDock: 0, chapter: -2, chapterT: 1, bank: 1, smoke: 0, drift: 0, ash: 0, epi: 1 };
   switch (sec.kind) {
     case 'opening':
       st.title = 1;
@@ -88,7 +91,7 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     case 'title':
       // a short scroll moves the title from the middle of the cover to the reading column
       st.title = 1;
-      st.titleDock = seg(t, 0, 0.5);
+      st.titleDock = seg(t, 0.05, 0.85);
       st.open = 0.45 * seg(t, 0.2, 1);
       break;
     case 'reveal':
@@ -118,20 +121,18 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
       st.close = seg(t, 0, 0.18);
       st.hud = st.close > 0 ? 0 : 1;
       st.epi = 1 - seg(t, 0.6, 0.68);
+      st.ash = seg(t, 0.3, 0.55);
       st.smoke = seg(t, 0.68, 0.84);
       break;
   }
   if (reduced) {
-    st.title = st.title > 0 ? 1 : 0;
-    st.titleDock = st.titleDock > 0.5 ? 1 : 0;
-    st.open = st.open > 0.5 ? 1 : 0;
-    st.close = st.close > 0 ? 1 : 0;
-    st.borders = st.borders > 0 ? 1 : 0;
-    st.hud = st.hud > 0 ? 1 : 0;
-    st.smoke = st.smoke > 0.5 ? 1 : 0;
-    st.epi = st.epi > 0.5 ? 1 : 0;
+    // reduced motion: no travel, but no jumps either. Fades stay continuous with the scroll; the title
+    // does not fly to its corner: it fades out in the middle and fades back in at its place.
+    const d = st.titleDock;
+    st.titleDock = d < 0.5 ? 0 : 1;
+    st.title *= Math.abs(2 * d - 1);
   }
-  st.drift = st.smoke > 0 && !reduced ? Math.round(scrollY) : 0;
+  st.drift = (st.smoke > 0 || st.ash > 0) && !reduced ? Math.round(scrollY) : 0;
   return st;
 }
 

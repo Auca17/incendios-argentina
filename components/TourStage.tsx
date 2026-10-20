@@ -6,6 +6,7 @@ import { SLIDES } from '../lib/slides';
 import { TOUR_EVENTS } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
 import ScenePanel from './ScenePanel';
+import { MAP_COLORS, GRID_MAX } from './TourMap';
 import styles from './TourStage.module.css';
 
 type View = { chapter: number; s: number; week: number; revealed: boolean };
@@ -56,6 +57,22 @@ export default function TourStage() {
             </span>
           </>
         )}
+      </div>
+
+      <div className={v.chapter === 7 ? `${styles.legend} ${styles.on}` : styles.legend} aria-hidden={v.chapter !== 7}>
+        <p className={styles.legendTitle}>Focos de calor en el año, por cuadro de unos 25 km</p>
+        <ol className={styles.legendScale}>
+          {MAP_COLORS.grid.map((c, i) => (
+            <li key={c}>
+              <i style={{ background: c, width: 6 + 4 * i, height: 6 + 4 * i }} />
+              {['pocos', '', '', 'muchos'][i] && <span>{['pocos', '', '', 'muchos'][i]}</span>}
+            </li>
+          ))}
+        </ol>
+        <p className={styles.legendNote}>
+          La misma escala para todos los años (hasta {GRID_MAX.toLocaleString('es-AR')} focos en un cuadro), así un año
+          tranquilo se ve tranquilo. Un foco no es una hectárea quemada.
+        </p>
       </div>
 
       <div className={story ? `${styles.scene} ${styles.on}` : styles.scene}>

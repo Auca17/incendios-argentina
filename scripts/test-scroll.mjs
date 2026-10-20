@@ -174,7 +174,16 @@ for (let step = 0; step < STEPS; step++) {
     kinds.walk++;
   }
   await sleep(WAIT);
-  const fp = await fingerprint();
+  // the camera spring may still be settling on a slow machine: compare only the settled frame
+  // (two equal fingerprints in a row, at most 10 s), which is what the page promises
+  let fp = await fingerprint();
+  for (let t = 0; t < 20; t++) {
+    await sleep(500);
+    const again = await fingerprint();
+    const same = again.map === fp.map && again.clouds === fp.clouds && again.hud === fp.hud;
+    fp = again;
+    if (same) break;
+  }
   y = fp.y;
   const prev = seen.get(fp.y);
   if (!prev) {

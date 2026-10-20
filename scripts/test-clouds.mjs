@@ -7,7 +7,7 @@
 // that coverage (canvas[data-coverage]), saves a screenshot to qa/nubes/ and measures the cloud
 // canvas itself: mean opacity and how many pixels change between consecutive steps. The opening
 // must be gradual and monotonic: mean opacity never goes up while coverage goes down, no step changes
-// mean opacity by more than 0.09, and no step takes more than 1 % of the pixels from almost opaque
+// mean opacity by more than 0.1 (the fly-through zoom moves the cloud edges a little more per step), and no step takes more than 1 % of the pixels from almost opaque
 // to almost clear in one go (a "pop"). Exit code 1 otherwise, or on console errors and failed requests.
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -132,7 +132,7 @@ for (let k = 0; k <= 20; k++) {
   if (prev) a.forEach((v, i) => { if (prev[i] - v > 230) flips++; mad += Math.abs(prev[i] - v) / 255; });
   const step = prev ? { dMean: rows[rows.length - 1].mean - mean, flips: flips / a.length, mad: mad / a.length } : null;
   rows.push({ want, cov, mean, step });
-  if (step && (step.dMean < -0.002 || step.dMean > 0.09 || step.flips > 0.01)) fail++;
+  if (step && (step.dMean < -0.002 || step.dMean > 0.1 || step.flips > 0.01)) fail++;
   prev = a;
 }
 

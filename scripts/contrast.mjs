@@ -126,8 +126,11 @@ const PAIRS = [
   U('tour: control border on sources paper', 'var(--t-control)', 'tPaper'),
   U('tour: focus outline amber on pod', 'var(--accent)', 'tPod'),
   U('explore: inactive bar #bf5b30 on cloud', '#bf5b30', 'tCloud'),
-  U('explore: lightest grid tone #f6b73c against its rim #240800', '#f6b73c', '#240800'),
-  U('map: hottest focus #ffd166 against its rim #240800', '#ffd166', '#240800'),
+  // ash map: every fire core has a #1a0703 rim; the reds share the grey land's luminance
+  U('map: darkest fire core #e8452a against its rim', '#e8452a', '#1a0703'),
+  U('map: grid lowest tier #f04a24 against its rim', '#f04a24', '#1a0703'),
+  U('map: hottest focus #ffe08a against its rim', '#ffe08a', '#1a0703'),
+  U('map: rim #1a0703 against the lightest Argentine land (#6f6f6f)', '#1a0703', '#6f6f6f'),
   U('explore: active bar red on cloud', 'var(--t-red)', 'tCloud'),
 ];
 
