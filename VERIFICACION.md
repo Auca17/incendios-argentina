@@ -1,5 +1,7 @@
 # Verificación de cifras y causas
 
+> **Nota de la persona autora (17/10/2026).** Este archivo se completa recién cuando la página esté terminada y aprobada. Primero se cierra el producto (página, storytelling, información); después se hacen el video, la verificación y la declaración. Las fuentes, la verificación y la declaración de uso de IA se presentan en el formulario de inscripción (Google Form), no en la página, así que no hace falta aclararlo en cada etapa ni volver a preguntarlo. El historial de Git no se limpia: se publica en `main` solo lo que funciona y se usa; lo que se descartó en ramas anteriores no forma parte del producto final.
+
 Revisión hecha el 14/10/2026 contra cada fuente citada en el sitio. **Verificado** significa que la fuente se abrió y el texto aparece en ella. **Parcial** significa que aparece, pero con un matiz que hay que revisar. **No coincide** significa que la fuente no dice lo que muestra el sitio. Ningún texto del sitio se cambió a partir de esta revisión: las diferencias quedan anotadas para que las decida la persona autora.
 
 Las notas de prensa se leyeron con un extractor automático de texto. El informe de Córdoba (PDF) y la nota de Misiones Online se descargaron y se buscó cada cifra en su texto.
@@ -73,3 +75,91 @@ Todas las discrepancias fueron corregidas en el código (`app.js`):
 ## Textos del proyecto (no son citas)
 
 "La fuente no detalla los medios de combate" (Córdoba, Delta y Corrientes) y los textos de ilustración describen lo que contienen las fuentes del sitio. No se revisó si otras fuentes, no citadas, detallan esos medios.
+
+## Verificación de la migración a Next.js
+
+Esta sección registra las comprobaciones de la versión en Next.js (rama `next`) contra el sitio original congelado (tag `entrega-v1-2026-10-15`, conservado en `legacy/`). Cada resultado se obtuvo corriendo el comando indicado. La sección anterior (fuentes y puntos de decisión) no se modificó.
+
+### Textos de los incendios (`EVENTS`)
+
+- **Comando:** `npm run test:events`.
+- **Qué compara:** el arreglo `EVENTS` de `lib/events.ts` con el de `legacy/app.js`, extraídos y evaluados por separado, con `assert.deepStrictEqual`: cifras, causas, fuentes, atribuciones, medios de combate y marcadores de los seis incendios.
+- **Resultado:** `EVENTS OK (6 events)`. Es decir, ninguna cifra, causa ni fuente cambió en la migración.
+
+### Totales y datos
+
+- **Comando:** `npm run check:data`.
+- **Qué compara:** cada archivo de `public/data/` contra los datos originales (`legacy/data`), sin archivos de más ni de menos, y reproduce las cifras de control.
+- **Resultado:** `DATA OK (24 JSON files identical to legacy)`. Total de la portada: 2.620.568 focos, igual a la suma de los totales anuales (datos de 2012 a 2026).
+
+### Lectura de la primera semana de cada incendio (`p = 0`)
+
+Texto que muestra el mapa al abrir cada incendio, recalculado a partir de `public/data/semanas-<id>.json` con la misma cuenta que `lib/fire.ts` (primera semana con focos, focos acumulados hasta ella y fecha de su último día). Chubut sale de `npm run check:data`; los otros cinco, de un cálculo propio sobre los JSON.
+
+| Incendio | Lectura al abrir |
+|---|---|
+| Córdoba | semana 1 de 31 · 78 focos · hasta el 7 de mayo de 2020 |
+| Delta | semana 1 de 53 · 211 focos · hasta el 7 de enero de 2020 |
+| Misiones | semana 1 de 36 · 22 focos · hasta el 7 de mayo de 2020 |
+| Corrientes | semana 1 de 53 · 1.243 focos · hasta el 7 de enero de 2022 |
+| Mendoza | semana 1 de 53 · 8 focos · hasta el 7 de enero de 2023 |
+| Chubut | semana 1 de 44 · 1.122 focos · hasta el 7 de enero de 2026 |
+
+Durante la migración, las capturas automáticas de los seis incendios mostraron estas mismas lecturas que el sitio original.
+
+### Filtro por mes o trimestre
+
+El filtro es nuevo (el sitio original no lo tenía) y afecta el ranking, la tarjeta de provincia, la serie, la estacionalidad y la tabla de comparación; el mapa sigue mostrando el año completo y la pantalla lo dice. Los totales se recalcularon sumando `public/data/provincia-mes.json`:
+
+| Comprobación | Resultado |
+|---|---|
+| Formosa, 2020, todo el año | 79.143 focos |
+| Santa Fe, 2020, todo el año | 77.213 focos |
+| Corrientes, tercer trimestre de 2019 (julio a septiembre) | 13.214 focos |
+| Corrientes, tercer trimestre de 2022 | 2.541 focos |
+
+La frase de lectura de la comparación nombra la provincia con mayor cambio absoluto y toma las cifras de los datos, sin adjetivos. Ejemplo: en el tercer trimestre, de 2019 a 2022, Corrientes pasa de 13.214 a 2.541 focos (−10.673). Los años incompletos se marcan y no se extrapolan.
+
+### Contraste de color
+
+- **Comando:** `node scripts/contrast.mjs`.
+- **Resultado:** 30 de 30 pares de colores cumplen WCAG AA (texto, íconos y bordes de la interfaz, incluido el indicador de año y los puntos de navegación).
+
+### Medios de combate dibujados
+
+Las ilustraciones son esquemáticas, están hechas en código y dibujan un medio aéreo solo si la fuente citada lo nombra:
+
+| Incendio | Medios dibujados | Fundamento |
+|---|---|---|
+| Chubut | Avión, helicóptero y brigadistas | Infobae: "aviones hidrantes y anfibios, helicópteros con helibalde". |
+| Misiones | Avión y brigadistas | Misiones Online: "un avión hidrante del Plan Nacional de Manejo de Fuego". |
+| Mendoza | Solo brigadistas | La fuente dice que se solicitó un avión hidrante, no que se haya usado. |
+| Córdoba, Delta y Corrientes | Solo brigadistas | Las fuentes citadas no detallan los medios de combate. |
+
+### Otras comprobaciones y límites
+
+- `npm run build` compila y exporta el sitio sin errores.
+- En las capturas automáticas (escritorio 1440 px y móvil 390 px) no hubo errores de consola, pedidos fallidos ni desborde horizontal.
+- No se corrió una auditoría automática de accesibilidad completa; durante la revisión se comprobaron la navegación por teclado y el anuncio de cambios de pantalla (`aria-live`).
+- Los textos de la interfaz nuevos (frase de lectura, nota del mapa, aviso de años incompletos) no tienen fuente externa: describen los datos del propio sitio.
+
+## Rama de rediseño con nubes (`feat/scrollytelling-redesign`, 17/10/2026)
+
+Comprobaciones de la versión con recorrido guiado. Las fuentes no se volvieron a abrir en esta sesión: la sección de fuentes técnicas del sitio toma los estados de la tabla completa de arriba, y no marca como verificado nada que esa tabla no registre.
+
+Nota de coherencia: el resumen "100 % revisado y corregido" del comienzo de este archivo no coincide con la tabla completa, que todavía tiene filas en estado "Parcial" (Misiones, causa; Córdoba, 321.688 ha; Corrientes, Reserva del Iberá; Chubut, causa) y una fila "No coincide" (Misiones, lluvia). La persona autora tiene que revisar y decidir esa diferencia.
+
+| Comprobación | Comando | Resultado |
+|---|---|---|
+| `EVENTS` igual al original | `npm run test:events` | `EVENTS OK (6 events)` |
+| Datos y totales | `npm run check:data` | `DATA OK (24 JSON files identical to legacy)`; total 2.620.568; Chubut "semana 1 de 44 · 1.122 focos" |
+| Contraste WCAG AA (incluye los pares del recorrido medidos sobre el peor fondo: pod sobre nube iluminada, chip sobre foco más claro) | `node scripts/contrast.mjs` | 48 de 48 pares cumplen AA |
+| Determinismo del scroll (200 paradas, 2 s cada una, con saltos del HUD y del teclado) | `npm run test:scroll` | `SCROLL OK`: 1440 × 900, 86 posiciones repetidas comparadas, 0 diferencias; 390 × 844, 86 comparadas, 0 diferencias |
+| Nubes cerradas detrás del epílogo | `npm run test:scroll` | 0 píxeles no opacos en el 70 % × 80 % central, en los dos tamaños |
+| Errores de consola, pedidos fallidos y desborde horizontal (1440 × 900 y 390 × 844) | `node scripts/shots.mjs` | 0 errores de consola, 0 pedidos fallidos, sin desborde de página (en móvil, la tabla de fuentes se desplaza dentro de su propio contenedor) |
+
+Los colores del territorio son neutros: el proyecto no tiene datos de cobertura del suelo ni de biomas. Ninguna provincia se rellena como quemada: de los incendios ya visitados quedan un contorno apagado y sus focos reales.
+
+El test de determinismo compara el canvas del mapa, el de las nubes y una captura del HUD cada vez que se repite una posición de scroll. Corre Chrome con el canvas 2D por software, porque, si no, Chrome pasa el canvas de la GPU a la CPU después de varias lecturas y los dos rasterizadores suavizan los bordes distinto: eso daba diferencias que no venían del sitio.
+
+Rendimiento con la CPU frenada 4× (Chrome sin ventana, scroll continuo de 40 px por cuadro): unos 41 cuadros por segundo, con una mediana de 16,7 ms por cuadro, en 1440 × 900 y en 390 × 844. Con la página quieta no se redibuja nada. La memoria de JavaScript queda entre 11 y 13 MB.

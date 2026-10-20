@@ -1,0 +1,63 @@
+/* Dark ink straight on the closed clouds: the shader keeps a flat bright column behind this block. */
+.epi {
+  width: min(680px, calc(100vw - 2 * var(--s-3)));
+  margin: 0 auto;
+  color: var(--t-ink);
+  font: 400 var(--fs-16) / 1.55 var(--t-font-read);
+}
+.title {
+  margin-bottom: var(--s-2);
+  font: 400 var(--fs-56) / 1.05 var(--t-font-title);
+  color: var(--t-ink);
+  text-wrap: balance;
+}
+.summary { margin-bottom: var(--s-4); font-size: var(--fs-20); line-height: 1.5; }
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.figures li { display: grid; gap: var(--s-half); align-content: start; }
+.figures b {
+  font: 600 var(--fs-32) / 1.1 var(--t-font-mono);
+  color: var(--t-red);
+  font-variant-numeric: tabular-nums;
+}
+.figures span { font-size: var(--fs-14); line-height: 1.45; color: var(--t-ink-2); }
+.source { margin-top: var(--s-2); font-size: var(--fs-14); color: var(--t-ink-2); }
+
+.limits {
+  margin-top: var(--s-4);
+  padding-left: var(--s-2);
+  border-left: 3px solid var(--t-red);
+  font-size: var(--fs-16);
+  font-weight: 600;
+}
+
+.actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-4); }
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 var(--s-4);
+  border-radius: 999px;
+  font: 700 var(--fs-16) / 1 var(--t-font-read);
+  text-decoration: none;
+  cursor: pointer;
+}
+.primary { border: 2px solid var(--t-ink); background: var(--t-ink); color: #fff; }
+.primary:hover { background: var(--t-red); border-color: var(--t-red); }
+.secondary { border: 2px solid var(--t-ink); background: transparent; color: var(--t-ink); }
+.secondary:hover { background: var(--t-ink); color: #fff; }
+.primary:focus-visible, .secondary:focus-visible { outline: 3px solid var(--t-red); outline-offset: 3px; }
+
+@media (max-width: 719.98px) {
+  .title { font-size: 40px; }
+  .summary { font-size: var(--fs-16); }
+  .figures { grid-template-columns: 1fr; gap: var(--s-2); }
+}

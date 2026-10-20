@@ -1,67 +1,111 @@
 # Lo que el fuego se llevó: 15 años, 6 historias
 
-Seis incendios argentinos contados con sus fuentes y los focos de calor detectados por satélite (NASA FIRMS, VIIRS S-NPP) entre 2012 y 2026, con un mapa para explorar los datos.
+Seis incendios argentinos contados con sus fuentes y con los focos de calor detectados por satélite (NASA FIRMS, VIIRS S-NPP) entre 2012 y 2026, más una exploración por año, provincia y período. Esta rama (`next`) es la versión en Next.js (exportación estática, TypeScript).
 
-**Sitio:** [auca17.github.io/incendios-argentina](https://auca17.github.io/incendios-argentina/)
+## Versión presentada
 
-Sitio estático: HTML, CSS y JavaScript sin compilación ni dependencias externas. Se publica con GitHub Pages desde la raíz de la rama `main`.
+| Dato | Valor |
+|---|---|
+| Tag congelado | `entrega-v1-2026-10-15` |
+| Commit | `8d664bb` |
+| URL pública | <https://auca17.github.io/incendios-argentina/> |
 
-## Cómo verlo localmente
-
-El sitio carga los datos con `<script>`, pero conviene servirlo por HTTP en lugar de abrir el archivo directamente:
-
-```sh
-python -m http.server 8000
-```
-
-Después abrir `http://localhost:8000`.
+El sitio estático original (la versión presentada el 15/10/2026) se conserva en `legacy/` para comparar y en el tag `entrega-v1-2026-10-15`.
 
 ## Cómo está organizado el código
 
-| Archivo | Qué hace |
+| Carpeta | Contenido |
 |---|---|
-| `index.html` | Estructura de la página: sidebar (`#side`), mapa (`#mapwrap` con `canvas#map`), escena (`#scenewrap`), cápsula del aviso metodológico (`#caveat`) y navegación (`#nav`). |
-| `style.css` | Layout de tres columnas en escritorio. En móvil (menos de 900 px), el mapa y la escena quedan fijos arriba y el texto va debajo. |
-| `app.js` | Todo el comportamiento. Arriba están `EVENTS` (cifras, causas, fuentes y atribuciones de cada incendio: no se editan sin revisar `VERIFICACION.md`) y las funciones de datos. Después vienen el mapa en canvas (cámara con zoom a la provincia, focos semanales), la exploración por año y provincia, la comparación de dos años y el render de cada pantalla. |
-| `scene.js` | `FireScene.create(opciones)` devuelve la ilustración SVG esquemática. `update(s)` la lleva a un estado entre 0 y 1: cómo empezó, el fuego y el combate. Solo dibuja los medios de combate que nombran las fuentes (`means` en `EVENTS`). |
-| `data/data.js` | `window.DATA`: provincias (Natural Earth), focos por provincia y mes, y celdas de 0,25° por año. |
-| `data/ev/<id>.js` | `window.EV_FOCI[id]`: focos de cada incendio por semana en celdas de 0,05°. Se cargan solo al abrir ese incendio. |
-| `scripts/process.py` | Genera `data/data.js`, `data/meta.json` y `data/ev/*.js`. |
-| `scripts/events.json` | Provincias, año y meses de cada incendio para los archivos semanales. |
+| `app/` | Next.js (App Router): `layout.tsx`, `page.tsx`, estilos globales y variables de diseño en `globals.css`. |
+| `components/` | Interfaz en React con CSS Modules: barra superior, navegación, tres paneles (texto, mapa, escena), exploración, gráficos, aviso metodológico y transición entre capítulos. |
+| `lib/` | Lógica sin interfaz (ver tabla siguiente). |
+| `public/data/` | Datos en JSON, cargados bajo demanda. |
+| `legacy/` | Sitio estático original (HTML, CSS, JS), ejecutable tal cual. Es la referencia de las pruebas. |
+| `scripts/` | Procesamiento de datos y verificaciones. |
 
-### Cómo se mueve la página
+Módulos principales de `lib/`:
 
-En cada incendio, el avance del scroll del sidebar (`p`, entre 0 y 1) mueve los tres paneles a la vez:
+| Módulo | Qué hace |
+|---|---|
+| `events.ts` | `EVENTS`: cifras, causas, fuentes y atribuciones de cada incendio. Copia literal del original; no se edita sin revisar `VERIFICACION.md`. |
+| `router.ts` | Estado de la vista en la URL (`#0`…`#7`, `&y=`, `&p=`, `&c=`, `&m=`). |
+| `progress.ts` | Avance del scroll del texto (`p`, entre 0 y 1) que mueve a la vez el mapa y la escena. |
+| `data.ts` | Carga perezosa de `public/data/*.json` con caché; soporta `NEXT_PUBLIC_BASE_PATH`. |
+| `firemap.ts` | Mapa en canvas: cámara con zoom a la provincia, celdas anuales y focos semanales. |
+| `scene.ts` | Ilustración SVG esquemática, hecha en código. Solo dibuja los medios de combate que nombran las fuentes (`means` en `EVENTS`). |
+| `fire.ts` | Auxiliares de cada capítulo: hechos por etapa, mapa de `p` a escena y línea "semana N de M · focos · hasta el …". |
+| `explore.ts` | Exploración: ranking y serie por provincia, filtro por mes o trimestre, comparación de dos años y frase de lectura. |
 
-- En el centro, el mapa suma los focos semana a semana. Arranca en la primera semana con focos y muestra la línea "semana N de M · focos · hasta el …".
-- A la derecha, la escena avanza (`toScene` en `app.js`, alineada con los títulos de los tres capítulos).
-- Si el scroll vuelve atrás, todo se revierte.
+## De dónde salen los datos
 
-Con `prefers-reduced-motion`, la escena muestra un cuadro fijo por etapa y el mapa no anima la cámara.
+- **Focos de calor:** [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/), sensor VIIRS S-NPP, archivo estándar y tiempo casi real. Se conservan los focos de vegetación (`type == 0` en el archivo estándar) con confianza nominal o alta.
+- **Límites provinciales:** [Natural Earth](https://www.naturalearthdata.com/) (`ne_10m_admin_1_states_provinces`, dominio público).
+- **Cifras y causas de cada incendio:** informes oficiales y prensa citados en el sitio y comparados en `VERIFICACION.md`. No provienen del satélite.
 
 ## Cómo se regeneran los datos
 
-1. Descargar de [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/download/) el archivo de VIIRS S-NPP para Argentina: los `fire_archive_*.csv` y los `fire_nrt_*.csv`. Guardarlos en `data-raw/`. Pesan más de 200 MB y no se suben al repositorio (ver `.gitignore`).
-2. Descargar los límites provinciales de Natural Earth (`ne_10m_admin_1_states_provinces.geojson`, dominio público).
-3. Correr:
+1. Descargar de FIRMS los `fire_archive_*.csv` y `fire_nrt_*.csv` de VIIRS S-NPP para Argentina y guardarlos en `data-raw/`. Esa carpeta nunca se sube al repositorio (pesa más de 200 MB; ver `.gitignore`).
+2. Descargar el GeoJSON de Natural Earth.
+3. Correr (requiere `pandas`, `numpy` y `shapely>=2`):
 
    ```sh
-   python scripts/process.py data-raw <ruta/al/geojson> data
+   python scripts/process.py data-raw <ruta/al/geojson> legacy/data
    ```
 
-   Requiere `pandas`, `numpy` y `shapely>=2`.
+   El script escribe los archivos del sitio original en `legacy/data/` y los mismos datos en JSON en `public/data/`. Si existe `scripts/events.json`, también genera los archivos semanales de cada incendio.
+4. Alternativa sin los CSV: `node scripts/to-json.mjs` convierte `legacy/data/*.js` a `public/data/*.json`.
 
-El script descarta los puntos de confianza baja y los que no son fuego de vegetación. Si existe `scripts/events.json`, también genera los archivos semanales de `data/ev/`.
+## Cómo ejecutarlo
+
+Requiere Node.js y npm.
+
+```sh
+npm ci            # instala las versiones del package-lock.json
+npm run dev       # servidor de desarrollo en http://localhost:3000
+npm run build     # exportación estática en out/
+```
+
+El sitio original se mira con cualquier servidor estático, por ejemplo `python -m http.server 8000 --directory legacy`.
+
+## Cómo correr las verificaciones
+
+| Comando | Qué comprueba |
+|---|---|
+| `npm run test:events` | `EVENTS` de `lib/events.ts` es idéntico al de `legacy/app.js` (`deepStrictEqual`). |
+| `npm run check:data` | Los 24 JSON de `public/data/` son idénticos a los datos originales, el total es 2.620.568 focos y la lectura de Chubut en `p = 0` es "semana 1 de 44 · 1.122 focos · hasta el 7 de enero de 2026". |
+| `node scripts/contrast.mjs` | Contraste AA de los pares de colores de la interfaz. |
+| `node scripts/shots.mjs …` | Capturas y control de salud (errores de consola, pedidos fallidos, desborde horizontal) con Chrome, sin dependencias de npm. |
+
+Ejemplo de `shots.mjs`, con el sitio exportado servido localmente:
+
+```sh
+npm run build
+python -m http.server 8770 --directory out
+node scripts/shots.mjs --url "http://localhost:8770/#6" --w 1440 --h 900 --out shots --prefix chubut_desk
+```
+
+Los resultados de la migración están en `VERIFICACION.md`.
+
+## Cómo se publica
+
+- **Vercel (previsto):** proyecto conectado a la rama `next`, con exportación estática (`output: 'export'`). En los documentos del concurso usar solo el alias de producción, porque las URL de vista previa incluyen el nombre de la cuenta o del equipo.
+- **GitHub Pages (alternativa):** necesita un repositorio aparte; si se usara el mismo, reemplazaría el sitio presentado. Si el sitio queda en una subruta, compilar con `NEXT_PUBLIC_BASE_PATH=/<repositorio> npm run build` (lo leen `next.config.mjs` y `lib/data.ts`).
+
+## Dependencias
+
+- Solo npm. Versiones exactas (`.npmrc` con `save-exact=true`) y publicadas hace al menos dos semanas.
+- Next.js, React y TypeScript; sin otras dependencias de ejecución.
+
+## Fotos
+
+El sitio no incluye fotos. Las 18 que había se retiraron por no tener licencia verificada; el registro y la política para incorporar nuevas están en `FOTOS.md`.
 
 ## Documentos
 
-- `VERIFICACION.md`: compara cada cifra y causa con su fuente. Los puntos marcados los decide la persona autora.
+- `VERIFICACION.md`: compara cada cifra y causa con su fuente y registra las verificaciones de la migración. Los puntos marcados los decide la persona autora.
 - `DESCRIPCION.md`: descripción metodológica para la presentación.
 - `VIDEO.md`: guion del video de 60 segundos.
 - `IA-declaracion.md`: uso de IA en el proyecto.
+- `FOTOS.md`: registro de fotos retiradas y política de fotos.
+- `CHECKLIST-ENVIO.md`: pasos previos a actualizar la versión presentada.
 - `INSPIRACION.md`: referencias de diseño.
-
-## Versiones
-
-- Tag `estable-pre-final`: estado anterior a la pasada final de diseño.
-- Tag `estable-foco-cero-pantalla-completa`: el diseño de escenario a pantalla completa, reemplazado por el layout actual de tres columnas.

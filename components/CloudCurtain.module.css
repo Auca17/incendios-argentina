@@ -1,0 +1,16 @@
+.curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+/* mobile: the bank sits behind the story text, the curtain covers everything only while it closes */
+@media (max-width: 1023.98px) {
+  .curtain { z-index: 1; }
+  .curtain[data-front='1'] { z-index: 9; }
+}
+.canvas { display: block; width: 100%; height: 100%; }
+
+/* no WebGL2: a cloud-coloured veil (white, or smoke at the end) driven by the same coverage */
+.fallback { background: linear-gradient(180deg, #ffffff 0%, #e9edf2 55%, #b9c4d1 100%); }
+.fallback[data-smoke='1'] { background: linear-gradient(180deg, #2a2c31 0%, #0c0d10 100%); }

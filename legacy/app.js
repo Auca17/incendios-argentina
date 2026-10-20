@@ -1,4 +1,4 @@
-/* Foco Cero — focos de calor 2012–2026
+/* Lo que el fuego se llevó — focos de calor 2012–2026
    Datos: NASA FIRMS (VIIRS S-NPP). Límites: Natural Earth (dominio público). */
 (function () {
   'use strict';

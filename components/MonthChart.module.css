@@ -1,0 +1,5 @@
+.chart { margin: 0; }
+.title { margin: 0 0 var(--s-1); font-size: var(--fs-14); font-weight: 600; color: var(--muted); }
+.chart svg { display: block; width: 100%; height: auto; }
+.peak { margin: var(--s-half) 0 0; font-size: var(--fs-14); color: var(--text-2); }
+.peak b { color: var(--text); }

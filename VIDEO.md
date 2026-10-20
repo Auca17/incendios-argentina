@@ -1,12 +1,29 @@
 # Lo que el fuego se llevó: guion del video (60 segundos)
 
-Grabación de pantalla en escritorio, 1440 × 900, sitio publicado en una ventana de incógnito. Sin narración obligatoria; si hay voz, usar los textos sugeridos. Dejar la animación sin pausar.
+> **Nota de la persona autora (17/10/2026).** Este archivo se completa recién cuando la página esté terminada y aprobada. Primero se cierra el producto (página, storytelling, información); después se hacen el video, la verificación y la declaración. Las fuentes, la verificación y la declaración de uso de IA se presentan en el formulario de inscripción (Google Form), no en la página, así que no hace falta aclararlo en cada etapa ni volver a preguntarlo. El historial de Git no se limpia: se publica en `main` solo lo que funciona y se usa; lo que se descartó en ramas anteriores no forma parte del producto final.
 
-| Tiempo | Pantalla | Qué mostrar | Texto sugerido |
-|---|---|---|---|
-| 0:00–0:08 | Inicio | Portada "Lo que el fuego se llevó: 15 años, 6 historias". Apretar ▶ en el reproductor: el mapa recorre los años de 2012 a 2026. | "Focos de calor detectados desde el espacio, 2012–2026." |
-| 0:08–0:12 | Inicio → Chubut | Clic en el punto de Chubut en la navegación de abajo a la derecha: el mapa del centro hace zoom a la provincia. | "Seis incendios, contados con sus fuentes." |
-| 0:12–0:36 | Chubut | Scrollear despacio el texto de la izquierda. En el centro, los focos reales se suman semana a semana y la línea de abajo cuenta la semana, los focos y la fecha. A la derecha, el fuego crece, el avión cruza y descarga, el helicóptero va y vuelve del lago y avanzan los brigadistas. Subir un poco para mostrar que todo retrocede. | "El texto manda: al bajar pasan las semanas y avanza el combate." |
-| 0:36–0:42 | Chubut | Al final del texto: gráfico mensual y "Fuentes" desplegado. | "Cada cifra, con su fuente." |
-| 0:42–0:54 | Inicio | Volver al inicio. Clic en Corrientes en el ranking: aparecen su serie anual y su estacionalidad. Pasar a "Comparar dos años" con 2019 y 2022. | "Naranja: más focos. Azul: menos." |
-| 0:54–1:00 | Cómo se hizo | Mostrar la pantalla y abrir la cápsula "Focos de calor ≠ hectáreas quemadas · Escena esquemática". | "Datos abiertos, límites a la vista." |
+Grabación de pantalla en escritorio (1440 × 900), en una ventana de incógnito y sobre el sitio de producción: `[URL de producción]`. La locución es la de la persona autora y se lee tal cual. Hay que scrollear con la rueda, despacio y a ritmo parejo: todo lo que se ve depende de la posición del scroll.
+
+## Antes de grabar
+
+- Ensayar con cronómetro. El texto tiene unas 150 palabras. Si se pasa de tiempo, recortar el segmento 4 en vez de acelerar.
+- La cifra de Corrientes (934.238 ha, INTA) es "cobertura vegetal afectada", no superficie quemada. Por eso la locución dice "el fuego alcanzó".
+
+## Guion
+
+| Tiempo | Qué mostrar | Locución |
+|---|---|---|
+| 0:00–0:08 | Pantalla de nubes, sin texto. Primer scroll: a la izquierda aparece el título y las nubes del centro se abren hacia la derecha. | "Seis incendios y datos satelitales de 2012 a 2026. Esto es Lo que el fuego se llevó." |
+| 0:08–0:16 | Las nubes terminan de abrirse: aparece Argentina y después se dibujan las provincias. | "Cada punto que vas a ver es un foco de calor que detectó un satélite de la NASA entre 2012 y 2026." |
+| 0:16–0:34 | Misiones y Corrientes. Scrollear despacio: el contador "semana N de M · focos" avanza y la escena de la derecha pasa del inicio al fuego y al combate. Abrir "Ver más" en Corrientes para mostrar las dos cifras que no coinciden. | "El recorrido va de norte a sur. En Corrientes, en 2022, el fuego alcanzó casi el once por ciento de la provincia, según el INTA. Otra fuente estima menos, y el sitio muestra las dos." |
+| 0:34–0:46 | Scrollear un poco hacia arriba y volver a bajar: el mapa y la escena retroceden y avanzan con el scroll. Saltar con el HUD a Chubut. | "Todo avanza y retrocede con el scroll. En Chubut, en 2026, según Infobae, más de quinientas personas lo combatieron con aviones y helicópteros." |
+| 0:46–0:54 | Plano general con los seis incendios en ceniza y las nubes cerrándose. | "Al final quedan solo los focos reales. Ninguna provincia se pinta entera como quemada." |
+| 0:54–1:00 | Epílogo sobre las nubes cerradas, con el aviso "un foco no es una hectárea quemada". Hacer clic en "Fuentes técnicas". | "Un foco no es una hectárea quemada. Cada cifra tiene su fuente." |
+
+Los tiempos suman 60 segundos.
+
+## Cuidado con lo que se ve en pantalla
+
+- Al abrir Chubut (semana 1) el contador dice "semana 1 de 44 · 1.122 focos · hasta el 7 de enero de 2026".
+- Las escenas son ilustraciones esquemáticas y lo dicen en pantalla. Dibujan un avión solo en Chubut y Misiones, y un helicóptero solo en Chubut, porque son los medios que nombran las fuentes. No presentarlas como imágenes reales.
+- Las fotos documentales y satelitales con licencia verificada solo aparecen al abrir "Ver más" en Corrientes, Delta y Chubut; Misiones, Córdoba y Mendoza no tienen fotos.

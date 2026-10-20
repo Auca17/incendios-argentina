@@ -1,0 +1,29 @@
+/* Black on the white clouds; a soft white halo keeps contrast where a cloud shadow passes behind. */
+.title {
+  position: fixed;
+  z-index: 4;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  text-align: center;
+}
+.h1 {
+  font: 400 var(--fs-56) / 1.02 var(--t-font-title);
+  color: var(--t-ink);
+  text-wrap: balance;
+  text-shadow: 0 0 2px #fff, 0 0 16px rgba(255, 255, 255, 0.95), 0 0 36px rgba(255, 255, 255, 0.85);
+}
+.sub {
+  margin-top: var(--s-2);
+  font: 700 var(--fs-24) / 1.2 var(--t-font-read);
+  color: var(--t-red);
+  letter-spacing: 0.01em;
+  text-shadow: 0 0 2px #fff, 0 0 14px rgba(255, 255, 255, 0.95), 0 0 28px rgba(255, 255, 255, 0.85);
+}
+
+@media (max-width: 1023.98px) {
+  .title { z-index: 10; }
+  .h1 { font-size: 40px; }
+  .sub { font-size: var(--fs-20); }
+}

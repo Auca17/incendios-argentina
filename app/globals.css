@@ -1,0 +1,104 @@
+/* Design tokens. Spacing runs on an 8 px grid (4 px only for fine adjustments). */
+:root {
+  --bg: #0a0a0a;
+  --text: #f2ece6;
+  --text-2: #cfc6bd;
+  --muted: #9a918a;
+  --accent: #f5a524; /* the single amber accent */
+  --accent-soft: rgba(245, 165, 36, 0.16);
+
+  --card: rgba(10, 10, 10, 0.88); /* opaque cards: no backdrop-filter anywhere */
+  --ring: rgba(255, 255, 255, 0.14);
+  --ring-ui: rgba(255, 255, 255, 0.4); /* borders that identify a control: 3:1 on the dark surfaces */
+  --ring-strong: rgba(245, 165, 36, 0.6);
+
+  --s-half: 4px;
+  --s-1: 8px;
+  --s-2: 16px;
+  --s-3: 24px;
+  --s-4: 32px;
+  --s-5: 40px;
+  --s-6: 48px;
+  --s-8: 64px;
+
+  --fs-12: 12px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-20: 20px;
+  --fs-24: 24px;
+  --fs-32: 32px;
+  --fs-40: 40px;
+  --fs-56: 56px;
+
+  --r-1: 8px;
+  --r-2: 16px;
+  --topbar-h: 48px;
+  --side-w: clamp(340px, 28vw, 440px);
+  --scene-w: clamp(300px, 40vw, 800px);
+  /* mobile: topbar + notice row + stage together take ~45 % of the viewport */
+  --topbar-h-m: 40px;
+  --aviso-h-m: 32px;
+  --mobile-stage-h: calc(45dvh - var(--topbar-h-m) - var(--aviso-h-m));
+
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* Guided tour (home page). Fire is the only warm colour; territory and sea stay cold. */
+  --t-sea-0: #08121f;
+  --t-sea-1: #050c16;
+  --t-land-0: #16222e;
+  --t-land-1: #1f2f3d;
+  --t-pod: rgba(12, 17, 24, 0.94);
+  --t-pod-ring: rgba(195, 204, 213, 0.1);
+  --t-rim: rgba(214, 220, 228, 0.16);
+  --t-chip: rgba(8, 14, 22, 0.92);
+  --t-paper: #0a0f16;
+  --t-text: #eaeef2;
+  --t-text-2: #c3ccd5;
+  --t-muted: #95a1ad;
+  --t-amber: #ffa236;
+  --t-amber-dim: rgba(255, 162, 54, 0.55);
+  --t-line: rgba(195, 204, 213, 0.16);
+  --t-control: rgba(195, 204, 213, 0.55); /* control borders: 3:1 on the dark surfaces */
+  --t-font-title: var(--font-rocker), Georgia, serif;
+  --t-ink: #111418; /* text on white clouds */
+  --t-ink-2: #1f262e; /* secondary text on clouds: >= 4.5:1 even on the darkest cloud shade */
+  --t-red: #b3261e;
+  --t-smoke-card: rgba(10, 10, 12, 0.84); /* cards over the smoke */
+  --t-ember: #ff9a5c;
+  --t-font-read: var(--font-jakarta), system-ui, sans-serif;
+  --t-font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --t-pod-w: clamp(340px, 30vw, 460px);
+  --t-scene-w: clamp(280px, 26vw, 400px);
+  --t-hud-w: 72px;
+  --t-map-left: calc(32px + var(--t-pod-w) + 136px);
+  --t-stage-h: 44svh;
+}
+@media (max-width: 1023.98px) {
+  :root { --t-map-left: 8px; }
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 400 var(--fs-16) / 1.5 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+/* The explorer is an app shell: only its own columns scroll. */
+html:has([data-app-shell]), html:has([data-app-shell]) body { overflow: hidden; }
+h1, h2, h3, p, ul { margin: 0; }
+code, kbd, samp { font-variant-ligatures: none; }
+button { font: inherit; color: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
