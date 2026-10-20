@@ -126,11 +126,13 @@ const PAIRS = [
   U('tour: control border on sources paper', 'var(--t-control)', 'tPaper'),
   U('tour: focus outline amber on pod', 'var(--accent)', 'tPod'),
   U('explore: inactive bar #bf5b30 on cloud', '#bf5b30', 'tCloud'),
-  // ash map: every fire core has a #1a0703 rim; the reds share the grey land's luminance
-  U('map: darkest fire core #e8452a against its rim', '#e8452a', '#1a0703'),
-  U('map: grid lowest tier #f04a24 against its rim', '#f04a24', '#1a0703'),
-  U('map: hottest focus #ffe08a against its rim', '#ffe08a', '#1a0703'),
-  U('map: rim #1a0703 against the lightest Argentine land (#6f6f6f)', '#1a0703', '#6f6f6f'),
+  // atlas map: every fire core is drawn on a tight shadow rgba(6,3,1,.78); its background is that
+  // shadow over the land: #2b2520 on the brightest sunlit slope (#ad9e8c), #140f0b on flat land
+  U('map: oldest core #e8452a on its shadow over the brightest slope', '#e8452a', '#2b2520'),
+  U('map: visited core #d63c22 on its shadow over the brightest slope', '#d63c22', '#2b2520'),
+  U('map: grid lowest tier #e8452a on its shadow over the brightest slope', '#e8452a', '#2b2520'),
+  U('map: hottest core #fff1c4 on its shadow over the brightest slope', '#fff1c4', '#2b2520'),
+  U('map: visited core #d63c22 on its shadow over flat land', '#d63c22', '#140f0b'),
   U('explore: active bar red on cloud', 'var(--t-red)', 'tCloud'),
 ];
 

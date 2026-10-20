@@ -26,7 +26,7 @@ const DATA: Card[] = [
   },
   {
     source: 'Natural Earth (dominio público)',
-    what: ['Relieve sombreado (Natural Earth II), en grises', 'Límites de países y provincias'],
+    what: ['Relieve sombreado (Natural Earth, Shaded Relief 1:50m), coloreado para el mapa', 'Límites de países y provincias'],
     url: 'https://www.naturalearthdata.com/',
   },
 ];

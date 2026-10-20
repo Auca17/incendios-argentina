@@ -3,10 +3,10 @@
 //   node scripts/gen-map-assets.mjs <dir>
 //
 // <dir> must hold the downloads:
-//   NE2_50M_SR_W/NE2_50M_SR_W.tif         Natural Earth II with shaded relief and water, 1:50m
+//   SR_50M.tif                             Natural Earth shaded relief (hillshade), 1:50m
 //   ne_50m_admin_0_countries.geojson       Admin 0 countries, 1:50m
 // Writes:
-//   public/map/sudamerica-ceniza.webp      relief cropped to lon -94..-24, lat 14..-63 (30 px per degree), in warm greys, via ffmpeg
+//   public/map/sudamerica-atlas.webp       relief cropped to lon -94..-24, lat 14..-63 (30 px per degree), sepia ramp, via ffmpeg
 //   public/data/sudamerica.json            South American countries except Argentina (its provinces come from
 //                                          provincias.json) and the Falkland/Malvinas Islands (shown by the relief only)
 import { spawnSync } from 'node:child_process';
@@ -19,11 +19,11 @@ if (!dir) { console.error('usage: node scripts/gen-map-assets.mjs <dir with Natu
 // raster: 10800 x 5400 px for 360 x 180 degrees -> 30 px per degree
 const [LON0, LON1, LAT1, LAT0] = [-94, -24, 14, -63];
 const crop = `crop=${(LON1 - LON0) * 30}:${(LAT1 - LAT0) * 30}:${(LON0 + 180) * 30}:${(90 - LAT1) * 30}`;
-// "ash territory": the same relief without its colour tints, in warm greys (the tour draws it darker
-// on land and dimmer on the sea; only the fire has colour)
-const r = spawnSync('ffmpeg', ['-loglevel', 'error', '-y', '-i', path.join(dir, 'NE2_50M_SR_W', 'NE2_50M_SR_W.tif'),
-  '-vf', `${crop},hue=s=0,eq=contrast=1.25:brightness=-0.04:gamma=0.85,colorchannelmixer=rr=1.04:gg=0.98:bb=0.9`,
-  '-c:v', 'libwebp', '-quality', '76', 'public/map/sudamerica-ceniza.webp'], { stdio: 'inherit' });
+// "atlas" territory: Natural Earth shaded relief (pure hillshade, public domain) mapped onto a
+// charcoal -> mineral brown -> ash ramp: flat land stays dark, sunlit slopes catch the light
+const RAMP = "curves=r='0/0.03 0.45/0.07 0.7/0.17 0.8/0.27 0.9/0.42 1/0.68':g='0/0.028 0.45/0.062 0.7/0.15 0.8/0.235 0.9/0.37 1/0.62':b='0/0.025 0.45/0.055 0.7/0.125 0.8/0.19 0.9/0.31 1/0.55'";
+const r = spawnSync('ffmpeg', ['-loglevel', 'error', '-y', '-i', path.join(dir, 'SR_50M.tif'),
+  '-vf', `${crop},format=rgb24,${RAMP}`, '-c:v', 'libwebp', '-quality', '80', 'public/map/sudamerica-atlas.webp'], { stdio: 'inherit' });
 if (r.status !== 0) process.exit(1);
 
 const gj = JSON.parse(fs.readFileSync(path.join(dir, 'ne_50m_admin_0_countries.geojson'), 'utf8'));
@@ -38,4 +38,4 @@ const features = gj.features
       geometry: { type: 'MultiPolygon', coordinates: polys.map((p) => p.map(round)) } };
   });
 fs.writeFileSync('public/data/sudamerica.json', JSON.stringify({ type: 'FeatureCollection', features }));
-console.log(`relief: public/map/sudamerica-ceniza.webp · countries: ${features.length} (${features.map((f) => f.properties.name).join(', ')})`);
+console.log(`relief: public/map/sudamerica-atlas.webp · countries: ${features.length} (${features.map((f) => f.properties.name).join(', ')})`);

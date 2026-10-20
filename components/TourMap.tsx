@@ -27,7 +27,9 @@ const ARGENTINA: Box = [-74.2, -52.8, -55.4, -21.6];
 const CONTINENT: Box = [-82, -34, -56, 13];
 /** Camera far away while the clouds still cover the screen; it flies in as they open. */
 const FAR: Box = [-118, -2, -76, 34];
-const RELIEF: Box = [-94, -24, -63, 14]; // extent of public/map/sudamerica-ceniza.webp
+const RELIEF: Box = [-94, -24, -63, 14]; // extent of public/map/sudamerica-atlas.webp
+/** Detections in one 0.05-degree cell in one week: p99 of the six fires is 58, the maximum 234. */
+const WEEK_REF = 60;
 /** Most foci in one 0.25-degree cell in any year (2022): the explore colour scale is fixed to it. */
 export const GRID_MAX = 6105;
 const TENSION = 0.052;
@@ -36,26 +38,30 @@ const FRICTION = 0.78;
 type Box = [number, number, number, number]; // minLon, maxLon, minLat, maxLat
 type Prov = { name: string; path: Path2D; box: Box };
 type Proj = (lon: number, lat: number) => [number, number];
+/** A cell: longitude, latitude and its number of detections. */
+type Pt = [number, number, number];
 
 export const MAP_COLORS = {
-  // "ash territory": dark sea, relief in warm greys; only the fire has colour
-  sea: '#0b0d10',
-  seaClear: 'rgba(11, 13, 16, 0)',
-  neighbour: 'rgba(225, 210, 195, 0.18)',
-  province: '235, 222, 208',
-  visited: 'rgba(255, 120, 60, 0.45)',
+  // atlas: dark sea with the coast lifted out of it, land in charcoal / mineral brown / ash relief;
+  // only the fire has colour
+  sea: '#07090c',
+  seaClear: 'rgba(7, 9, 12, 0)',
+  coast: 'rgba(214, 190, 156, 0.32)',
+  neighbour: 'rgba(214, 190, 156, 0.14)',
+  province: '226, 206, 178',
+  visited: 'rgba(255, 120, 60, 0.4)',
   active: '#ff6a2a',
-  activeHalo: 'rgba(255, 106, 42, 0.25)',
-  // focus cores (each keeps >= 3:1 against its dark rim; scripts/contrast.mjs) and their glow
-  hot: '#ffe08a',
-  ember: '#ffa040',
+  activeHalo: 'rgba(255, 106, 42, 0.22)',
+  // focus cores (each keeps >= 3:1 against the dark shadow drawn under it; scripts/contrast.mjs)
+  hot: '#fff1c4',
+  ember: '#ffb24a',
   deep: '#ff6a2a',
-  old: '#f04a24',
-  visitedFocus: '#e8452a',
+  old: '#e8452a',
+  visitedFocus: '#d63c22',
   // year grid of the explore section, low to high (fixed scale for every year)
-  grid: ['#f04a24', '#ff6a2a', '#ffa040', '#ffe08a'],
+  grid: ['#e8452a', '#ff6a2a', '#ffa040', '#ffe08a'],
   selected: '#ffffff',
-  rim: '#1a0703',
+  shadow: 'rgba(6, 3, 1, 0.78)',
 };
 const C = MAP_COLORS;
 
@@ -91,7 +97,7 @@ export default function TourMap() {
     const img = new Image();
     img.decoding = 'async';
     img.onload = () => { if (live) { relief = img; lastKey = baseKey = ''; request(); } };
-    img.src = BASE_PATH + '/map/sudamerica-ceniza.webp';
+    img.src = BASE_PATH + '/map/sudamerica-atlas.webp';
     TOUR_EVENTS.forEach((ev) => loadFoci(ev.id).then((E) => { if (live) { foci.set(ev.id, E); request(); prewarm(ev.id, E); } }, () => {}));
     const grids = new Map<number, { step: number; cells: [number, number, number][] }>();
     const unsubExplore = subscribeExplore(() => request());
@@ -217,7 +223,7 @@ export default function TourMap() {
     const base = document.createElement('canvas');
     const bctx = base.getContext('2d')!;
     let baseKey = '';
-    const byWeek = new Map<string, [number, number][][]>();
+    const byWeek = new Map<string, Pt[][]>();
     /*
      * Plates: fire layers rendered once into an offscreen canvas in world coordinates (res px per
      * degree) and then only placed with the camera transform each frame. Drawing thousands of glowing
@@ -254,11 +260,11 @@ export default function TourMap() {
     const FIRE_RES = 80; // px per degree: a 0.05-degree cell is 4 px
     const oldPlate = (id: string, E: Foci, c0: number) => plate(`old:${id}:${c0}`, fireBox(E), FIRE_RES, (g, pp) => {
       const W = weeksOf(id, E);
-      for (let wk = c0; wk < c0 + CHUNK; wk++) focusCells(g, W[wk] || [], E.step, FIRE_RES, pp, C.old, 0.14, 1, 0.4);
+      for (let wk = c0; wk < c0 + CHUNK; wk++) focusCells(g, W[wk] || [], E.step, FIRE_RES, pp, C.old, 0.22, 1, 0.4);
     });
     const visitedPlate = (id: string, E: Foci) => plate('visited:' + id, fireBox(E), FIRE_RES, (g, pp) => {
       const W = weeksOf(id, E);
-      for (let wk = 0; wk < E.weeks; wk++) focusCells(g, W[wk], E.step, FIRE_RES, pp, C.visitedFocus, 0.1, 1, 0.4);
+      for (let wk = 0; wk < E.weeks; wk++) focusCells(g, W[wk], E.step, FIRE_RES, pp, C.visitedFocus, 0.65, 1, 0.6);
     });
     // build every fire's plates ahead, one per idle slot, so scrolling never pays for them
     const warm: (() => void)[] = [];
@@ -276,7 +282,7 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       let b = byWeek.get(id);
       if (!b) {
         b = Array.from({ length: E.weeks + 1 }, () => []);
-        for (const [lon, lat, wk] of E.cells) b[wk].push([lon, lat]);
+        for (const [lon, lat, wk, n] of E.cells) b[wk].push([lon, lat, n]);
         byWeek.set(id, b);
       }
       return b;
@@ -332,7 +338,7 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       for (let wk = ashW; wk < week; wk++) {
         const age = week - 1 - wk;
         const col = age < 1 ? C.hot : age < 3 ? C.ember : age < LIVE_WEEKS ? C.deep : C.old;
-        focusCells(ctx, W[wk], Ea.step, scale, proj, col, age < 1 ? 0.5 : age < 2 ? 0.28 : 0);
+        focusCells(ctx, W[wk], Ea.step, scale, proj, col, age < 1 ? 0.7 : 0);
       }
     };
 
@@ -352,17 +358,22 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
           provs.forEach((p) => land!.addPath(p.path));
         }
         if (land) {
+          // the coast: a faint light rim around the land, so it separates from the dark sea
+          g.save();
+          g.strokeStyle = C.coast;
+          g.lineWidth = 2.2 * px;
+          g.stroke(land);
+          g.restore();
           g.save();
           g.clip(land);
-          g.globalAlpha = 0.34;
+          g.globalAlpha = 0.72; // neighbours slightly darker
           paint();
           g.restore();
-          // Argentina a little lighter than its neighbours
+          // Argentina at full strength: the country stays recognisable even when small
           const arg = new Path2D();
           provs.forEach((p) => arg.addPath(p.path));
           g.save();
           g.clip(arg);
-          g.globalAlpha = 0.16;
           paint();
           g.restore();
         }
@@ -426,11 +437,11 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       const G = grids.get(ex.year);
       if (G && G.cells.length) {
         const lm = Math.log(GRID_MAX + 1);
-        const tiers: [number, number][][] = [[], [], [], []];
-        for (const [lon, lat, n] of G.cells) tiers[Math.min(3, Math.floor((Math.log(n + 1) / lm) * 4))].push([lon, lat]);
+        const tiers: Pt[][] = [[], [], [], []];
+        for (const [lon, lat, n] of G.cells) tiers[Math.min(3, Math.floor((Math.log(n + 1) / lm) * 4))].push([lon, lat, n]);
         placePlate(g, world, plate('grid:' + ex.year, [-75, -52, -56, -21], 28, (pg, pp) => {
         // more foci, bigger and brighter square; only the two upper tiers glow
-          tiers.forEach((list, i) => focusCells(pg, list, G.step, 28, pp, C.grid[i], i < 2 ? 0 : 0.08 * i, 1, [0.3, 0.5, 0.72, 0.92][i]));
+          tiers.forEach((list, i) => focusCells(pg, list, G.step, 28, pp, C.grid[i], 0.28, 1, 0.5, GRID_MAX));
         }));
       }
       if (ex.prov) {
@@ -453,10 +464,10 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
         const cells = allYears;
         const lm = Math.log(allMax + 1);
         placePlate(g, world, plate('grid:all', [-75, -52, -56, -21], 56, (pg, pp) => {
-          const tiers: [number, number][][] = [[], [], [], []];
-          for (const [lon, lat, n] of cells) tiers[Math.min(3, Math.floor((Math.log(n + 1) / lm) * 4))].push([lon, lat]);
+          const tiers: Pt[][] = [[], [], [], []];
+          for (const [lon, lat, n] of cells) tiers[Math.min(3, Math.floor((Math.log(n + 1) / lm) * 4))].push([lon, lat, n]);
           // fifteen years pile up: smaller squares keep it a density of points, not a filled area
-          tiers.forEach((list, i) => focusCells(pg, list, 0.25, 56, pp, C.grid[i], i < 3 ? 0 : 0.18, 1, [0.18, 0.3, 0.44, 0.58][i]));
+          tiers.forEach((list, i) => focusCells(pg, list, 0.25, 56, pp, C.grid[i], 0.25, 1, 0.42, allMax));
         }));
       }
       const name = MORE_PROVINCES[moreNow];
@@ -473,46 +484,78 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
     };
 
     /*
-     * Fire as light: every focus cell is a solid core (its colour keeps >= 3:1 against the lightest
-     * land) plus a soft halo added with 'lighter', so where foci crowd the halos melt into glowing
-     * patches. It is still the density of real detections, never an invented burnt surface.
+     * Fire as light. Each cell is drawn in two passes:
+     *  1. a glow added with 'lighter', whose size and strength follow the cell's number of
+     *     detections (log scale against a fixed reference): where detections pile up the glows add up
+     *     and the area shines because there are more detections, not because a colour was chosen;
+     *  2. the detection itself: a small round core on a tight dark shadow, so it keeps >= 3:1
+     *     against the land below.
+     * It is the density of real detections, never an invented burnt surface.
      */
     const sprites = new Map<string, HTMLCanvasElement>();
-    const glow = (color: string) => {
-      let c = sprites.get(color);
+    const sprite = (key: string, stops: [number, string][]) => {
+      let c = sprites.get(key);
       if (!c) {
         c = document.createElement('canvas');
         c.width = c.height = 64;
         const g = c.getContext('2d')!;
         const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-        gr.addColorStop(0, color);
-        gr.addColorStop(0.35, color + '88');
-        gr.addColorStop(1, color + '00');
+        stops.forEach(([o, col]) => gr.addColorStop(o, col));
         g.fillStyle = gr;
         g.fillRect(0, 0, 64, 64);
-        sprites.set(color, c);
+        sprites.set(key, c);
       }
       return c;
     };
-    const focusCells = (g: CanvasRenderingContext2D, list: [number, number][], step: number, scale: number, proj: Proj, color: string, halo: number, device = dpr, size = 0) => {
+    const focusCells = (g: CanvasRenderingContext2D, list: Pt[], step: number, scale: number, proj: Proj, color: string, halo: number, device = dpr, size = 0, ref = WEEK_REF) => {
       if (!list.length) return;
       g.setTransform(device, 0, 0, device, 0, 0);
       const cell = step * scale; // px of the target
-      const core = Math.max(cell * (size || 0.6), 1.6);
-      const R = Math.max(cell * (size ? 1.4 : 1.8), 6);
-      const spr = glow(color);
+      const lr = Math.log(ref + 1);
+      const weight = (n: number) => Math.min(1, Math.log((n || 1) + 1) / lr);
+      const glow = sprite('glow:' + color, [[0, color], [0.25, color + 'aa'], [1, color + '00']]);
+      // the detection itself: a small round core on a tight dark shadow, pre-composited in one sprite
+      // (the shadow gives the core its contrast on sunlit slopes; it is too small to merge into a patch)
+      let dot = sprites.get('dot:' + color);
+      if (!dot) {
+        dot = document.createElement('canvas');
+        dot.width = dot.height = 64;
+        const d = dot.getContext('2d')!;
+        const sh = d.createRadialGradient(32, 32, 0, 32, 32, 32);
+        sh.addColorStop(0, C.shadow);
+        sh.addColorStop(0.55, 'rgba(6, 3, 1, 0.35)');
+        sh.addColorStop(1, 'rgba(6, 3, 1, 0)');
+        d.fillStyle = sh;
+        d.fillRect(0, 0, 64, 64);
+        const co = d.createRadialGradient(32, 32, 0, 32, 32, 16);
+        co.addColorStop(0, '#fff8e6');
+        co.addColorStop(0.45, color);
+        co.addColorStop(0.8, color);
+        co.addColorStop(1, color + '00');
+        d.fillStyle = co;
+        d.fillRect(16, 16, 32, 32);
+        sprites.set('dot:' + color, dot);
+      }
+      const k = size || 0.6;
+      // glow, sized and weighted by the detections
       if (halo > 0) {
         g.globalCompositeOperation = 'lighter';
-        g.globalAlpha = halo;
-        for (const [lon, lat] of list) { const [x, y] = proj(lon, lat); g.drawImage(spr, x - R, y - R, 2 * R, 2 * R); }
+        for (const [lon, lat, n] of list) {
+          const w = weight(n);
+          const [x, y] = proj(lon, lat);
+          const r = Math.max(cell * (1 + 1.6 * w) * k * 1.4, 3);
+          g.globalAlpha = halo * (0.2 + 0.8 * w);
+          g.drawImage(glow, x - r, y - r, 2 * r, 2 * r);
+        }
       }
+      // shadow + core (the core is half the sprite's radius)
       g.globalCompositeOperation = 'source-over';
       g.globalAlpha = 1;
-      // dark rim: the reds share the grey land's luminance, so contrast comes from the rim (>= 3:1)
-      g.fillStyle = C.rim;
-      for (const [lon, lat] of list) { const [x, y] = proj(lon, lat); g.fillRect(x - core / 2 - 1, y - core / 2 - 1, core + 2, core + 2); }
-      g.fillStyle = color;
-      for (const [lon, lat] of list) { const [x, y] = proj(lon, lat); g.fillRect(x - core / 2, y - core / 2, core, core); }
+      for (const [lon, lat, n] of list) {
+        const [x, y] = proj(lon, lat);
+        const r = Math.max(cell * (0.35 + 0.35 * weight(n)) * k * 1.4, 1.1) * 2;
+        g.drawImage(dot, x - r, y - r, 2 * r, 2 * r);
+      }
     };
 
     const unsub = subscribe(onFrame);
