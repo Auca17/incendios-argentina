@@ -10,6 +10,7 @@ import TourStage from './TourStage';
 import TourHud from './TourHud';
 import StoryPod from './StoryPod';
 import ExploreSection from './ExploreSection';
+import MoreSection from './MoreSection';
 import Epilogue from './Epilogue';
 import CoverTitle from './CoverTitle';
 import SourcesSection from './SourcesSection';
@@ -103,6 +104,12 @@ export default function ScrollyExperience() {
                 superficie quemada: muestran dónde y cuándo hubo actividad de fuego.
               </p>
             </article>
+          </div>
+        </section>
+
+        <section id="sec-more" className={styles.story} style={vh('sec-more')} aria-label="Dónde más ardió">
+          <div className={styles.podSlot}>
+            <MoreSection />
           </div>
         </section>
 

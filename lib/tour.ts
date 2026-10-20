@@ -14,10 +14,14 @@ export const TOUR_EVENTS: any[] = NORTH_TO_SOUTH.map((id) => EVENTS.find((e) => 
  *   reveal   14-22 % Argentina appears, then the provincial borders and the HUD
  *   stories  22-88 % six fires, north to south
  *   wide     camera opens on the whole country
+ *   more     where else it burned: the provinces with most foci outside the stories
  *   explore  year by year map, province series and ranking (state in the address)
  *   epilogue 93-100 % clouds close completely, epilogue on them, then smoke into the sources
  */
-export type Kind = 'opening' | 'title' | 'reveal' | 'story' | 'wide' | 'explore' | 'epilogue';
+export type Kind = 'opening' | 'title' | 'reveal' | 'story' | 'wide' | 'more' | 'explore' | 'epilogue';
+
+/** "Dónde más ardió": the provinces with the most foci in 2012-2026 that are not in the six stories. */
+export const MORE_PROVINCES = ['Formosa', 'Chaco', 'Santiago del Estero', 'Salta'];
 export type Section = { id: string; kind: Kind; vh: number; story?: number };
 
 export const SECTIONS: Section[] = [
@@ -26,6 +30,7 @@ export const SECTIONS: Section[] = [
   { id: 'sec-reveal', kind: 'reveal', vh: 125 },
   ...TOUR_EVENTS.map((ev, i): Section => ({ id: 'sec-' + ev.id, kind: 'story', vh: 180, story: i })),
   { id: 'sec-wide', kind: 'wide', vh: 85 },
+  { id: 'sec-more', kind: 'more', vh: 360 },
   { id: 'sec-explore', kind: 'explore', vh: 190 },
   { id: 'sec-epilogue', kind: 'epilogue', vh: 250 },
 ];
@@ -47,7 +52,7 @@ export type TourState = {
   /** Title visibility, and how far it moved from the centre of the cover to the side (0..1). */
   title: number;
   titleDock: number;
-  /** -2 = South America, -1 = Argentina, 0..5 = fire, 6 = wide shot (all fires visited), 7 = explore by year. */
+  /** -2 = South America, -1 = Argentina, 0..5 = fire, 6 = wide shot, 7 = explore by year, 8 = where else it burned. */
   chapter: number;
   /** Progress inside the fire (0..1); 1 outside the stories. */
   chapterT: number;
@@ -57,6 +62,8 @@ export type TourState = {
   smoke: number;
   /** Scroll-driven offset for embers and ash (0 while there is no smoke). */
   drift: number;
+  /** Province shown in "Dónde más ardió" (index in MORE_PROVINCES), -1 outside it. */
+  more: number;
   /** Falling ash on the white clouds, before the smoke (0..1). */
   ash: number;
   /** Opacity of the epilogue text: it fades out before the clouds turn to smoke. */
@@ -83,7 +90,7 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     }
   }
   const sec = SECTIONS[idx];
-  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, titleDock: 0, chapter: -2, chapterT: 1, bank: 1, smoke: 0, drift: 0, ash: 0, epi: 1 };
+  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, titleDock: 0, chapter: -2, chapterT: 1, bank: 1, smoke: 0, drift: 0, ash: 0, epi: 1, more: -1 };
   switch (sec.kind) {
     case 'opening':
       st.title = 1;
@@ -110,6 +117,11 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     case 'wide':
       st.open = 1; st.borders = 1; st.hud = 1;
       st.chapter = 6;
+      break;
+    case 'more':
+      st.open = 1; st.borders = 1; st.hud = 1;
+      st.chapter = 8;
+      st.more = Math.min(MORE_PROVINCES.length - 1, Math.floor(t * MORE_PROVINCES.length));
       break;
     case 'explore':
       st.open = 1; st.borders = 1; st.hud = 1;

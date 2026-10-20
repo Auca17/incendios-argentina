@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { loadFoci, loadGrid, loadProvincias, type Foci } from '../lib/data';
 import { getExplore, setExplore, subscribeExplore } from '../lib/exploreState';
 import { fociWeek } from '../lib/fire';
-import { TOUR_EVENTS } from '../lib/tour';
+import { MORE_PROVINCES, TOUR_EVENTS } from '../lib/tour';
 import { request, subscribe, type Frame } from '../lib/scrollDriver';
 import { mapRect } from '../lib/tourLayout';
 import styles from './TourMap.module.css';
@@ -96,6 +96,27 @@ export default function TourMap() {
     const grids = new Map<number, { step: number; cells: [number, number, number][] }>();
     const unsubExplore = subscribeExplore(() => request());
     let chapterNow = -2;
+    let moreNow = -1;
+    let allYears: [number, number, number][] | null = null; // foci 2012-2026 per 0.25-degree cell
+    let allMax = 1;
+    const loadAllYears = () => {
+      if (allYears) return;
+      allYears = [];
+      const years = Array.from({ length: 15 }, (_, i) => 2012 + i);
+      Promise.all(years.map((y) => loadGrid(y))).then((gs) => {
+        if (!live) return;
+        const acc = new Map<string, [number, number, number]>();
+        gs.forEach((g: any) => g.cells.forEach(([lon, lat, n]: number[]) => {
+          const k = lon + ',' + lat;
+          const c = acc.get(k);
+          if (c) c[2] += n; else acc.set(k, [lon, lat, n]);
+        }));
+        allYears = [...acc.values()];
+        allYears.forEach((c) => { if (c[2] > allMax) allMax = c[2]; });
+        baseKey = lastKey = '';
+        request();
+      }, () => { allYears = null; });
+    };
     let view = { scale: 1, ox: 0, oy: 0 };
     // explore section: a click on a province selects it (the panel offers the same choice as a list)
     const onClick = (e: MouseEvent) => {
@@ -126,7 +147,16 @@ export default function TourMap() {
     const vel = [0, 0, 0, 0, 0, 0];
     let lastKey = '';
 
-    const boxFor = (chapter: number, open: number): Box => {
+    const boxFor = (chapter: number, open: number, more: number): Box => {
+      if (chapter === 8 && more >= 0 && provs.length) {
+        const p = provs.find((x) => x.name === MORE_PROVINCES[more]);
+        if (p) {
+          // a wide shot around the province: its neighbours stay in view for comparison
+          const b = p.box, cx = (b[0] + b[1]) / 2, cy = (b[2] + b[3]) / 2;
+          const hx = Math.max((b[1] - b[0]) * 1.1, 4.5), hy = Math.max((b[3] - b[2]) * 1.1, 4.5);
+          return [cx - hx, cx + hx, cy - hy, cy + hy];
+        }
+      }
       if (chapter === -2) {
         const k = open * open * (3 - 2 * open);
         return FAR.map((v, i) => v + (CONTINENT[i] - v) * k) as Box;
@@ -147,7 +177,8 @@ export default function TourMap() {
       if (!w || !h) return false;
       const { st } = f;
       const [rl, rr] = mapRect(w, st.chapter);
-      const target = [...boxFor(st.chapter, st.open), rl, rr];
+      const target = [...boxFor(st.chapter, st.open, st.more), rl, rr];
+      moreNow = st.more;
       if (!cam || f.reduced) cam = target.slice();
       let moving = false;
       for (let i = 0; i < 6; i++) {
@@ -167,7 +198,8 @@ export default function TourMap() {
         grids.set(ex.year, { step: 0.25, cells: [] }); // placeholder until loaded
         loadGrid(ex.year).then((g) => { if (live) { grids.set(ex.year, g); baseKey = lastKey = ''; request(); } }, () => {});
       }
-      const exKey = st.chapter === 7 ? ex.year + ':' + (ex.prov || '') : '';
+      if (st.chapter === 8) loadAllYears();
+      const exKey = st.chapter === 7 ? ex.year + ':' + (ex.prov || '') : st.chapter === 8 ? 'more:' + st.more + ':' + (allYears?.length || 0) : '';
       const key = [cam.map((v) => v.toFixed(4)).join(','), st.chapter, week, st.borders.toFixed(3), provs.length, foci.size, w, h, exKey].join('|');
       if (key !== lastKey) {
         lastKey = key;
@@ -269,7 +301,7 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       const camKey = c.map((v) => v.toFixed(4)).join(',') + '|' + w + 'x' + h;
 
       const ex = getExplore();
-      const bk = [camKey, chapter, borders.toFixed(3), provs.length, foci.size, !!relief, !!neighbours, chapter === 7 ? ex.year + ':' + (ex.prov || '') + ':' + (grids.get(ex.year)?.cells.length || 0) : ''].join('|');
+      const bk = [camKey, chapter, borders.toFixed(3), provs.length, foci.size, !!relief, !!neighbours, chapter === 7 ? ex.year + ':' + (ex.prov || '') + ':' + (grids.get(ex.year)?.cells.length || 0) : chapter === 8 ? moreNow + ':' + (allYears?.length || 0) : ''].join('|');
       if (bk !== baseKey) {
         baseKey = bk;
         drawBase(bctx, world, chapter, borders, px, scale, proj);
@@ -366,6 +398,10 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
         drawGrid(g, px, world);
         return;
       }
+      if (chapter === 8) {
+        drawMore(g, px, world);
+        return;
+      }
 
       // visited fires: a faint warm outline and all their foci, dimmer than the active fire
       const visited = chapter === 6 ? 6 : Math.max(0, chapter);
@@ -409,6 +445,31 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
           g.stroke(p.path);
         });
       }
+    };
+
+    /** "Dónde más ardió": all foci 2012-2026 per cell (own fixed scale), the province in focus outlined. */
+    const drawMore = (g: CanvasRenderingContext2D, px: number, world: (g: CanvasRenderingContext2D) => void) => {
+      if (allYears && allYears.length) {
+        const cells = allYears;
+        const lm = Math.log(allMax + 1);
+        placePlate(g, world, plate('grid:all', [-75, -52, -56, -21], 56, (pg, pp) => {
+          const tiers: [number, number][][] = [[], [], [], []];
+          for (const [lon, lat, n] of cells) tiers[Math.min(3, Math.floor((Math.log(n + 1) / lm) * 4))].push([lon, lat]);
+          // fifteen years pile up: smaller squares keep it a density of points, not a filled area
+          tiers.forEach((list, i) => focusCells(pg, list, 0.25, 56, pp, C.grid[i], i < 3 ? 0 : 0.18, 1, [0.18, 0.3, 0.44, 0.58][i]));
+        }));
+      }
+      const name = MORE_PROVINCES[moreNow];
+      world(g);
+      provs.forEach((p) => {
+        if (p.name !== name) return;
+        g.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+        g.lineWidth = 5 * px;
+        g.stroke(p.path);
+        g.strokeStyle = C.selected;
+        g.lineWidth = 2 * px;
+        g.stroke(p.path);
+      });
     };
 
     /*

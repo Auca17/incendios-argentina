@@ -58,8 +58,10 @@ export default function TourStage() {
         )}
       </div>
 
-      <div className={v.chapter === 7 ? `${styles.legend} ${styles.on}` : styles.legend} aria-hidden={v.chapter !== 7}>
-        <p className={styles.legendTitle}>Focos de calor en el año, por cuadro de unos 25 km</p>
+      <div className={v.chapter === 7 || v.chapter === 8 ? `${styles.legend} ${styles.on}` : styles.legend} aria-hidden={v.chapter !== 7 && v.chapter !== 8}>
+        <p className={styles.legendTitle}>
+          {v.chapter === 8 ? 'Focos de calor de 2012 a 2026, por cuadro de unos 25 km' : 'Focos de calor en el año, por cuadro de unos 25 km'}
+        </p>
         <ol className={styles.legendScale}>
           {MAP_COLORS.grid.map((c, i) => (
             <li key={c}>
@@ -68,7 +70,7 @@ export default function TourStage() {
             </li>
           ))}
         </ol>
-        <p className={styles.legendNote}>
+        <p className={styles.legendNote} hidden={v.chapter !== 7}>
           La misma escala para todos los años (hasta {GRID_MAX.toLocaleString('es-AR')} focos en un cuadro), así un año
           tranquilo se ve tranquilo. Un foco no es una hectárea quemada.
         </p>

@@ -2,7 +2,7 @@
 // 100 % of every tour section, for `node scripts/shots.mjs --ys $(node scripts/tour-stops.mjs 900)`.
 const vh = +(process.argv[2] || 900);
 const S = [['opening', 130], ['title', 95], ['reveal', 125], ['misiones', 180], ['corrientes', 180], ['cordoba', 180],
-  ['delta', 180], ['mendoza', 180], ['chubut', 180], ['wide', 85], ['explore', 190], ['epilogue', 250]];
+  ['delta', 180], ['mendoza', 180], ['chubut', 180], ['wide', 85], ['more', 360], ['explore', 190], ['epilogue', 250]];
 let top = 0;
 const out = [];
 for (const [n, h] of S) {
