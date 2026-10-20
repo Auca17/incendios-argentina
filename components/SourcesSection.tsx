@@ -26,7 +26,7 @@ const DATA: Card[] = [
   },
   {
     source: 'Natural Earth (dominio público)',
-    what: ['Relieve sombreado con tonos de clima (Natural Earth II)', 'Límites de países y provincias'],
+    what: ['Relieve sombreado (Natural Earth II), en grises', 'Límites de países y provincias'],
     url: 'https://www.naturalearthdata.com/',
   },
 ];
@@ -77,7 +77,6 @@ export default function SourcesSection() {
           <li>Un foco de calor es un punto caliente que vio el satélite. No es una hectárea quemada ni un incendio forestal: también aparecen quemas en el campo.</li>
           <li>Las hectáreas y las causas vienen de las fuentes de cada historia, no del satélite. Cuando dos fuentes no coinciden, mostramos las dos.</li>
           <li>Cada punto marca un lugar de unos 375 metros. Si hay nubes o humo, el satélite puede no ver un fuego; y a veces marca algo que no es fuego.</li>
-          <li>Las escenas son dibujos hechos con código: muestran solo los medios de combate que nombran las fuentes.</li>
           <li>El recorrido va de norte a sur, no por fecha.</li>
         </ul>
 

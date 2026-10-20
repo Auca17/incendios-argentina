@@ -1,23 +1,24 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { loadFoci, type Foci } from '../lib/data';
-import { fmt, fociWeek, stageOf, toScene, weekDate, READ_0 } from '../lib/fire';
-import { SLIDES } from '../lib/slides';
+import { fmt, fociWeek, weekDate } from '../lib/fire';
+import { STORY_PHOTOS } from '../lib/photos';
 import { TOUR_EVENTS } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
-import ScenePanel from './ScenePanel';
 import { MAP_COLORS, GRID_MAX } from './TourMap';
 import styles from './TourStage.module.css';
 
-type View = { chapter: number; s: number; week: number; revealed: boolean };
+type View = { chapter: number; week: number; revealed: boolean };
+
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 /**
  * What sits on the map while the tour runs: the fixed foci notice, the weekly counter of the active
- * fire and its schematic scene. All three follow the scroll state; React re-renders only when the
- * chapter, the week or the scene position change.
+ * fire, the explore legend, and, for the fires that have one, a verified photo with its credit. They
+ * follow the scroll state; React re-renders only when the chapter or the week change.
  */
 export default function TourStage() {
-  const [v, setV] = useState<View>({ chapter: -1, s: 0, week: 0, revealed: false });
+  const [v, setV] = useState<View>({ chapter: -1, week: 0, revealed: false });
   const [foci, setFoci] = useState<Record<string, Foci>>({});
 
   useEffect(() => {
@@ -29,18 +30,16 @@ export default function TourStage() {
   useEffect(() => subscribe(({ st }) => {
     const story = st.chapter >= 0 && st.chapter <= 5;
     const ev = story ? TOUR_EVENTS[st.chapter] : null;
-    const s = story ? toScene({ ...READ_0, p: st.chapterT }) : 0;
     const E = ev ? foci[ev.id] : undefined;
     const week = E ? fociWeek(E, st.chapterT) : 0;
     const revealed = st.borders > 0 && st.close < 1;
-    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed && Math.abs(o.s - s) < 0.0005
-      ? o : { chapter: st.chapter, s, week, revealed }));
+    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed ? o : { chapter: st.chapter, week, revealed }));
   }), [foci]);
 
   const story = v.chapter >= 0 && v.chapter <= 5;
   const ev = story ? TOUR_EVENTS[v.chapter] : null;
   const E = ev ? foci[ev.id] : undefined;
-  const slide = ev ? SLIDES.find((x) => x.type === 'event' && x.ev.id === ev.id)! : SLIDES[0];
+  const photo = ev ? STORY_PHOTOS[ev.id]?.[0] : undefined;
 
   return (
     <>
@@ -75,9 +74,14 @@ export default function TourStage() {
         </p>
       </div>
 
-      <div className={story ? `${styles.scene} ${styles.on}` : styles.scene}>
-        {ev && <ScenePanel s={v.s} stage={stageOf(v.s)} slide={slide} />}
-      </div>
+      <figure className={photo ? `${styles.scene} ${styles.on}` : styles.scene}>
+        {photo && (
+          <>
+            <img src={BASE + photo.src} alt={photo.alt} width={photo.width} height={photo.height} className={styles.photo} />
+            <figcaption className={styles.photoCredit}>{photo.credit}</figcaption>
+          </>
+        )}
+      </figure>
     </>
   );
 }

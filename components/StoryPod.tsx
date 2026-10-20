@@ -102,12 +102,13 @@ export default function StoryPod({ ev, index, total }: Props) {
             </p>
           </div>
 
-          {STORY_PHOTOS[ev.id] && STORY_PHOTOS[ev.id].length > 0 && (
+          {/* the first photo of a fire is shown next to the map; the others live here */}
+          {STORY_PHOTOS[ev.id] && STORY_PHOTOS[ev.id].length > 1 && (
             <div className={styles.photos}>
-              {STORY_PHOTOS[ev.id].map((p) => (
+              {STORY_PHOTOS[ev.id].slice(1).map((p) => (
                 <figure key={p.src} className={styles.photo}>
                   <img
-                    src={p.src}
+                    src={(process.env.NEXT_PUBLIC_BASE_PATH || '') + p.src}
                     alt={p.alt}
                     width={p.width}
                     height={p.height}

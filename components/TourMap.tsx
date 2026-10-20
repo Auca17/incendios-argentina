@@ -222,11 +222,11 @@ export default function TourMap() {
     const FIRE_RES = 80; // px per degree: a 0.05-degree cell is 4 px
     const oldPlate = (id: string, E: Foci, c0: number) => plate(`old:${id}:${c0}`, fireBox(E), FIRE_RES, (g, pp) => {
       const W = weeksOf(id, E);
-      for (let wk = c0; wk < c0 + CHUNK; wk++) focusCells(g, W[wk] || [], E.step, FIRE_RES, pp, C.old, 0.14, 1);
+      for (let wk = c0; wk < c0 + CHUNK; wk++) focusCells(g, W[wk] || [], E.step, FIRE_RES, pp, C.old, 0.14, 1, 0.4);
     });
     const visitedPlate = (id: string, E: Foci) => plate('visited:' + id, fireBox(E), FIRE_RES, (g, pp) => {
       const W = weeksOf(id, E);
-      for (let wk = 0; wk < E.weeks; wk++) focusCells(g, W[wk], E.step, FIRE_RES, pp, C.visitedFocus, 0.1, 1);
+      for (let wk = 0; wk < E.weeks; wk++) focusCells(g, W[wk], E.step, FIRE_RES, pp, C.visitedFocus, 0.1, 1, 0.4);
     });
     // build every fire's plates ahead, one per idle slot, so scrolling never pays for them
     const warm: (() => void)[] = [];
