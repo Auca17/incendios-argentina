@@ -24,11 +24,17 @@ export type Kind = 'opening' | 'title' | 'reveal' | 'story' | 'wide' | 'more' | 
 export const MORE_PROVINCES = ['Formosa', 'Chaco', 'Santiago del Estero', 'Salta'];
 export type Section = { id: string; kind: Kind; vh: number; story?: number };
 
+/*
+ * Scroll length of each story: enough to read the pod and watch the weeks, no more. Chubut is longer
+ * because the illustrated air drop plays after its fire (lib/airScene.ts).
+ */
+const STORY_VH: Record<string, number> = { chubut: 240 };
+
 export const SECTIONS: Section[] = [
   { id: 'sec-opening', kind: 'opening', vh: 130 },
   { id: 'sec-title', kind: 'title', vh: 95 },
   { id: 'sec-reveal', kind: 'reveal', vh: 125 },
-  ...TOUR_EVENTS.map((ev, i): Section => ({ id: 'sec-' + ev.id, kind: 'story', vh: 180, story: i })),
+  ...TOUR_EVENTS.map((ev, i): Section => ({ id: 'sec-' + ev.id, kind: 'story', vh: STORY_VH[ev.id] ?? 150, story: i })),
   { id: 'sec-wide', kind: 'wide', vh: 85 },
   { id: 'sec-more', kind: 'more', vh: 360 },
   { id: 'sec-explore', kind: 'explore', vh: 190 },

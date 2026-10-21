@@ -9,3 +9,5 @@
 @media (max-width: 1023.98px) {
   .map { bottom: auto; height: var(--t-stage-h); z-index: 5; } /* above the story text scrolling under it */
 }
+/* illustrated layer of the Chubut scene, over the map and never in the way of a click */
+.fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }

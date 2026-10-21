@@ -1,14 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { loadFoci, type Foci } from '../lib/data';
-import { fmt, fociWeek, weekDate } from '../lib/fire';
+import { fmt, weekDate } from '../lib/fire';
+import { AIR_STORY, airScene, storyWeek } from '../lib/airScene';
 import { STORY_PHOTOS } from '../lib/photos';
 import { TOUR_EVENTS } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
 import { MAP_COLORS, GRID_MAX } from './TourMap';
 import styles from './TourStage.module.css';
 
-type View = { chapter: number; week: number; revealed: boolean };
+type View = { chapter: number; week: number; revealed: boolean; flames: boolean; plane: boolean };
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
@@ -18,7 +19,7 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
  * follow the scroll state; React re-renders only when the chapter or the week change.
  */
 export default function TourStage() {
-  const [v, setV] = useState<View>({ chapter: -1, week: 0, revealed: false });
+  const [v, setV] = useState<View>({ chapter: -1, week: 0, revealed: false, flames: false, plane: false });
   const [foci, setFoci] = useState<Record<string, Foci>>({});
 
   useEffect(() => {
@@ -27,13 +28,17 @@ export default function TourStage() {
     return () => { live = false; };
   }, []);
 
-  useEffect(() => subscribe(({ st }) => {
+  useEffect(() => subscribe(({ st, reduced }) => {
     const story = st.chapter >= 0 && st.chapter <= 5;
     const ev = story ? TOUR_EVENTS[st.chapter] : null;
     const E = ev ? foci[ev.id] : undefined;
-    const week = E ? fociWeek(E, st.chapterT) : 0;
+    const week = E && ev ? storyWeek(ev.id, E, st.chapterT) : 0;
     const revealed = st.borders > 0 && st.close < 1;
-    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed ? o : { chapter: st.chapter, week, revealed }));
+    const air = ev?.id === AIR_STORY ? airScene(st.chapterT, reduced) : null;
+    const flames = !!air && air.zoom > 0.5;
+    const plane = !!air && air.show > 0.5;
+    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed && o.flames === flames && o.plane === plane
+      ? o : { chapter: st.chapter, week, revealed, flames, plane }));
   }), [foci]);
 
   const story = v.chapter >= 0 && v.chapter <= 5;
@@ -76,7 +81,13 @@ export default function TourStage() {
         </p>
       </div>
 
-      <figure className={photo ? `${styles.scene} ${styles.on}` : styles.scene}>
+      <p className={v.flames ? `${styles.fxNote} ${styles.on}` : styles.fxNote}>
+        {v.plane
+          ? <><b>Ilustración.</b> Aviones hidrantes combatieron este incendio; esta pasada no reproduce una operación concreta.</>
+          : <><b>Las llamas</b> marcan dónde se acumularon más focos de calor. No miden superficie quemada.</>}
+      </p>
+
+      <figure className={photo && !v.flames ? `${styles.scene} ${styles.on}` : photo ? `${styles.scene} ${styles.on} ${styles.sceneAside}` : styles.scene}>
         {photo && (
           <>
             <img src={BASE + photo.src} alt={photo.alt} width={photo.width} height={photo.height} className={styles.photo} />

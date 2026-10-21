@@ -2,7 +2,8 @@
 import { useEffect, useRef } from 'react';
 import { loadFoci, loadGrid, loadProvincias, type Foci } from '../lib/data';
 import { getExplore, setExplore, subscribeExplore } from '../lib/exploreState';
-import { fociWeek } from '../lib/fire';
+import { AIR_STORY, HOTSPOT, airScene, storyWeek } from '../lib/airScene';
+import { drawFx, pickFlames, type Flame } from '../lib/fx';
 import { MORE_PROVINCES, TOUR_EVENTS } from '../lib/tour';
 import { request, subscribe, type Frame } from '../lib/scrollDriver';
 import { mapRect } from '../lib/tourLayout';
@@ -68,11 +69,14 @@ const C = MAP_COLORS;
 export default function TourMap() {
   const wrap = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
+  const fxv = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = cv.current!;
     const box = wrap.current!;
     const ctx = canvas.getContext('2d')!;
+    const fxc = fxv.current!;
+    const fctx = fxc.getContext('2d')!;
     let provs: Prov[] = [];
     let neighbours: Path2D | null = null;
     let relief: HTMLImageElement | null = null;
@@ -142,6 +146,8 @@ export default function TourMap() {
       dpr = Math.min(window.devicePixelRatio || 1, w < 1024 ? 1.5 : 2);
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
+      fxc.width = canvas.width;
+      fxc.height = canvas.height;
       lastKey = '';
       request();
     };
@@ -153,7 +159,7 @@ export default function TourMap() {
     const vel = [0, 0, 0, 0, 0, 0];
     let lastKey = '';
 
-    const boxFor = (chapter: number, open: number, more: number): Box => {
+    const boxFor = (chapter: number, open: number, more: number, zoom = 0): Box => {
       if (chapter === 8 && more >= 0 && provs.length) {
         const p = provs.find((x) => x.name === MORE_PROVINCES[more]);
         if (p) {
@@ -176,14 +182,23 @@ export default function TourMap() {
         b[2] = Math.min(b[2], p.box[2]); b[3] = Math.max(b[3], p.box[3]);
       });
       const px = Math.max((b[1] - b[0]) * 0.35, 1.2), py = Math.max((b[3] - b[2]) * 0.35, 1.2);
-      return [b[0] - px, b[1] + px, b[2] - py, b[3] + py];
+      const pb: Box = [b[0] - px, b[1] + px, b[2] - py, b[3] + py];
+      // Chubut: the camera closes in on the valleys where the detections piled up, then opens again
+      if (zoom > 0 && TOUR_EVENTS[chapter].id === AIR_STORY) return pb.map((v, i) => v + (HOTSPOT[i] - v) * zoom) as Box;
+      return pb;
     };
 
     const onFrame = (f: Frame): boolean => {
       if (!w || !h) return false;
       const { st } = f;
       const [rl, rr] = mapRect(w, st.chapter);
-      const target = [...boxFor(st.chapter, st.open, st.more), rl, rr];
+      const airOn = st.chapter >= 0 && st.chapter <= 5 && TOUR_EVENTS[st.chapter].id === AIR_STORY;
+      air = airOn ? airScene(st.chapterT, f.reduced) : null;
+      still = f.reduced || !!(window as any).__tourStill;
+      reducedNow = f.reduced;
+      // the close-up takes the whole band: the photo box steps aside while the scene plays
+      const rw = air ? rr + (mapRect(w, 6)[1] - rr) * air.zoom : rr;
+      const target = [...boxFor(st.chapter, st.open, st.more, air?.zoom || 0), rl, rw];
       moreNow = st.more;
       if (!cam || f.reduced) cam = target.slice();
       let moving = false;
@@ -196,7 +211,7 @@ export default function TourMap() {
 
       const ev = st.chapter >= 0 && st.chapter <= 5 ? TOUR_EVENTS[st.chapter] : null;
       const E = ev ? foci.get(ev.id) : undefined;
-      const week = E ? fociWeek(E, st.chapterT) : 0;
+      const week = E ? storyWeek(ev.id, E, st.chapterT) : 0;
       chapterNow = st.chapter;
       canvas.style.cursor = st.chapter === 7 ? 'pointer' : '';
       const ex = getExplore();
@@ -211,7 +226,43 @@ export default function TourMap() {
         lastKey = key;
         draw(st.chapter, week, st.borders);
       }
+      fxWeek = air && E ? week : -1;
+      fxCells = air && E ? E.cells : null;
+      drawAir();
       return moving;
+    };
+
+    /*
+     * The illustrated layer of the Chubut scene (lib/fx.ts), on its own canvas over the map. It is
+     * redrawn with each scroll frame, and between frames only to let the flames flicker (not under
+     * reduced motion).
+     */
+    let air: ReturnType<typeof airScene> | null = null;
+    let still = false;
+    let reducedNow = false;
+    let fxWeek = -1;
+    let fxCells: Foci['cells'] | null = null;
+    let flames: Flame[] = [];
+    let flamesKey = '';
+    let fxDrawn = false;
+    let ticking = 0;
+    const drawAir = () => {
+      const active = !!air && air.zoom > 0.001 && fxWeek >= 0 && !!fxCells;
+      if (!active) {
+        if (fxDrawn) { fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, fxc.width, fxc.height); fxDrawn = false; }
+        return;
+      }
+      if (flamesKey !== String(fxWeek)) { flamesKey = String(fxWeek); flames = pickFlames(fxCells!, fxWeek); }
+      const { scale, ox, oy } = view;
+      drawFx(fctx, {
+        proj: (lon, lat) => [ox + lon * K * scale, oy - lat * scale],
+        scale, w, h, dpr, band: [cam![4], cam![5]],
+        zoom: air!.zoom, plane: air!.plane, show: air!.show, flames,
+        time: still ? 0 : performance.now() / 1000,
+        reduced: reducedNow,
+      });
+      fxDrawn = true;
+      if (!still && !ticking) ticking = requestAnimationFrame(() => { ticking = 0; if (live) drawAir(); });
     };
 
     /*
@@ -333,12 +384,14 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       const W = weeksOf(a.id, Ea);
       // older weeks come from fixed blocks of CHUNK weeks, each rendered once and kept; only the weeks
       // after the last whole block are drawn live. Same position, same blocks, same pixels.
-      const ashW = Math.max(0, Math.floor((week - LIVE_WEEKS) / CHUNK) * CHUNK);
+      // in a close-up the cached plates would be enlarged into blocks: a small fire is drawn live instead
+      const sharp = scale > FIRE_RES * 1.3 && Ea.cells.length < 3000;
+      const ashW = sharp ? 0 : Math.max(0, Math.floor((week - LIVE_WEEKS) / CHUNK) * CHUNK);
       for (let c0 = 0; c0 < ashW; c0 += CHUNK) placePlate(ctx, world, oldPlate(a.id, Ea, c0));
       for (let wk = ashW; wk < week; wk++) {
         const age = week - 1 - wk;
         const col = age < 1 ? C.hot : age < 3 ? C.ember : age < LIVE_WEEKS ? C.deep : C.old;
-        focusCells(ctx, W[wk], Ea.step, scale, proj, col, age < 1 ? 0.7 : 0);
+        focusCells(ctx, W[wk], Ea.step, scale, proj, col, age < 1 ? 0.7 : age >= LIVE_WEEKS ? 0.3 : 0, dpr, sharp ? 0.36 : age >= LIVE_WEEKS ? 0.4 : 0);
       }
     };
 
@@ -559,7 +612,7 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
     };
 
     const unsub = subscribe(onFrame);
-    return () => { live = false; unsub(); unsubExplore(); ro.disconnect(); canvas.removeEventListener('click', onClick); };
+    return () => { live = false; cancelAnimationFrame(ticking); unsub(); unsubExplore(); ro.disconnect(); canvas.removeEventListener('click', onClick); };
   }, []);
 
   return (
@@ -571,6 +624,7 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
         role="img"
         aria-label="Mapa de Sudamérica con las provincias argentinas y los focos de calor semanales detectados por satélite en cada incendio del recorrido"
       />
+      <canvas ref={fxv} className={styles.fx} data-tour-canvas="fx" aria-hidden="true" />
     </div>
   );
 }

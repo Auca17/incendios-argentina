@@ -100,6 +100,9 @@ await Promise.all(['Page', 'Runtime', 'Network'].map((d) => send(d + '.enable'))
 await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 1, mobile: MOBILE });
 // headless Chrome reports reduced motion unless told otherwise; test the full motion path by default
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: args.motion === 'reduce' ? 'reduce' : 'no-preference' }] });
+// the flames of the Chubut scene flicker with time; freeze that clock so a position has one frame
+// (everything else in the scene follows the scroll and is still checked)
+await send('Page.addScriptToEvaluateOnNewDocument', { source: 'window.__tourStill = true;' });
 const loaded = new Promise((res) => on('Page.loadEventFired', res));
 await send('Page.navigate', { url: URL_ });
 await loaded;
