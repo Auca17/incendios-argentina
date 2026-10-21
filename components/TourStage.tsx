@@ -2,16 +2,20 @@
 import { useEffect, useState } from 'react';
 import { loadFoci, type Foci } from '../lib/data';
 import { fmt, weekDate } from '../lib/fire';
-import { AIR_STORY, airScene, storyWeek } from '../lib/airScene';
+import { AIR_STORY, EPISODE_WEEKS, airScene, storyWeek } from '../lib/airScene';
 import { STORY_PHOTOS } from '../lib/photos';
 import { TOUR_EVENTS } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
 import { MAP_COLORS, GRID_MAX } from './TourMap';
 import styles from './TourStage.module.css';
 
-type View = { chapter: number; week: number; revealed: boolean; flames: boolean; plane: boolean };
+type View = { chapter: number; week: number; revealed: boolean; flames: boolean; plane: boolean; balance: boolean };
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
+/** "21 de enero de 2026" → "21 de enero". */
+const dayMonth = (s: string) => s.replace(/ de \d{4}$/, '');
+/** First day of a fire's weekly series, as "1 de enero". */
+const firstDay = (E: Foci) => new Date(E.start + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
 
 /**
  * What sits on the map while the tour runs: the fixed foci notice, the weekly counter of the active
@@ -19,7 +23,7 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
  * follow the scroll state; React re-renders only when the chapter or the week change.
  */
 export default function TourStage() {
-  const [v, setV] = useState<View>({ chapter: -1, week: 0, revealed: false, flames: false, plane: false });
+  const [v, setV] = useState<View>({ chapter: -1, week: 0, revealed: false, flames: false, plane: false, balance: false });
   const [foci, setFoci] = useState<Record<string, Foci>>({});
 
   useEffect(() => {
@@ -35,10 +39,11 @@ export default function TourStage() {
     const week = E && ev ? storyWeek(ev.id, E, st.chapterT) : 0;
     const revealed = st.borders > 0 && st.close < 1;
     const air = ev?.id === AIR_STORY ? airScene(st.chapterT, reduced) : null;
-    const flames = !!air && air.zoom > 0.5;
+    const flames = !!air && air.zoom > 0.5 && air.phase !== 'balance';
     const plane = !!air && air.show > 0.5;
-    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed && o.flames === flames && o.plane === plane
-      ? o : { chapter: st.chapter, week, revealed, flames, plane }));
+    const balance = air?.phase === 'balance';
+    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed && o.flames === flames && o.plane === plane && o.balance === balance
+      ? o : { chapter: st.chapter, week, revealed, flames, plane, balance }));
   }), [foci]);
 
   const story = v.chapter >= 0 && v.chapter <= 5;
@@ -53,7 +58,19 @@ export default function TourStage() {
       </p>
 
       <div className={story ? `${styles.counter} ${styles.on}` : styles.counter} aria-live="off">
-        {E && ev && (
+        {E && ev && v.balance && (
+          <>
+            {/* the fire's own weeks apart from the whole observation period */}
+            <span className={styles.counterHead}>{ev.region} · balance del episodio</span>
+            <span className={styles.counterLine}>
+              <b>{fmt(E.cum[EPISODE_WEEKS])} focos</b> entre el {firstDay(E)} y el {dayMonth(weekDate(E, EPISODE_WEEKS))}
+            </span>
+            <span className={styles.counterHead}>
+              El registro satelital sigue hasta el {dayMonth(weekDate(E, E.weeks))}: {fmt(E.total - E.cum[EPISODE_WEEKS])} focos más, dispersos.
+            </span>
+          </>
+        )}
+        {E && ev && !v.balance && (
           <>
             <span className={styles.counterHead}>{ev.region} · focos detectados por satélite</span>
             <span className={styles.counterLine}>

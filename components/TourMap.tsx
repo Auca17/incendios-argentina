@@ -2,8 +2,8 @@
 import { useEffect, useRef } from 'react';
 import { loadFoci, loadGrid, loadProvincias, type Foci } from '../lib/data';
 import { getExplore, setExplore, subscribeExplore } from '../lib/exploreState';
-import { AIR_STORY, HOTSPOT, airScene, storyWeek } from '../lib/airScene';
-import { drawFx, pickFlames, type Flame } from '../lib/fx';
+import { AIR_STORY, EPISODE_WEEKS, HOTSPOT, airScene, storyWeek } from '../lib/airScene';
+import { drawFx, fireSites, type Sites } from '../lib/fx';
 import { MORE_PROVINCES, TOUR_EVENTS } from '../lib/tour';
 import { request, subscribe, type Frame } from '../lib/scrollDriver';
 import { mapRect } from '../lib/tourLayout';
@@ -226,7 +226,6 @@ export default function TourMap() {
         lastKey = key;
         draw(st.chapter, week, st.borders);
       }
-      fxWeek = air && E ? week : -1;
       fxCells = air && E ? E.cells : null;
       drawAir();
       return moving;
@@ -240,24 +239,22 @@ export default function TourMap() {
     let air: ReturnType<typeof airScene> | null = null;
     let still = false;
     let reducedNow = false;
-    let fxWeek = -1;
     let fxCells: Foci['cells'] | null = null;
-    let flames: Flame[] = [];
-    let flamesKey = '';
+    let sites: Sites | null = null;
     let fxDrawn = false;
     let ticking = 0;
     const drawAir = () => {
-      const active = !!air && air.zoom > 0.001 && fxWeek >= 0 && !!fxCells;
+      const active = !!air && air.zoom > 0.001 && !!fxCells;
       if (!active) {
         if (fxDrawn) { fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, fxc.width, fxc.height); fxDrawn = false; }
         return;
       }
-      if (flamesKey !== String(fxWeek)) { flamesKey = String(fxWeek); flames = pickFlames(fxCells!, fxWeek); }
+      sites ??= fireSites(fxCells!, EPISODE_WEEKS);
       const { scale, ox, oy } = view;
       drawFx(fctx, {
         proj: (lon, lat) => [ox + lon * K * scale, oy - lat * scale],
-        scale, w, h, dpr, band: [cam![4], cam![5]],
-        zoom: air!.zoom, plane: air!.plane, show: air!.show, flames,
+        w, h, dpr, band: [cam![4], cam![5]],
+        zoom: air!.zoom, wf: air!.wf, plane: air!.plane, show: air!.show, sites,
         time: still ? 0 : performance.now() / 1000,
         reduced: reducedNow,
       });
