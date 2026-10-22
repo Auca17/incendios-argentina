@@ -2,14 +2,16 @@
 import { useEffect, useState } from 'react';
 import { loadFoci, type Foci } from '../lib/data';
 import { fmt, weekDate } from '../lib/fire';
-import { AIR_STORY, EPISODE_WEEKS, airScene, storyWeek } from '../lib/airScene';
+import { EPISODE_WEEKS } from '../lib/airScene';
+import { SCENES, storyWeek } from '../lib/scenes';
 import { STORY_PHOTOS } from '../lib/photos';
 import { TOUR_EVENTS } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
 import { MAP_COLORS, GRID_MAX } from './TourMap';
 import styles from './TourStage.module.css';
 
-type View = { chapter: number; week: number; revealed: boolean; flames: boolean; plane: boolean; balance: boolean };
+/** close: a scene's close-up note is on; ill: it is the illustration note (else the flames note). */
+type View = { chapter: number; week: number; revealed: boolean; close: boolean; ill: boolean; balance: boolean };
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 /** "21 de enero de 2026" → "21 de enero". */
@@ -23,7 +25,7 @@ const firstDay = (E: Foci) => new Date(E.start + 'T00:00:00').toLocaleDateString
  * follow the scroll state; React re-renders only when the chapter or the week change.
  */
 export default function TourStage() {
-  const [v, setV] = useState<View>({ chapter: -1, week: 0, revealed: false, flames: false, plane: false, balance: false });
+  const [v, setV] = useState<View>({ chapter: -1, week: 0, revealed: false, close: false, ill: false, balance: false });
   const [foci, setFoci] = useState<Record<string, Foci>>({});
 
   useEffect(() => {
@@ -38,18 +40,20 @@ export default function TourStage() {
     const E = ev ? foci[ev.id] : undefined;
     const week = E && ev ? storyWeek(ev.id, E, st.chapterT) : 0;
     const revealed = st.borders > 0 && st.close < 1;
-    const air = ev?.id === AIR_STORY ? airScene(st.chapterT, reduced) : null;
-    const flames = !!air && air.zoom > 0.5 && air.phase !== 'balance';
-    const plane = !!air && air.show > 0.5;
-    const balance = air?.phase === 'balance';
-    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed && o.flames === flames && o.plane === plane && o.balance === balance
-      ? o : { chapter: st.chapter, week, revealed, flames, plane, balance }));
+    const sf = ev && SCENES[ev.id] ? SCENES[ev.id].frame(st.chapterT, reduced) : null;
+    const ill = !!sf && sf.ill > 0.5;
+    const close = !!sf && (sf.flames || ill);
+    const balance = !!sf && sf.balance;
+    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed && o.close === close && o.ill === ill && o.balance === balance
+      ? o : { chapter: st.chapter, week, revealed, close, ill, balance }));
   }), [foci]);
 
   const story = v.chapter >= 0 && v.chapter <= 5;
   const ev = story ? TOUR_EVENTS[v.chapter] : null;
   const E = ev ? foci[ev.id] : undefined;
   const photo = ev ? STORY_PHOTOS[ev.id]?.[0] : undefined;
+  const sc = ev ? SCENES[ev.id] : undefined;
+  const note = sc ? (v.ill ? sc.notes.ill : sc.notes.flames) : null;
 
   return (
     <>
@@ -98,13 +102,11 @@ export default function TourStage() {
         </p>
       </div>
 
-      <p className={v.flames ? `${styles.fxNote} ${styles.on}` : styles.fxNote}>
-        {v.plane
-          ? <><b>Ilustración.</b> Aviones hidrantes combatieron este incendio; esta pasada no reproduce una operación concreta.</>
-          : <><b>Las llamas</b> marcan dónde se acumularon más focos de calor. No miden superficie quemada.</>}
+      <p className={v.close ? `${styles.fxNote} ${styles.on}` : styles.fxNote}>
+        {note && <><b>{note[0]}</b>{note[1]}</>}
       </p>
 
-      <figure className={photo && !v.flames ? `${styles.scene} ${styles.on}` : photo ? `${styles.scene} ${styles.on} ${styles.sceneAside}` : styles.scene}>
+      <figure className={photo && !v.close ? `${styles.scene} ${styles.on}` : photo ? `${styles.scene} ${styles.on} ${styles.sceneAside}` : styles.scene}>
         {photo && (
           <>
             <img src={BASE + photo.src} alt={photo.alt} width={photo.width} height={photo.height} className={styles.photo} />

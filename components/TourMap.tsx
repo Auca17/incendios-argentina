@@ -2,8 +2,8 @@
 import { useEffect, useRef } from 'react';
 import { loadFoci, loadGrid, loadProvincias, type Foci } from '../lib/data';
 import { getExplore, setExplore, subscribeExplore } from '../lib/exploreState';
-import { AIR_STORY, EPISODE_WEEKS, HOTSPOT, airScene, storyWeek } from '../lib/airScene';
-import { drawFx, fireSites, type Sites } from '../lib/fx';
+import { SCENES, storyWeek, type Scene, type SceneFrame } from '../lib/scenes';
+import type { Sites } from '../lib/fx';
 import { MORE_PROVINCES, TOUR_EVENTS } from '../lib/tour';
 import { request, subscribe, type Frame } from '../lib/scrollDriver';
 import { mapRect } from '../lib/tourLayout';
@@ -103,6 +103,15 @@ export default function TourMap() {
     img.onload = () => { if (live) { relief = img; lastKey = baseKey = ''; request(); } };
     img.src = BASE_PATH + '/map/sudamerica-atlas.webp';
     TOUR_EVENTS.forEach((ev) => loadFoci(ev.id).then((E) => { if (live) { foci.set(ev.id, E); request(); prewarm(ev.id, E); } }, () => {}));
+    // detailed relief of each scene's close-up, drawn over the continental relief when the camera is near
+    const closeups: { img: HTMLImageElement; box: Box; ok: boolean }[] = Object.values(SCENES).map((sc) => {
+      const im = new Image();
+      im.decoding = 'async';
+      const c = { img: im, box: sc.relief.box, ok: false };
+      im.onload = () => { if (live) { c.ok = true; lastKey = baseKey = ''; request(); } };
+      im.src = BASE_PATH + sc.relief.src;
+      return c;
+    });
     const grids = new Map<number, { step: number; cells: [number, number, number][] }>();
     const unsubExplore = subscribeExplore(() => request());
     let chapterNow = -2;
@@ -159,7 +168,7 @@ export default function TourMap() {
     const vel = [0, 0, 0, 0, 0, 0];
     let lastKey = '';
 
-    const boxFor = (chapter: number, open: number, more: number, zoom = 0): Box => {
+    const boxFor = (chapter: number, open: number, more: number, sc?: Scene, sf?: SceneFrame | null): Box => {
       if (chapter === 8 && more >= 0 && provs.length) {
         const p = provs.find((x) => x.name === MORE_PROVINCES[more]);
         if (p) {
@@ -183,8 +192,11 @@ export default function TourMap() {
       });
       const px = Math.max((b[1] - b[0]) * 0.35, 1.2), py = Math.max((b[3] - b[2]) * 0.35, 1.2);
       const pb: Box = [b[0] - px, b[1] + px, b[2] - py, b[3] + py];
-      // Chubut: the camera closes in on the valleys where the detections piled up, then opens again
-      if (zoom > 0 && TOUR_EVENTS[chapter].id === AIR_STORY) return pb.map((v, i) => v + (HOTSPOT[i] - v) * zoom) as Box;
+      // a story with a scene: the camera closes in on its place, then opens again
+      if (sc && sf && sf.zoom > 0) {
+        const cb = sc.box(w);
+        return pb.map((v, i) => v + (cb[i] + sf.pan[i < 2 ? 0 : 1] - v) * sf.zoom) as Box;
+      }
       return pb;
     };
 
@@ -192,13 +204,15 @@ export default function TourMap() {
       if (!w || !h) return false;
       const { st } = f;
       const [rl, rr] = mapRect(w, st.chapter);
-      const airOn = st.chapter >= 0 && st.chapter <= 5 && TOUR_EVENTS[st.chapter].id === AIR_STORY;
-      air = airOn ? airScene(st.chapterT, f.reduced) : null;
+      const sid = st.chapter >= 0 && st.chapter <= 5 ? TOUR_EVENTS[st.chapter].id : '';
+      if (sid !== sceneId) { sceneId = sid; sites = null; }
+      scene = SCENES[sid];
+      sf = scene ? scene.frame(st.chapterT, f.reduced) : null;
       still = f.reduced || !!(window as any).__tourStill;
       reducedNow = f.reduced;
       // the close-up takes the whole band: the photo box steps aside while the scene plays
-      const rw = air ? rr + (mapRect(w, 6)[1] - rr) * air.zoom : rr;
-      const target = [...boxFor(st.chapter, st.open, st.more, air?.zoom || 0), rl, rw];
+      const rw = sf ? rr + (mapRect(w, 6)[1] - rr) * sf.zoom : rr;
+      const target = [...boxFor(st.chapter, st.open, st.more, scene, sf), rl, rw];
       moreNow = st.more;
       if (!cam || f.reduced) cam = target.slice();
       let moving = false;
@@ -226,40 +240,41 @@ export default function TourMap() {
         lastKey = key;
         draw(st.chapter, week, st.borders);
       }
-      fxCells = air && E ? E.cells : null;
-      drawAir();
+      fxFoci = sf && E ? E : null;
+      drawScene();
       return moving;
     };
 
     /*
-     * The illustrated layer of the Chubut scene (lib/fx.ts), on its own canvas over the map. It is
-     * redrawn with each scroll frame, and between frames only to let the flames flicker (not under
-     * reduced motion).
+     * The illustrated layer of the active story's scene (lib/scenes.ts), on its own canvas over the
+     * map. It is redrawn with each scroll frame, and between frames only to let the flames flicker
+     * (not under reduced motion).
      */
-    let air: ReturnType<typeof airScene> | null = null;
+    let scene: Scene | undefined;
+    let sceneId = '';
+    let sf: SceneFrame | null = null;
     let still = false;
     let reducedNow = false;
-    let fxCells: Foci['cells'] | null = null;
+    let fxFoci: Foci | null = null;
     let sites: Sites | null = null;
     let fxDrawn = false;
     let ticking = 0;
-    const drawAir = () => {
-      const active = !!air && air.zoom > 0.001 && !!fxCells;
+    const drawScene = () => {
+      const active = !!scene && !!sf && sf.zoom > 0.001 && !!fxFoci;
       if (!active) {
         if (fxDrawn) { fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, fxc.width, fxc.height); fxDrawn = false; }
         return;
       }
-      sites ??= fireSites(fxCells!, EPISODE_WEEKS);
+      sites ??= scene!.sites(fxFoci!);
       const { scale, ox, oy } = view;
-      drawFx(fctx, {
+      sf!.draw(fctx, {
         proj: (lon, lat) => [ox + lon * K * scale, oy - lat * scale],
-        w, h, dpr, band: [cam![4], cam![5]],
-        zoom: air!.zoom, wf: air!.wf, plane: air!.plane, show: air!.show, sites,
+        w, h, dpr, band: [cam![4], cam![5]], ppd: scale,
         time: still ? 0 : performance.now() / 1000,
         reduced: reducedNow,
-      });
+      }, sites);
       fxDrawn = true;
-      if (!still && !ticking) ticking = requestAnimationFrame(() => { ticking = 0; if (live) drawAir(); });
+      if (!still && !ticking) ticking = requestAnimationFrame(() => { ticking = 0; if (live) drawScene(); });
     };
 
     /*
@@ -388,7 +403,7 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       for (let wk = ashW; wk < week; wk++) {
         const age = week - 1 - wk;
         const col = age < 1 ? C.hot : age < 3 ? C.ember : age < LIVE_WEEKS ? C.deep : C.old;
-        focusCells(ctx, W[wk], Ea.step, scale, proj, col, age < 1 ? 0.7 : age >= LIVE_WEEKS ? 0.3 : 0, dpr, sharp ? 0.36 : age >= LIVE_WEEKS ? 0.4 : 0);
+        focusCells(ctx, W[wk], Ea.step, scale, proj, col, age < 1 ? 0.7 : age >= LIVE_WEEKS ? 0.3 : 0, dpr, age >= LIVE_WEEKS ? 0.4 : 0, WEEK_REF, sharp ? 5 : Infinity);
       }
     };
 
@@ -426,6 +441,25 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
           g.clip(arg);
           paint();
           g.restore();
+          // a close-up's own relief fades in as the camera comes down to it (it is 15-40 times sharper)
+          const cam0 = cam!, span = cam0[1] - cam0[0];
+          for (const cu of closeups) {
+            const b = cu.box, bw = b[1] - b[0];
+            if (!cu.ok || cam0[1] < b[0] || cam0[0] > b[1] || cam0[3] < b[2] || cam0[2] > b[3]) continue;
+            const a = Math.min(1, Math.max(0, (bw * 4 - span) / (bw * 2.5)));
+            if (a <= 0) continue;
+            const draw = () => g.drawImage(cu.img, b[0] * K, -b[3], (b[1] - b[0]) * K, b[3] - b[2]);
+            g.save();
+            g.clip(land);
+            g.globalAlpha = 0.72 * a;
+            draw();
+            g.restore();
+            g.save();
+            g.clip(arg);
+            g.globalAlpha = a;
+            draw();
+            g.restore();
+          }
         }
         g.globalAlpha = 1;
         // fade the image edges into the uniform sea around it, so there is no seam
@@ -557,10 +591,12 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       }
       return c;
     };
-    const focusCells = (g: CanvasRenderingContext2D, list: Pt[], step: number, scale: number, proj: Proj, color: string, halo: number, device = dpr, size = 0, ref = WEEK_REF) => {
+    const focusCells = (g: CanvasRenderingContext2D, list: Pt[], step: number, scale: number, proj: Proj, color: string, halo: number, device = dpr, size = 0, ref = WEEK_REF, cap = Infinity) => {
       if (!list.length) return;
       g.setTransform(device, 0, 0, device, 0, 0);
-      const cell = step * scale; // px of the target
+      // px of the target; in a close-up a cell would grow into a disc, so it is capped: a detection
+      // is a point, never an area
+      const cell = Math.min(step * scale, cap);
       const lr = Math.log(ref + 1);
       const weight = (n: number) => Math.min(1, Math.log((n || 1) + 1) / lr);
       const glow = sprite('glow:' + color, [[0, color], [0.25, color + 'aa'], [1, color + '00']]);

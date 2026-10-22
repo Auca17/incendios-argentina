@@ -25,10 +25,10 @@ export const MORE_PROVINCES = ['Formosa', 'Chaco', 'Santiago del Estero', 'Salta
 export type Section = { id: string; kind: Kind; vh: number; story?: number };
 
 /*
- * Scroll length of each story: enough to read the pod and watch the weeks, no more. Chubut is longer
- * because the illustrated air drop plays after its fire (lib/airScene.ts).
+ * Scroll length of each story: enough to read the pod and watch the weeks, no more. Chubut
+ * and Mendoza are longer: their illustrated scenes play inside them (lib/scenes.ts).
  */
-const STORY_VH: Record<string, number> = { chubut: 240 };
+const STORY_VH: Record<string, number> = { mendoza: 230, chubut: 260 };
 
 export const SECTIONS: Section[] = [
   { id: 'sec-opening', kind: 'opening', vh: 130 },

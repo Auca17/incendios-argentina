@@ -1,8 +1,9 @@
-import { DROP, PATH } from './airScene';
+import { DROP, ROUTE, ROUTE_N } from './airScene';
 
 /*
- * Illustrated layer of the Chubut scene, drawn on its own canvas above the map: fire, smoke, an air
- * tanker with its shadow, and the water it drops. Seen from above, like the map, with depth from
+ * Illustrated layer of the story scenes, drawn on its own canvas above the map. This file holds the
+ * shared pieces (fire sites, fire, smoke, the lens) and the Chubut scene: an air tanker with its
+ * shadow, its route, and the water it drops (lib/fxGround.ts holds the Mendoza ground crew). Seen from above, like the map, with depth from
  * shadows and altitude (the plane flies up and to the left of its shadow, toward the light of the
  * relief, which comes from the north-west).
  *
@@ -10,26 +11,29 @@ import { DROP, PATH } from './airScene';
  * is the flicker of the flames, the embers and the drift of the smoke, driven by `time`, which is
  * frozen under reduced motion (and in the visual tests).
  */
-type Proj = (lon: number, lat: number) => [number, number];
+export type Proj = (lon: number, lat: number) => [number, number];
 type Cells = [number, number, number, number][];
 
-const hash = (i: number) => {
+export const hash = (i: number) => {
   const s = Math.sin(i * 127.1 + 311.7) * 43758.5453;
   return s - Math.floor(s);
 };
-const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
+export const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
 
 /*
  * Fire sites: the places where the detections of the episode piled up, one per cluster of cells.
  * Each site keeps its detections per week, so its fire can rise and fall with the weeks.
  */
 export type Site = { lon: number; lat: number; weeks: number[]; seed: number };
-export type Sites = { list: Site[]; ref: number };
+export type Sites = { list: Site[]; ref: number; w0: number };
 
-export function fireSites(cells: Cells, lastWeek: number, max = 8, gap = 0.16): Sites {
+/** Sites from the cells of weeks [w0, w1), optionally only inside a box (minLon, maxLon, minLat, maxLat). */
+export function fireSites(cells: Cells, w0: number, w1: number, max = 8, gap = 0.16, box?: number[], share = 0.05): Sites {
+  const inside = (lon: number, lat: number, wk: number) =>
+    wk >= w0 && wk < w1 && (!box || (lon >= box[0] && lon <= box[1] && lat >= box[2] && lat <= box[3]));
   const acc = new Map<string, [number, number, number]>();
   for (const [lon, lat, wk, n] of cells) {
-    if (wk >= lastWeek) continue;
+    if (!inside(lon, lat, wk)) continue;
     const k = lon + ',' + lat;
     const c = acc.get(k);
     if (c) c[2] += n; else acc.set(k, [lon, lat, n]);
@@ -37,35 +41,35 @@ export function fireSites(cells: Cells, lastWeek: number, max = 8, gap = 0.16): 
   const all = [...acc.values()].sort((a, b) => b[2] - a[2]);
   const list: Site[] = [];
   for (const [lon, lat, n] of all) {
-    if (list.length >= max || n < all[0][2] * 0.05) break;
+    if (list.length >= max || n < all[0][2] * share) break;
     if (list.some((s) => Math.hypot((s.lon - lon) * 0.74, s.lat - lat) < gap)) continue;
-    list.push({ lon, lat, weeks: new Array(lastWeek).fill(0), seed: list.length + 1 });
+    list.push({ lon, lat, weeks: new Array(w1 - w0).fill(0), seed: list.length + 1 });
   }
   // every cell feeds its nearest site (within reach), week by week
   for (const [lon, lat, wk, n] of cells) {
-    if (wk >= lastWeek) continue;
+    if (!inside(lon, lat, wk)) continue;
     let best: Site | null = null, bd = gap * 1.2;
     for (const s of list) {
       const d = Math.hypot((s.lon - lon) * 0.74, s.lat - lat);
       if (d < bd) { bd = d; best = s; }
     }
-    if (best) best.weeks[wk] += n;
+    if (best) best.weeks[wk - w0] += n;
   }
   let ref = 1;
   for (const s of list) for (const v of s.weeks) if (v > ref) ref = v;
-  return { list, ref };
+  return { list, ref, w0 };
 }
 
 /** Strength of a site at the continuous week wf (0..1, log scale against the strongest site-week). */
-function strength(s: Site, wf: number, ref: number) {
+export function strength(s: Site, wf: number, sites: Sites) {
   let I = 0;
-  for (let wk = 0; wk < s.weeks.length; wk++) I += s.weeks[wk] * Math.max(0, 1 - Math.abs(wf - (wk + 0.5)));
-  return I <= 0 ? 0 : Math.log(I + 1) / Math.log(ref + 1);
+  for (let wk = 0; wk < s.weeks.length; wk++) I += s.weeks[wk] * Math.max(0, 1 - Math.abs(wf - (sites.w0 + wk + 0.5)));
+  return I <= 0 ? 0 : Math.log(I + 1) / Math.log(sites.ref + 1);
 }
 
 /** Sprite cache: soft round blobs of one colour. */
 const blobs = new Map<string, HTMLCanvasElement>();
-function blob(color: string, mid = 0.45): HTMLCanvasElement {
+export function blob(color: string, mid = 0.45): HTMLCanvasElement {
   const key = color + mid;
   let c = blobs.get(key);
   if (!c) {
@@ -82,7 +86,7 @@ function blob(color: string, mid = 0.45): HTMLCanvasElement {
   }
   return c;
 }
-const stamp = (g: CanvasRenderingContext2D, img: HTMLCanvasElement, x: number, y: number, rx: number, ry = rx) =>
+export const stamp = (g: CanvasRenderingContext2D, img: HTMLCanvasElement, x: number, y: number, rx: number, ry = rx) =>
   g.drawImage(img, x - rx, y - ry, 2 * rx, 2 * ry);
 
 /*
@@ -185,28 +189,41 @@ function fire(g: CanvasRenderingContext2D, x: number, y: number, h: number, s: n
   g.globalAlpha = ga;
 }
 
-/* ---------- the plane's track: a cubic curve in screen space ---------- */
-type Track = { p: [number, number][] };
-const bez = (T: Track, s: number): [number, number] => {
-  const [a, b, c, d] = T.p, m = 1 - s;
-  return [
-    m * m * m * a[0] + 3 * m * m * s * b[0] + 3 * m * s * s * c[0] + s * s * s * d[0],
-    m * m * m * a[1] + 3 * m * m * s * b[1] + 3 * m * s * s * c[1] + s * s * s * d[1],
-  ];
+/* ---------- the route, projected to the screen every frame (it follows the camera exactly) ---------- */
+type Route = { x: Float32Array; y: Float32Array };
+const project = (proj: Proj): Route => {
+  const x = new Float32Array(ROUTE_N + 1), y = new Float32Array(ROUTE_N + 1);
+  ROUTE.forEach(([lon, lat], i) => { const p = proj(lon, lat); x[i] = p[0]; y[i] = p[1]; });
+  return { x, y };
 };
-const heading = (T: Track, s: number) => {
-  const [x0, y0] = bez(T, Math.max(0, s - 0.005)), [x1, y1] = bez(T, Math.min(1, s + 0.005));
+const at = (R: Route, s: number): [number, number] => {
+  const v = clamp01(s) * ROUTE_N, i = Math.min(ROUTE_N - 1, Math.floor(v)), f = v - i;
+  return [R.x[i] + (R.x[i + 1] - R.x[i]) * f, R.y[i] + (R.y[i + 1] - R.y[i]) * f];
+};
+const heading = (R: Route, s: number) => {
+  const [x0, y0] = at(R, s - 0.004), [x1, y1] = at(R, s + 0.004);
   return Math.atan2(y1 - y0, x1 - x0);
 };
 /** Roll of the plane from how fast it turns (radians, + = right wing down). */
-const roll = (T: Track, s: number) => {
-  let d = heading(T, Math.min(1, s + 0.04)) - heading(T, Math.max(0, s - 0.04));
+const roll = (R: Route, s: number) => {
+  let d = heading(R, s + 0.015) - heading(R, s - 0.015);
   if (d > Math.PI) d -= 2 * Math.PI;
   if (d < -Math.PI) d += 2 * Math.PI;
-  return Math.max(-0.55, Math.min(0.55, d * 1.6));
+  return Math.max(-0.55, Math.min(0.55, d * 1.4));
 };
 /** Altitude factor: it comes down for the drop and climbs away after it. */
-const altitude = (s: number) => 1 - 0.42 * clamp01((s - DROP[0] + 0.12) / 0.12) * (1 - clamp01((s - DROP[1]) / 0.14));
+const altitude = (s: number) => 1 - 0.42 * clamp01((s - DROP[0] + 0.05) / 0.05) * (1 - clamp01((s - DROP[1]) / 0.06));
+/** Trace the route between s0 and s1 as one path. */
+const trace = (g: CanvasRenderingContext2D, R: Route, s0: number, s1: number) => {
+  if (s1 <= s0) return false;
+  const [x0, y0] = at(R, s0);
+  g.beginPath();
+  g.moveTo(x0, y0);
+  for (let i = Math.ceil(s0 * ROUTE_N); i < s1 * ROUTE_N; i++) g.lineTo(R.x[i], R.y[i]);
+  const [x1, y1] = at(R, s1);
+  g.lineTo(x1, y1);
+  return true;
+};
 
 export type FxInput = {
   proj: Proj;
@@ -218,20 +235,22 @@ export type FxInput = {
   zoom: number;
   wf: number;
   plane: number;
-  show: number;
+  routeIn: number;
+  routeDim: number;
+  ill: number;
   sites: Sites;
   time: number;
   /** Reduced motion: the plane is a still picture over the fire line and no water falls. */
   reduced?: boolean;
 };
 
-/** Seeded water particles: track position of release, lateral offset (fraction of span), size. */
+/** Seeded water particles: route position of release, lateral offset (fraction of span), size. */
 const DROPS = Array.from({ length: 240 }, (_, i) => ({
   s: DROP[0] + (DROP[1] - DROP[0]) * hash(i + 3),
   side: (hash(i + 401) - 0.5) * 0.9,
   r: 0.5 + hash(i + 977) * 0.9,
 }));
-const FALL = 0.07; // track length a drop takes to reach the ground
+const FALL = 0.025; // route length a drop takes to reach the ground
 
 export function drawFx(g: CanvasRenderingContext2D, f: FxInput) {
   g.setTransform(f.dpr, 0, 0, f.dpr, 0, 0);
@@ -239,38 +258,30 @@ export function drawFx(g: CanvasRenderingContext2D, f: FxInput) {
   if (f.zoom <= 0.001) return;
   const z = f.zoom;
   const span = Math.min(150, Math.max(72, 0.16 * Math.min(f.band[1] - f.band[0], f.h))); // wingspan, px
-  const T: Track = { p: PATH.map(([lon, lat]) => f.proj(lon, lat)) };
-  const normal = (s: number): [number, number] => { const a = heading(T, s); return [-Math.sin(a), Math.cos(a)]; };
+  const R = project(f.proj);
+  const normal = (s: number): [number, number] => { const a = heading(R, s); return [-Math.sin(a), Math.cos(a)]; };
   // from the ground point up to the plane, toward the light (north-west)
   const lift = (s: number): [number, number] => { const a = span * 0.62 * altitude(s); return [-0.55 * a, -0.8 * a]; };
+  const flying = !f.reduced && f.plane > 0 && f.plane < 1;
 
-  // a slow vignette and a fine grain: the close-up reads as a lens on a printed plate
-  const cx = (f.band[0] + f.band[1]) / 2, cy = f.h / 2;
-  const vg = g.createRadialGradient(cx, cy, Math.min(f.w, f.h) * 0.25, cx, cy, Math.max(f.w, f.h) * 0.75);
-  vg.addColorStop(0, 'rgba(5, 4, 3, 0)');
-  vg.addColorStop(1, `rgba(5, 4, 3, ${(0.55 * z).toFixed(3)})`);
-  g.fillStyle = vg;
-  g.fillRect(0, 0, f.w, f.h);
-  g.globalAlpha = 0.2 * z;
-  g.globalCompositeOperation = 'overlay';
-  g.fillStyle = g.createPattern(grain(), 'repeat')!;
-  g.fillRect(0, 0, f.w, f.h);
-  g.globalAlpha = 1;
-  g.globalCompositeOperation = 'source-over';
+  lens(g, f.w, f.h, f.band, z);
 
   // each site: its strength this week, and how much water reached it (place along the drop, distance)
   const sites = f.sites.list.map((st) => {
     const [x, y] = f.proj(st.lon, st.lat);
     let best = 0, bd = Infinity;
-    for (let i = 0; i <= 40; i++) {
-      const s = i / 40, [px, py] = bez(T, s), d = Math.hypot(px - x, py - y);
-      if (d < bd) { bd = d; best = s; }
+    for (let i = 0; i <= ROUTE_N; i += 2) {
+      const d = Math.hypot(R.x[i] - x, R.y[i] - y);
+      if (d < bd) { bd = d; best = i / ROUTE_N; }
     }
-    let douse = 0;
-    if (best >= DROP[0] - 0.03 && best <= DROP[1] + 0.03 && bd < span * 0.7) {
-      douse = clamp01((f.plane - best - FALL * 0.6) / 0.12) * (1 - 0.5 * clamp01(bd / span - 0.3));
+    let knock = 0, wetting = 0;
+    if (best >= DROP[0] - 0.01 && best <= DROP[1] + 0.01 && bd < span * 0.7) {
+      // knocked down when the water lands, then it partly recovers: one drop does not put a fire out
+      const hit = clamp01((f.plane - best - FALL * 0.6) / 0.04), back = clamp01((f.plane - best - 0.12) / 0.2);
+      knock = hit * (1 - 0.45 * back) * (1 - 0.5 * clamp01(bd / span - 0.3));
+      wetting = hit * (1 - clamp01((f.plane - best - 0.06) / 0.05));
     }
-    return { st, x, y, s: strength(st, f.wf, f.sites.ref), douse };
+    return { x, y, seed: st.seed, s: strength(st, f.wf, f.sites), douse: knock, wetting };
   });
 
   // 1. wet ground: water darkens and cools the land where the load landed
@@ -279,14 +290,132 @@ export function drawFx(g: CanvasRenderingContext2D, f: FxInput) {
   for (const p of DROPS) {
     const age = (f.plane - p.s) / FALL;
     if (age <= 1) continue;
-    const [gx, gy] = bez(T, p.s), [nx, ny] = normal(p.s);
+    const [gx, gy] = at(R, p.s), [nx, ny] = normal(p.s);
     const off = p.side * Math.abs(p.side) * 2 * span; // most water near the line, a ragged fringe
     g.globalAlpha = z * 0.16 * Math.min(1, (age - 1) * 2) * (1 - Math.abs(p.side));
     stamp(g, wet, gx + nx * off, gy + ny * off, span * 0.16 * p.r);
   }
   g.globalCompositeOperation = 'source-over';
 
-  // 2. glow on the ground and rising embers, then the fire
+  // 2. the route: a cartographic annotation. A faint dashed line drawn ahead (with a dark casing so
+  // it reads on any terrain), small chevrons for the direction, the flown part in warm amber and a
+  // short bright wake right behind the plane.
+  const ra = z * f.routeDim;
+  if (f.routeIn > 0) {
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    if (trace(g, R, 0, f.routeIn)) {
+      g.globalAlpha = ra * 0.55;
+      g.strokeStyle = 'rgba(10, 6, 3, 0.8)';
+      g.lineWidth = 4;
+      g.stroke();
+      g.globalAlpha = ra * 0.85;
+      g.setLineDash([7, 7]);
+      g.strokeStyle = 'rgba(255, 236, 208, 0.75)';
+      g.lineWidth = 1.6;
+      g.stroke();
+      g.setLineDash([]);
+    }
+    for (let s = 0.05; s < f.routeIn - 0.02; s += 0.07) {
+      if (s < f.plane + 0.02) continue;
+      const [x, y] = at(R, s);
+      g.save();
+      g.translate(x, y);
+      g.rotate(heading(R, s));
+      g.globalAlpha = ra * 0.8;
+      g.strokeStyle = 'rgba(255, 226, 180, 0.9)';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(-4, -4.5);
+      g.lineTo(1.5, 0);
+      g.lineTo(-4, 4.5);
+      g.stroke();
+      g.restore();
+    }
+    const flown = f.reduced ? Math.min(f.plane, (DROP[0] + DROP[1]) / 2) : f.plane;
+    if (trace(g, R, 0, flown)) {
+      g.globalAlpha = ra * 0.35;
+      g.globalCompositeOperation = 'lighter';
+      g.strokeStyle = '#ff9a3a';
+      g.lineWidth = 7;
+      g.stroke();
+      g.globalCompositeOperation = 'source-over';
+      g.globalAlpha = ra;
+      g.strokeStyle = '#ffb24a';
+      g.lineWidth = 2.4;
+      g.stroke();
+    }
+    if (flying) {
+      // the wake: brighter and wider just behind the plane, fading back along the route
+      for (let k = 0; k < 6; k++) {
+        const s1 = f.plane - k * 0.008, s0 = s1 - 0.008;
+        if (!trace(g, R, Math.max(0, s0), Math.max(0, s1))) continue;
+        g.globalAlpha = ra * (1 - k / 6) * 0.9;
+        g.strokeStyle = '#fff1c4';
+        g.lineWidth = 3.2 - k * 0.3;
+        g.stroke();
+      }
+    }
+    g.globalAlpha = 1;
+  }
+
+  // 3. the fires, their smoke and the steam where the water lands
+  drawFires(g, sites, z, span, f.time);
+
+  // 5. falling water: released from the plane's belly, it keeps some speed, spreads and falls
+  const fall = blob('214, 232, 242', 0.35);
+  if (flying) {
+    for (const p of DROPS) {
+      const age = (f.plane - p.s) / FALL;
+      if (age <= 0 || age > 1.25) continue;
+      const a = Math.min(1, age), e = 1 - (1 - a) * (1 - a);
+      const [gx, gy] = at(R, p.s), [nx, ny] = normal(p.s), [lx, ly] = lift(p.s);
+      const ha = heading(R, p.s), fwd = span * 0.5 * a * (1 - 0.5 * a);
+      const spread = p.side * span * (0.2 + 0.95 * e);
+      const x = gx + lx * (1 - e) + nx * spread + Math.cos(ha) * fwd;
+      const y = gy + ly * (1 - e) + ny * spread + Math.sin(ha) * fwd;
+      g.globalAlpha = z * 0.6 * (age > 1 ? (1.25 - age) / 0.25 : 1) * (0.5 + 0.5 * (1 - a));
+      stamp(g, fall, x, y, span * 0.06 * p.r * (1 + 1.9 * e));
+    }
+  }
+
+  // 6. shadow on the terrain, then the aircraft. It is drawn whenever it is on the route: the route
+  // starts and ends outside the frame, so it flies in and out instead of fading. Under reduced
+  // motion it is a still picture over the drop, shown while the illustration note is.
+  const sp = f.reduced ? (DROP[0] + DROP[1]) / 2 : f.plane;
+  if (flying || (f.reduced && f.ill > 0.5)) {
+    const [gx, gy] = at(R, sp), [lx, ly] = lift(sp);
+    const ang = heading(R, sp), rl = f.reduced ? 0 : roll(R, sp);
+    const dropping = flying && f.plane > DROP[0] && f.plane < DROP[1];
+    g.globalAlpha = z;
+    plane(g, gx, gy, span * 0.98, ang, rl, true, false);
+    plane(g, gx + lx, gy + ly, span * (1 + 0.08 * (altitude(sp) - 0.58)), ang, rl, false, dropping);
+  }
+  g.globalAlpha = 1;
+}
+
+/** A vignette and a fine grain: the close-up reads as a lens on a printed plate. */
+export function lens(g: CanvasRenderingContext2D, w: number, h: number, band: [number, number], z: number) {
+  const cx = (band[0] + band[1]) / 2, cy = h / 2;
+  const vg = g.createRadialGradient(cx, cy, Math.min(w, h) * 0.25, cx, cy, Math.max(w, h) * 0.75);
+  vg.addColorStop(0, 'rgba(5, 4, 3, 0)');
+  vg.addColorStop(1, `rgba(5, 4, 3, ${(0.55 * z).toFixed(3)})`);
+  g.fillStyle = vg;
+  g.fillRect(0, 0, w, h);
+  g.globalAlpha = 0.2 * z;
+  g.globalCompositeOperation = 'overlay';
+  g.fillStyle = g.createPattern(grain(), 'repeat')!;
+  g.fillRect(0, 0, w, h);
+  g.globalAlpha = 1;
+  g.globalCompositeOperation = 'source-over';
+}
+
+/** A fire to draw: screen position, strength (0..1), seed, how knocked down it is and its steam. */
+export type FireItem = { x: number; y: number; s: number; seed: number; douse: number; wetting: number };
+
+/** Glow on the ground and rising embers, the fires, then smoke drifting east and white steam. */
+export function drawFires(g: CanvasRenderingContext2D, sites: FireItem[], z: number, span: number, time: number) {
+  const f = { time };
   const glow = blob('255, 104, 36', 0.3);
   const spark = blob('255, 200, 120', 0.2);
   const lean = 0.32; // the westerlies push the flames east
@@ -299,22 +428,22 @@ export function drawFx(g: CanvasRenderingContext2D, f: FxInput) {
     g.globalAlpha = z * 0.55 * k;
     stamp(g, glow, c.x + h * 0.15, c.y - h * 0.1, h * (1.4 + 1.2 * c.s), h * (0.9 + 0.6 * c.s));
     for (let j = 0; j < 2 + Math.round(4 * c.s); j++) {
-      const a = (f.time * 0.4 + hash(c.st.seed * 7 + j)) % 1;
+      const a = (f.time * 0.4 + hash(c.seed * 7 + j)) % 1;
       g.globalAlpha = z * k * (1 - a);
-      stamp(g, spark, c.x + (hash(c.st.seed * 3 + j) - 0.4) * h + a * h * 0.9, c.y - h * (0.5 + 1.8 * a), 1.4 + 1.4 * (1 - a));
+      stamp(g, spark, c.x + (hash(c.seed * 3 + j) - 0.4) * h + a * h * 0.9, c.y - h * (0.5 + 1.8 * a), 1.4 + 1.4 * (1 - a));
     }
   }
   g.globalCompositeOperation = 'source-over';
   for (const c of sites) {
     const vis = clamp01((c.s - 0.08) / 0.12);
     if (vis <= 0) continue;
-    // under the water the fire is knocked flat and pushed back, down to embers
+    // under the water the fire is knocked flat and pushed back, then partly comes back
     const knock = c.douse;
     g.globalAlpha = z * vis * (1 - 0.55 * knock);
-    fire(g, c.x, c.y, fireH(c.s) * (1 - 0.72 * knock), c.s * (1 - 0.6 * knock), c.st.seed, f.time, lean + 0.5 * knock);
+    fire(g, c.x, c.y, fireH(c.s) * (1 - 0.72 * knock), c.s * (1 - 0.6 * knock), c.seed, f.time, lean + 0.5 * knock);
   }
 
-  // 3. smoke drifting east from each fire; white steam where the water hits it
+  // smoke drifting east from each fire; white steam where the water hits it
   const smoke = blob('104, 96, 90', 0.5);
   const steam = blob('236, 240, 242', 0.5);
   for (const c of sites) {
@@ -322,50 +451,22 @@ export function drawFx(g: CanvasRenderingContext2D, f: FxInput) {
     const k = c.s * (1 - 0.7 * c.douse);
     const h = fireH(c.s);
     for (let j = 0; j < 8; j++) {
-      const a = (j + ((f.time * 0.16 + hash(c.st.seed)) % 1)) / 8; // 0 at the fire, 1 at the plume's end
-      const px = c.x + h * 0.4 + a * span * (1 + 1.4 * c.s) + Math.sin(a * 5 + c.st.seed) * span * 0.08;
+      const a = (j + ((f.time * 0.16 + hash(c.seed)) % 1)) / 8; // 0 at the fire, 1 at the plume's end
+      const px = c.x + h * 0.4 + a * span * (1 + 1.4 * c.s) + Math.sin(a * 5 + c.seed) * span * 0.08;
       const py = c.y - h * 0.9 - a * span * 0.3;
       g.globalAlpha = z * 0.36 * k * Math.sin(Math.PI * Math.min(1, a * 1.1));
       stamp(g, smoke, px, py, span * (0.1 + 0.32 * a) * (0.6 + 0.6 * c.s));
     }
-    const d = c.douse;
-    if (d > 0 && d < 1) {
+    const d = c.wetting;
+    if (d > 0) {
       for (let j = 0; j < 6; j++) {
         const a = (j / 6 + d * 0.6) % 1;
-        g.globalAlpha = z * Math.min(1, 4 * d * (1 - d)) * 0.75 * (1 - a);
-        stamp(g, steam, c.x + (hash(c.st.seed * 9 + j) - 0.3) * span * 0.35 + a * span * 0.3, c.y - span * (0.08 + 0.45 * a), span * (0.09 + 0.16 * a));
+        g.globalAlpha = z * Math.min(1, 4 * d * (1 - d) + 0.2 * d) * 0.75 * (1 - a);
+        stamp(g, steam, c.x + (hash(c.seed * 9 + j) - 0.3) * span * 0.35 + a * span * 0.3, c.y - span * (0.08 + 0.45 * a), span * (0.09 + 0.16 * a));
       }
     }
   }
 
-  if (f.show <= 0.001 || (!f.reduced && (f.plane <= 0 || f.plane >= 1))) { g.globalAlpha = 1; return; }
-  const sp = f.reduced ? (DROP[0] + DROP[1]) / 2 : f.plane;
-
-  // 4. falling water: released from the plane's belly, it keeps some speed, spreads and falls
-  const fall = blob('214, 232, 242', 0.35);
-  if (!f.reduced) {
-    for (const p of DROPS) {
-      const age = (f.plane - p.s) / FALL;
-      if (age <= 0 || age > 1.25) continue;
-      const a = Math.min(1, age), e = 1 - (1 - a) * (1 - a);
-      const [gx, gy] = bez(T, p.s), [nx, ny] = normal(p.s), [lx, ly] = lift(p.s);
-      const ha = heading(T, p.s), fwd = span * 0.5 * a * (1 - 0.5 * a);
-      const spread = p.side * span * (0.2 + 0.95 * e);
-      const x = gx + lx * (1 - e) + nx * spread + Math.cos(ha) * fwd;
-      const y = gy + ly * (1 - e) + ny * spread + Math.sin(ha) * fwd;
-      g.globalAlpha = f.show * z * 0.6 * (age > 1 ? (1.25 - age) / 0.25 : 1) * (0.5 + 0.5 * (1 - a));
-      stamp(g, fall, x, y, span * 0.06 * p.r * (1 + 1.9 * e));
-    }
-  }
-
-  // 5. shadow on the terrain, then the aircraft (banking into the turn, lower during the drop)
-  const [gx, gy] = bez(T, sp), [lx, ly] = lift(sp);
-  const ang = heading(T, sp), rl = f.reduced ? 0 : roll(T, sp);
-  const dropping = !f.reduced && f.plane > DROP[0] && f.plane < DROP[1];
-  g.globalAlpha = f.show * z;
-  plane(g, gx, gy, span * 0.98, ang, rl, true, false);
-  plane(g, gx + lx, gy + ly, span * (1 + 0.08 * (altitude(sp) - 0.58)), ang, rl, false, dropping);
-  g.globalAlpha = 1;
 }
 
 let GRAIN: HTMLCanvasElement | null = null;
