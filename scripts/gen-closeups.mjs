@@ -1,7 +1,7 @@
 // Detailed relief for the scene close-ups (El Challao, Epuyén), in the same atlas palette as the
 // continental relief (scripts/gen-map-assets.mjs).
 //
-//   node scripts/gen-closeups.mjs
+//   node scripts/gen-closeups.mjs [area ids]
 //
 // Source: Terrain Tiles on AWS Open Data (s3://elevation-tiles-prod, "terrarium" PNG tiles, web
 // mercator). For Argentina they come from SRTM and GMTED2010 (courtesy of the U.S. Geological
@@ -20,9 +20,14 @@ const OUT = path.join(ROOT, 'public', 'map');
 
 // box: minLon, maxLon, minLat, maxLat (a little larger than the scene's close-up); ppd: output px
 // per degree; z: tile zoom (enough source detail for ppd)
+// zf: vertical exaggeration (flat wetlands and islands need more to show their channels)
 const AREAS = [
-  { id: 'challao', box: [-70.6, -67.4, -34.2, -31.9], ppd: 800, z: 11 },
-  { id: 'epuyen', box: [-73.6, -69.5, -43.8, -41.0], ppd: 420, z: 10 },
+  { id: 'challao', box: [-70.6, -67.4, -34.2, -31.9], ppd: 800, z: 11, zf: 1.6 },
+  { id: 'epuyen', box: [-73.6, -69.5, -43.8, -41.0], ppd: 420, z: 10, zf: 1.6 },
+  { id: 'yaboti', box: [-55.0, -53.2, -27.8, -26.2], ppd: 480, z: 10, zf: 2.5 },
+  { id: 'ibera', box: [-58.9, -55.5, -29.7, -26.8], ppd: 300, z: 9, zf: 8 },
+  { id: 'sierras', box: [-65.9, -63.5, -33.8, -29.9], ppd: 340, z: 9, zf: 2 },
+  { id: 'delta', box: [-61.5, -58.8, -34.4, -31.9], ppd: 340, z: 9, zf: 10 },
 ];
 
 // the atlas ramp of gen-map-assets.mjs (hillshade 0..1 -> r, g, b), as straight segments
@@ -53,7 +58,8 @@ async function tile(z, x, y) {
   return h;
 }
 
-for (const A of AREAS) {
+const ONLY = process.argv.slice(2);
+for (const A of AREAS.filter((a) => !ONLY.length || ONLY.includes(a.id))) {
   const [lon0, lon1, lat0, lat1] = A.box, z = A.z;
   const x0 = Math.floor(tileX(lon0, z)), x1 = Math.floor(tileX(lon1, z));
   const y0 = Math.floor(tileY(lat1, z)), y1 = Math.floor(tileY(lat0, z));
@@ -86,7 +92,7 @@ for (const A of AREAS) {
   }
   // hillshade: sun from the north-west (azimuth 315), 45 degrees high, like the continental relief
   const mPerPxY = 111320 / A.ppd, mPerPxX = mPerPxY * Math.cos((((lat0 + lat1) / 2) * Math.PI) / 180);
-  const zf = 1.6; // a little exaggeration so the foothills read at this scale
+  const zf = A.zf;
   const azMath = ((360 - 315 + 90) * Math.PI) / 180, alt = (45 * Math.PI) / 180; // ESRI convention
   const rgba = Buffer.alloc(W * H * 4);
   const feather = Math.round(Math.min(W, H) * 0.08);

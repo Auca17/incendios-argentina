@@ -413,8 +413,11 @@ export function lens(g: CanvasRenderingContext2D, w: number, h: number, band: [n
 /** A fire to draw: screen position, strength (0..1), seed, how knocked down it is and its steam. */
 export type FireItem = { x: number; y: number; s: number; seed: number; douse: number; wetting: number };
 
-/** Glow on the ground and rising embers, the fires, then smoke drifting east and white steam. */
-export function drawFires(g: CanvasRenderingContext2D, sites: FireItem[], z: number, span: number, time: number) {
+/**
+ * Glow on the ground and rising embers, the fires, then smoke and white steam. The smoke drifts east
+ * with the westerlies unless `wind` gives each fire its own direction (a unit vector on screen).
+ */
+export function drawFires(g: CanvasRenderingContext2D, sites: FireItem[], z: number, span: number, time: number, wind?: (c: FireItem) => [number, number]) {
   const f = { time };
   const glow = blob('255, 104, 36', 0.3);
   const spark = blob('255, 200, 120', 0.2);
@@ -452,8 +455,10 @@ export function drawFires(g: CanvasRenderingContext2D, sites: FireItem[], z: num
     const h = fireH(c.s);
     for (let j = 0; j < 8; j++) {
       const a = (j + ((f.time * 0.16 + hash(c.seed)) % 1)) / 8; // 0 at the fire, 1 at the plume's end
-      const px = c.x + h * 0.4 + a * span * (1 + 1.4 * c.s) + Math.sin(a * 5 + c.seed) * span * 0.08;
-      const py = c.y - h * 0.9 - a * span * 0.3;
+      const [wx, wy] = wind ? wind(c) : [1, 0];
+      const reach = a * span * (1 + 1.4 * c.s);
+      const px = c.x + h * 0.4 * wx + reach * wx + Math.sin(a * 5 + c.seed) * span * 0.08;
+      const py = c.y - h * 0.9 + reach * wy - a * span * 0.3;
       g.globalAlpha = z * 0.36 * k * Math.sin(Math.PI * Math.min(1, a * 1.1));
       stamp(g, smoke, px, py, span * (0.1 + 0.32 * a) * (0.6 + 0.6 * c.s));
     }

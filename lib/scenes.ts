@@ -4,6 +4,8 @@ import { AIR_STORY, EPISODE_WEEKS, HOTSPOT, airScene } from './airScene';
 import { CHALLAO_NARROW, CHALLAO_WIDE, GROUND_STORY, groundScene } from './groundScene';
 import { drawFx, fireSites, type Proj, type Sites } from './fx';
 import { drawGround } from './fxGround';
+import { STORIES, storyState } from './storyScenes';
+import { drawStory } from './fxStories';
 
 /*
  * The story scenes, one per story that has one. Each is a pure function of the story's progress u
@@ -72,7 +74,23 @@ const mendoza: Scene = {
   notes: { flames: FLAMES_NOTE, ill: ['Ilustración.', ' Brigadistas del Plan Provincial de Manejo del Fuego combatieron este incendio; la escena no reproduce una operación concreta.'] },
 };
 
-export const SCENES: Record<string, Scene> = { [AIR_STORY]: chubut, [GROUND_STORY]: mendoza };
+/** Misiones, Corrientes, Córdoba and Delta, built from their data in lib/storyScenes.ts. */
+const lighter = Object.fromEntries(STORIES.map((c): [string, Scene] => [c.id, {
+  box: (w) => (w < 1024 ? c.narrow : c.box),
+  relief: c.relief,
+  frame: (u, reduced) => {
+    const st = storyState(c, u, reduced);
+    return {
+      zoom: st.zoom, pan: st.pan, ill: 0, flames: st.zoom > 0.5 && st.ill > 0.5, balance: false,
+      draw: (g, d, sites) => drawStory(g, { ...d, cfg: c, st, sites }),
+    };
+  },
+  week: (E, u) => (u >= c.full ? E.weeks : clamp(Math.floor(storyState(c, u).wf) + 1, 1, E.weeks)),
+  sites: (E) => fireSites(E.cells, c.sites.w0, c.sites.w1, c.sites.max, c.sites.gap, c.sites.box),
+  notes: { flames: c.note, ill: c.note },
+}]));
+
+export const SCENES: Record<string, Scene> = { ...lighter, [AIR_STORY]: chubut, [GROUND_STORY]: mendoza };
 
 /** Week shown in a story (the map draws the weeks before it). */
 export function storyWeek(id: string, E: Foci, u: number): number {
