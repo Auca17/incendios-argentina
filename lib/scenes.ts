@@ -42,7 +42,7 @@ export type Scene = {
   notes: { flames: [string, string]; ill: [string, string]; cine?: [string, string] };
 };
 
-const FLAMES_NOTE: [string, string] = ['Las llamas', ' marcan dónde se acumularon más focos de calor. No miden superficie quemada.'];
+const FLAMES_NOTE: [string, string] = ['Llamas:', ' donde se acumularon más focos.'];
 
 const chubut: Scene = {
   box: () => HOTSPOT,
@@ -59,8 +59,8 @@ const chubut: Scene = {
   sites: (E) => fireSites(E.cells, 0, EPISODE_WEEKS),
   notes: {
     flames: FLAMES_NOTE,
-    ill: ['Ilustración.', ' Aviones hidrantes combatieron este incendio; esta pasada no reproduce una operación concreta.'],
-    cine: ['Recreación ilustrada.', ' Un bosque andino en llamas, no una imagen real de Epuyén. Los datos vuelven con el mapa.'],
+    ill: ['Ilustración.', ' En este incendio trabajaron aviones hidrantes.'],
+    cine: ['Recreación ilustrada,', ' no una imagen de Epuyén.'],
   },
 };
 
@@ -79,7 +79,7 @@ const mendoza: Scene = {
   // cell east of it, in the city, has detections almost every week of the year (a steady heat
   // source, not this fire): the 10 % share keeps it as a dot on the map but without a flame.
   sites: (E) => fireSites(E.cells, 42, 45, 6, 0.03, CHALLAO_WIDE, 0.1),
-  notes: { flames: FLAMES_NOTE, ill: ['Ilustración.', ' Brigadistas del Plan Provincial de Manejo del Fuego combatieron este incendio; la escena no reproduce una operación concreta.'] },
+  notes: { flames: FLAMES_NOTE, ill: ['Ilustración.', ' El fuego lo combatieron brigadistas del Plan Provincial de Manejo del Fuego.'] },
 };
 
 /** Misiones, Corrientes, Córdoba and Delta, built from their data in lib/storyScenes.ts. */

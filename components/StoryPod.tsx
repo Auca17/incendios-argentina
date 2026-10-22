@@ -36,7 +36,8 @@ export default function StoryPod({ ev, index, total }: Props) {
   return (
     <article className={styles.pod} aria-labelledby={id + 'h'}>
       <p className={styles.label}>
-        <span className={styles.count}>{index + 1}/{total}</span> {ev.region} · {ev.when}
+        {/* the region only when the title does not already name it */}
+        <span className={styles.count}>{index + 1}/{total}</span> {ev.title.includes(ev.region) ? ev.when : `${ev.region} · ${ev.when}`}
       </p>
       <h2 className={styles.title} id={id + 'h'}>{ev.title}</h2>
 
@@ -49,8 +50,8 @@ export default function StoryPod({ ev, index, total }: Props) {
         <p className={styles.num}>
           {fmt(ev.hero.value)} <span className={styles.unit}>{ev.hero.unit === 'hectáreas' ? 'ha' : ev.hero.unit}</span>
         </p>
-        <span className={styles.total}>Total según {ev.hero.src}</span>
         <p className={styles.figLabel}>{cap(ev.hero.unit)} {ev.hero.label}</p>
+        <span className={styles.total}>Fuente: {ev.hero.src}</span>
       </div>
 
       <button
@@ -97,8 +98,7 @@ export default function StoryPod({ ev, index, total }: Props) {
               <MonthChart series={series} provs={ev.months.prov} year={ev.months.year} from={ev.months.from} to={ev.months.to} />
             )}
             <p className={styles.chartNote}>
-              Focos de calor detectados por satélite (NASA FIRMS, VIIRS S-NPP). No son hectáreas quemadas ni
-              incendios forestales: incluyen quemas agrícolas.
+              Focos de calor por mes. NASA FIRMS, satélite VIIRS S-NPP.
             </p>
           </div>
 

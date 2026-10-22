@@ -31,7 +31,8 @@ function label(g: CanvasRenderingContext2D, x: number, y: number, text: string, 
   g.font = `600 13px ${font()}`;
   g.textBaseline = 'middle';
   (g as any).letterSpacing = '0.06em';
-  const tx = city ? x + 9 : x - g.measureText(text).width / 2, ty = city ? y : y;
+  // a city's name goes to the west of its dot (the Delta's fires are east of Rosario)
+  const tx = city ? x - 9 - g.measureText(text).width : x - g.measureText(text).width / 2, ty = y;
   g.lineJoin = 'round';
   g.strokeStyle = 'rgba(8, 6, 4, 0.85)';
   g.lineWidth = 4;

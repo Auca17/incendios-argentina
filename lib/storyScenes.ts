@@ -36,7 +36,7 @@ export type StoryCfg = {
   note: [string, string];
 };
 
-const FLAMES: [string, string] = ['Las llamas', ' marcan dónde se acumularon más focos de calor. No miden superficie quemada.'];
+const FLAMES: [string, string] = ['Llamas:', ' donde se acumularon más focos.'];
 
 export const STORIES: StoryCfg[] = [
   {
@@ -47,7 +47,7 @@ export const STORIES: StoryCfg[] = [
     pace: [[0, 0], [0.28, 26], [0.7, 31.5], [0.86, 34]], full: 0.9,
     sites: { w0: 26, w1: 36, max: 7, gap: 0.12, box: [-54.75, -53.45, -27.55, -26.5] },
     labels: [{ lon: -53.95, lat: -27.05, text: 'Reserva de Biosfera Yabotí', from: 0.3, to: 0.9 }],
-    note: ['Las brasas', ' ilustran lo que cuenta la fuente: los troncos grandes siguieron encendidos por dentro.'],
+    note: ['Brasas:', ' los troncos grandes siguieron ardiendo por dentro.'],
   },
   {
     id: 'corrientes',
@@ -82,7 +82,7 @@ export const STORIES: StoryCfg[] = [
     pace: [[0, 0], [0.26, 28], [0.76, 35], [0.86, 40]], full: 0.9,
     sites: { w0: 26, w1: 40, max: 10, gap: 0.14, box: [-61.1, -59.4, -33.8, -32.35] },
     labels: [{ lon: -60.65, lat: -32.95, text: 'Rosario', from: 0.3, to: 0.92 }],
-    note: ['El humo', ' ilustra cómo llegaba a Rosario. El dato del aire («hasta cinco veces peor que lo tolerable») es de la fuente.'],
+    note: FLAMES,
   },
 ];
 

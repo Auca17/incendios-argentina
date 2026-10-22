@@ -98,11 +98,8 @@ export default function ScrollyExperience() {
         <section id="sec-wide" className={styles.story} style={vh('sec-wide')} aria-labelledby="wide-h">
           <div className={styles.podSlot}>
             <article className={styles.widePod}>
-              <h2 id="wide-h" className={styles.wideTitle}>Las seis historias en el mapa</h2>
-              <p>
-                Los puntos son los focos de calor que detectó el satélite durante cada incendio. No marcan
-                superficie quemada: muestran dónde y cuándo hubo actividad de fuego.
-              </p>
+              <h2 id="wide-h" className={styles.wideTitle}>Las seis, juntas</h2>
+              <p>Selva, esteros, sierras, islas, piedemonte y bosque andino: el fuego no tiene un solo paisaje.</p>
             </article>
           </div>
         </section>

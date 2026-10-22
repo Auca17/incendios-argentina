@@ -16,7 +16,7 @@ export function goToSection(i: number) {
 }
 
 /**
- * Right-hand HUD: one dot per fire (label only on the active one) and a thin progress line. Hidden on
+ * Right-hand HUD: one dot per fire (its name on hover or focus) and a thin progress line. Hidden on
  * the cover and over the closed clouds of the epilogue. Arrow keys left/right move between fires
  * (PgUp/PgDn keep their native scrolling).
  */
@@ -77,7 +77,8 @@ export default function TourHud() {
                   onClick={() => goToSection(FIRST_STORY + i)}
                 >
                   <i aria-hidden="true" />
-                  {on && <span className={styles.label} aria-hidden="true">{ev.region} · {ev.year}</span>}
+                  {/* the name shows on hover or focus: the reading pod already says where we are */}
+                  <span className={styles.label} aria-hidden="true">{ev.region} · {ev.year}</span>
                 </button>
               </li>
             );

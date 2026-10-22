@@ -74,8 +74,8 @@ export default function MoreSection() {
               ))}
             </ol>
             <p className={styles.note}>
-              <span className={styles.keyUntold} /> sin historia · <span className={styles.keyTold} /> con historia. Porcentaje
-              sobre el total del país. Un foco no es una hectárea quemada; incluye quemas agrícolas.
+              <span className={styles.keyUntold} /> sin historia en este recorrido · <span className={styles.keyTold} /> con historia ·
+              porcentaje del total del país
             </p>
           </>
         )}
@@ -94,15 +94,14 @@ export default function MoreSection() {
       <h2 className={pod.title} id="more-h">{r.name}</h2>
       <div className={pod.figure}>
         <p className={pod.num}>{fmt(r.total)} <span className={pod.unit}>focos</span></p>
-        <span className={pod.total}>entre 2012 y 2026, según NASA FIRMS</span>
         <p className={pod.figLabel}>
-          {r.rank}.ª provincia del país: el {pct(r.share)} % de los {fmt(data.national)} focos de Argentina. Su peor año fue{' '}
-          {r.peakYear}, con {fmt(r.peak)}.
+          {r.rank}.ª del país, con el {pct(r.share)} % de todos los focos. Su peor año: {r.peakYear} ({fmt(r.peak)}).
         </p>
+        <span className={pod.total}>2012–2026 · NASA FIRMS</span>
       </div>
       <figure className={styles.months}>
         <figcaption>
-          Cuándo arde: sobre todo en {MESES_L[order[0][1]]} y {MESES_L[order[1][1]]} (focos por mes, 2012 a 2026)
+          Arde sobre todo en {MESES_L[Math.min(order[0][1], order[1][1])]} y {MESES_L[Math.max(order[0][1], order[1][1])]}
         </figcaption>
         <svg viewBox="0 0 288 70" role="img" aria-label={`Focos por mes en ${r.name}, 2012 a 2026`}>
           {r.months.map((v, k) => {

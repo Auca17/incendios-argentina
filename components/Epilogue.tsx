@@ -19,16 +19,11 @@ export default function Epilogue() {
     <article ref={ref} className={styles.epi} aria-labelledby="epi-h">
       <h2 id="epi-h" className={styles.title}>Lo que queda en el mapa</h2>
       <p className={styles.summary}>
-        Bajamos de Misiones a Chubut por seis incendios, entre 2020 y 2026. En cada uno, el mapa mostró semana a
-        semana los focos de calor que vio el satélite. Las hectáreas y las causas las cuentan las fuentes: oficinas
-        de gobierno, una empresa y diarios. En tres casos las fuentes no coinciden, y por eso mostramos las dos.
+        De la selva misionera al bosque de Chubut, seis incendios entre 2020 y 2026. El satélite marcó dónde y cuándo
+        hubo fuego; cuánto se perdió y por qué lo cuentan las fuentes, que no siempre coinciden.
       </p>
 
       <ul className={styles.figures}>
-        <li>
-          <b>2.620.568</b>
-          <span>focos de calor en Argentina entre 2012 y 2026</span>
-        </li>
         <li>
           <b>400.892</b>
           <span>focos en 2020, el año con más focos</span>
@@ -38,11 +33,11 @@ export default function Epilogue() {
           <span>focos durante los seis incendios del recorrido</span>
         </li>
       </ul>
-      <p className={styles.source}>Según los datos de NASA FIRMS (satélite VIIRS S-NPP) que procesamos para este trabajo.</p>
+      <p className={styles.source}>NASA FIRMS, satélite VIIRS S-NPP.</p>
 
       <p className={styles.limits}>
-        Un foco de calor no es una hectárea quemada ni un incendio forestal: también aparecen quemas en el campo, y a
-        veces el satélite se equivoca.
+        Un foco es un punto caliente visto desde el espacio: a veces un incendio, a veces una quema en el campo, a veces
+        un error del satélite.
       </p>
 
       <div className={styles.actions}>

@@ -143,7 +143,6 @@ export default function ExploreSection() {
         </div>
       )}
 
-      <p className={styles.note}>Un foco de calor no es una hectárea quemada: también aparecen quemas en el campo.</p>
     </div>
   );
 }

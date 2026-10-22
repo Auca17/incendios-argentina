@@ -58,7 +58,7 @@ export default function TourStage() {
 
   return (
     <>
-      <p className={v.revealed ? `${styles.notice} ${styles.on}` : styles.notice}>
+      <p className={v.revealed && !v.close ? `${styles.notice} ${styles.on}` : styles.notice}>
         <b>Focos de calor</b> ≠ hectáreas quemadas ≠ incendios forestales
       </p>
 
@@ -66,20 +66,18 @@ export default function TourStage() {
         {E && ev && v.balance && (
           <>
             {/* the fire's own weeks apart from the whole observation period */}
-            <span className={styles.counterHead}>{ev.region} · balance del episodio</span>
             <span className={styles.counterLine}>
-              <b>{fmt(E.cum[EPISODE_WEEKS])} focos</b> entre el {firstDay(E)} y el {dayMonth(weekDate(E, EPISODE_WEEKS))}
+              <b>{fmt(E.cum[EPISODE_WEEKS])} focos</b> del {firstDay(E)} al {dayMonth(weekDate(E, EPISODE_WEEKS))}
             </span>
             <span className={styles.counterHead}>
-              El registro satelital sigue hasta el {dayMonth(weekDate(E, E.weeks))}: {fmt(E.total - E.cum[EPISODE_WEEKS])} focos más, dispersos.
+              Después, hasta el {dayMonth(weekDate(E, E.weeks))}, solo {fmt(E.total - E.cum[EPISODE_WEEKS])} más.
             </span>
           </>
         )}
         {E && ev && !v.balance && (
           <>
-            <span className={styles.counterHead}>{ev.region} · focos detectados por satélite</span>
             <span className={styles.counterLine}>
-              semana {v.week} de {E.weeks} · <b>{fmt(E.cum[v.week])} focos</b> · hasta el {weekDate(E, v.week)}
+              <b>{fmt(E.cum[v.week])} focos</b> hasta el {dayMonth(weekDate(E, v.week))}
             </span>
           </>
         )}
@@ -98,8 +96,8 @@ export default function TourStage() {
           ))}
         </ol>
         <p className={styles.legendNote} hidden={v.chapter !== 7}>
-          La misma escala para todos los años (hasta {GRID_MAX.toLocaleString('es-AR')} focos en un cuadro), así un año
-          tranquilo se ve tranquilo. Un foco no es una hectárea quemada.
+          La misma escala todos los años (hasta {GRID_MAX.toLocaleString('es-AR')} focos por cuadro): un año tranquilo se
+          ve tranquilo.
         </p>
       </div>
 
