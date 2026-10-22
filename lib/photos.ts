@@ -25,9 +25,11 @@ export const STORY_PHOTOS: Record<string, StoryPhoto[]> = {
   ],
   delta: [
     {
-      src: '/fotos/delta-iss.webp',
-      alt: 'Vista desde la Estación Espacial Internacional con columnas de humo sobre la llanura de inundación del río Paraná en junio de 2020.',
-      credit: 'NASA / International Space Station (ISS063-E-40142)',
+      src: '/fotos/delta-brigada.webp',
+      alt: 'Brigadista de Parques Nacionales de espaldas, con hacha, frente a las llamas que avanzan sobre el pajonal del Delta del Paraná en 2020.',
+      credit: 'Foto: Ministerio de Ambiente de la Nación, bajo licencia ',
+      licenseText: 'CC BY 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
       width: 1200,
       height: 800,
     },
@@ -43,11 +45,22 @@ export const STORY_PHOTOS: Record<string, StoryPhoto[]> = {
   ],
   chubut: [
     {
-      src: '/fotos/chubut.webp',
-      alt: 'Imagen satelital de Sentinel-2 sobre los incendios forestales en la cordillera de Chubut en enero de 2026.',
-      credit: 'Contains modified Copernicus Sentinel data 2026, processed by the European Union',
+      src: '/fotos/chubut-patriada.webp',
+      alt: 'Columna de humo del incendio desatado el 5 de enero de 2026 en Puerto Patriada, sobre la cordillera, vista desde la playa de un lago con bañistas, el 9 de enero de 2026.',
+      credit: 'Foto: Gioia Claro, bajo licencia ',
+      licenseText: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
       width: 1200,
-      height: 848,
+      height: 900,
+    },
+    {
+      src: '/fotos/chubut-epuyen.webp',
+      alt: 'Atardecer anaranjado por el humo del incendio de interfase en la zona de Puerto Patriada, sobre el lago y el bosque, en enero de 2026.',
+      credit: 'Foto: CatrielGB, bajo licencia ',
+      licenseText: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+      width: 1200,
+      height: 800,
     },
   ],
 };
