@@ -307,6 +307,34 @@ export default function TourMap() {
       plates.set(key, pl);
       return pl;
     };
+    /*
+     * A relief image cut to the land once: neighbours at 72 %, Argentina at full strength, the sea
+     * transparent. Clipping a large image to hundreds of province outlines on every camera frame was
+     * the most expensive step of the map; now it is one drawImage.
+     */
+    const landPlates = new Map<HTMLImageElement, HTMLCanvasElement>();
+    const landPlate = (img: HTMLImageElement, b: Box) => {
+      let c = landPlates.get(img);
+      if (c) return c;
+      c = document.createElement('canvas');
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const pg = c.getContext('2d')!;
+      const sx = c.width / ((b[1] - b[0]) * K), sy = c.height / (b[3] - b[2]);
+      const arg = new Path2D();
+      provs.forEach((p) => arg.addPath(p.path));
+      ([[land!, 0.72], [arg, 1]] as [Path2D, number][]).forEach(([path, alpha]) => {
+        pg.save();
+        pg.setTransform(sx, 0, 0, sy, -b[0] * K * sx, b[3] * sy); // world -> plate pixels
+        pg.clip(path);
+        pg.setTransform(1, 0, 0, 1, 0, 0);
+        pg.globalAlpha = alpha;
+        pg.drawImage(img, 0, 0);
+        pg.restore();
+      });
+      landPlates.set(img, c);
+      return c;
+    };
     const placePlate = (g: CanvasRenderingContext2D, world: (g: CanvasRenderingContext2D) => void, pl: Plate) => {
       world(g);
       g.imageSmoothingEnabled = true;
@@ -416,11 +444,11 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       if (relief) {
         g.imageSmoothingQuality = 'high';
         const x0 = RELIEF[0] * K, x1 = RELIEF[1] * K, y0 = -RELIEF[3], y1 = -RELIEF[2];
-        const paint = () => g.drawImage(relief!, x0, y0, x1 - x0, y1 - y0);
         // relief on land only: the sea stays one flat dark tone, so the image never shows its edges
         if (!land && provs.length && neighbours) {
           land = new Path2D(neighbours);
           provs.forEach((p) => land!.addPath(p.path));
+          landPlates.clear();
         }
         if (land) {
           // the coast: a faint light rim around the land, so it separates from the dark sea
@@ -429,18 +457,9 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
           g.lineWidth = 2.2 * px;
           g.stroke(land);
           g.restore();
-          g.save();
-          g.clip(land);
-          g.globalAlpha = 0.72; // neighbours slightly darker
-          paint();
-          g.restore();
-          // Argentina at full strength: the country stays recognisable even when small
-          const arg = new Path2D();
-          provs.forEach((p) => arg.addPath(p.path));
-          g.save();
-          g.clip(arg);
-          paint();
-          g.restore();
+          // the relief already cut to the land (composited once, then only placed)
+          const pl = landPlate(relief, RELIEF);
+          g.drawImage(pl, x0, y0, x1 - x0, y1 - y0);
           // a close-up's own relief fades in as the camera comes down to it (it is 15-40 times sharper)
           const cam0 = cam!, span = cam0[1] - cam0[0];
           for (const cu of closeups) {
@@ -448,17 +467,8 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
             if (!cu.ok || cam0[1] < b[0] || cam0[0] > b[1] || cam0[3] < b[2] || cam0[2] > b[3]) continue;
             const a = Math.min(1, Math.max(0, (bw * 4 - span) / (bw * 2.5)));
             if (a <= 0) continue;
-            const draw = () => g.drawImage(cu.img, b[0] * K, -b[3], (b[1] - b[0]) * K, b[3] - b[2]);
-            g.save();
-            g.clip(land);
-            g.globalAlpha = 0.72 * a;
-            draw();
-            g.restore();
-            g.save();
-            g.clip(arg);
             g.globalAlpha = a;
-            draw();
-            g.restore();
+            g.drawImage(landPlate(cu.img, b), b[0] * K, -b[3], (b[1] - b[0]) * K, b[3] - b[2]);
           }
         }
         g.globalAlpha = 1;
