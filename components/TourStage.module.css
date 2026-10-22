@@ -3,6 +3,7 @@
 .fxNote,
 .counter,
 .legend,
+.locator,
 .scene {
   position: fixed;
   z-index: 2;
@@ -60,6 +61,19 @@
 
 /* the photo steps aside while the Chubut scene takes the whole map band */
 .sceneAside.on { opacity: 0; visibility: hidden; transition: opacity 300ms var(--ease), visibility 0s linear 300ms; }
+
+/* where the region is: Argentina with its provinces lit, top right */
+.locator {
+  top: var(--s-3);
+  right: calc(var(--t-hud-w) + var(--s-1));
+  width: 96px;
+  height: 150px;
+  padding: var(--s-1);
+  border-radius: var(--r-2);
+  background: rgba(8, 14, 22, 0.72);
+  box-shadow: 0 0 0 1px var(--t-line);
+}
+.locatorMap { display: block; width: 100%; height: 100%; }
 
 /* explore legend, bottom right over the sea */
 .legend {
@@ -133,6 +147,7 @@
     z-index: 6;
   }
   .photo { max-height: 30vh; }
+  .locator { top: calc(var(--s-1) + 72px); right: var(--s-1); width: 56px; height: 88px; padding: 4px; z-index: 6; }
   .fxNote { top: calc(var(--s-1) + 64px); left: var(--s-1); max-width: calc(100vw - 2 * var(--s-1)); padding: var(--s-half) var(--s-1); font-size: var(--fs-12); z-index: 6; }
 
   .photoCredit { font-size: 10px; }

@@ -84,7 +84,22 @@
 
 
 
+.explore {
+  writing-mode: vertical-rl;
+  margin-right: 12px;
+  padding: var(--s-1) 2px;
+  font: 600 var(--fs-12) / 1 var(--t-font-read);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--t-text-2);
+  text-decoration: none;
+  border-radius: var(--r-1);
+}
+.explore:hover { color: var(--t-amber); }
+.explore:focus-visible { outline: 3px solid var(--t-ember); outline-offset: 2px; }
+
 @media (max-width: 1023.98px) {
+  .explore { writing-mode: horizontal-tb; margin: 0 0 0 var(--s-1); padding: var(--s-1); background: var(--t-chip); text-transform: none; letter-spacing: 0; }
   .hud {
     top: calc(var(--s-1) + 36px);
     right: var(--s-1);
@@ -92,7 +107,7 @@
     align-items: center;
     gap: var(--s-1);
     transform: none;
-    z-index: 7;
+    z-index: 9;
   }
   .track { display: none; }
   .dots { grid-auto-flow: column; gap: 0; }

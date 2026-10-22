@@ -1,9 +1,22 @@
 /*
- * "Dónde más ardió" on the cloud bank: dark ink on white cloud, like the story pods. Provinces
- * without a story in red (the point of the section), the ones with a story in ink grey.
+ * "Dónde más ardió", fixed on the left over the dark scrim like the regions' text: light type on dark.
+ * Provinces without a story in ember (the point of the section), the ones with a story in grey.
  */
-.lead { margin-top: var(--s-2); color: var(--t-ink); }
-.lead b { font-weight: 700; }
+.wrap {
+  position: fixed;
+  left: 32px;
+  top: max(var(--s-6), calc(50vh - 300px));
+  width: var(--t-pod-w);
+  padding-right: var(--s-3);
+  opacity: 0;
+  visibility: hidden;
+}
+.wrap[data-on='1'] { visibility: visible; }
+.pod { color: var(--t-text-2); font: 400 var(--fs-16) / 1.6 var(--t-font-read); }
+
+.lead { margin-top: var(--s-1); color: var(--t-text); }
+.lead b { font-weight: 700; color: #fff; }
+.figure { margin-bottom: var(--s-2); }
 
 .rank { display: grid; gap: var(--s-1); margin: var(--s-3) 0 var(--s-2); padding: 0; list-style: none; }
 .rank li {
@@ -12,25 +25,43 @@
   align-items: center;
   gap: var(--s-1);
   font: 400 var(--fs-14) / 1.3 var(--t-font-read);
-  color: var(--t-ink);
+  color: var(--t-text-2);
 }
 .rankName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.untold .rankName { font-weight: 700; }
-.bar { display: block; height: 10px; border-radius: 999px; background: rgba(17, 20, 24, 0.08); }
+.untold .rankName { font-weight: 700; color: var(--t-text); }
+.bar { display: block; height: 8px; border-radius: 999px; background: rgba(195, 204, 213, 0.12); }
 .bar i { display: block; height: 100%; border-radius: inherit; }
-.untold .bar i { background: var(--t-red); }
-.told .bar i { background: #5b636c; }
+.untold .bar i { background: var(--t-ember); }
+.told .bar i { background: #6f7a86; }
 .rankN { font: 400 var(--fs-14) / 1 var(--t-font-mono); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
-.note { font-size: var(--fs-14); line-height: 1.5; color: var(--t-ink-2); }
+.note { margin-bottom: var(--s-3); font-size: var(--fs-12); line-height: 1.5; color: var(--t-muted); }
 .keyUntold,
 .keyTold { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; }
-.keyUntold { background: var(--t-red); }
-.keyTold { background: #5b636c; }
+.keyUntold { background: var(--t-ember); }
+.keyTold { background: #6f7a86; }
 
-.months { margin: var(--s-3) 0 0; }
-.months figcaption { margin-bottom: var(--s-1); font: 600 var(--fs-14) / 1.4 var(--t-font-read); color: var(--t-ink); }
+.months { margin: var(--s-2) 0 var(--s-3); }
+.months figcaption { margin-bottom: var(--s-1); font: 600 var(--fs-14) / 1.4 var(--t-font-read); color: var(--t-text); }
 .months svg { display: block; width: 100%; max-width: 360px; height: auto; }
-.months text { font: 400 8.5px var(--t-font-read); fill: var(--t-ink-2); }
-.mbar { fill: #5b636c; }
-.peak { fill: var(--t-red); }
+.months text { font: 400 8.5px var(--t-font-read); fill: var(--t-muted); }
+.mbar { fill: #6f7a86; }
+.peak { fill: var(--t-ember); }
+
+@media (max-width: 1023.98px) {
+  .wrap {
+    left: 0;
+    right: 0;
+    top: var(--t-stage-h);
+    bottom: 0;
+    width: auto;
+    z-index: 8;
+    padding: var(--s-2) var(--s-2) var(--s-3);
+    background: var(--t-paper);
+    box-shadow: 0 -1px 0 var(--t-line);
+    overflow: hidden;
+  }
+  .pod { font-size: var(--fs-14); line-height: 1.5; }
+  .rank { margin: var(--s-2) 0 var(--s-1); gap: 6px; }
+  .months { margin: var(--s-1) 0 var(--s-2); }
+}

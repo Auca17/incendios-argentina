@@ -1,21 +1,24 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import { FOCAL, SECTIONS, TOUR_EVENTS } from '../lib/tour';
+import { FOCAL, SECTIONS, TOUR_EVENTS, entryOf } from '../lib/tour';
 import { EVENTS } from '../lib/events';
 import { readAddress } from '../lib/exploreState';
+import { RETURN_KEY } from '../lib/returnPoint';
 import { subscribe } from '../lib/scrollDriver';
 import TourMap from './TourMap';
 import CloudCurtain from './CloudCurtain';
+import Landscape from './Landscape';
 import TourStage from './TourStage';
 import TourHud from './TourHud';
 import StoryPod from './StoryPod';
-import ExploreSection from './ExploreSection';
+import StoryDialog from './StoryDialog';
 import MoreSection from './MoreSection';
 import Epilogue from './Epilogue';
 import CoverTitle from './CoverTitle';
 import SourcesSection from './SourcesSection';
 import styles from './ScrollyExperience.module.css';
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 const vh = (id: string) => ({ minHeight: SECTIONS.find((s) => s.id === id)!.vh + 'vh' });
 
 /** Scroll hint of the opening: visible only at the very top, gone as soon as the reader scrolls. */
@@ -32,42 +35,55 @@ function Cue() {
   );
 }
 
+/** Dark scrim on the left under the reading text of the regions (the territory takes the rest). */
+function Scrim() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => subscribe(({ st }) => {
+    const on = (st.chapter >= 0 && st.chapter <= 5) || st.chapter === 8;
+    if (ref.current) ref.current.style.opacity = on ? (1 - st.land).toFixed(3) : '0';
+  }), []);
+  return <div ref={ref} className={styles.scrim} aria-hidden="true" />;
+}
+
 /**
- * The guided tour: clouds, title, Argentina revealed, six fires north to south, wide shot, explore,
- * epilogue and the technical sources. All visible state derives from the scroll position (lib/tour.ts).
+ * The story: clouds, title, Argentina revealed, six regions north to south (each opened by its
+ * landscape, carried to the next by smoke), the change of scale to the whole country, the epilogue
+ * on the closed clouds and the technical sources. All visible state derives from the scroll position
+ * (lib/tour.ts). The year by year map is a separate page (/explorar).
  */
 export default function ScrollyExperience() {
   useEffect(() => {
     const { go } = readAddress();
-    if (go === null || go === undefined) return;
+    // the explorer used to live on this page: old explorer addresses open it where it is now
+    if (go === 'explore') { location.replace(BASE + '/explorar/' + location.search); return; }
     let targetId = '';
-    if (go === 'explore') targetId = 'sec-explore';
-    else if (go === 'sources') targetId = 'fuentes';
+    let frac = 0;
+    let top: number | null = null;
+    if (go === 'sources') targetId = 'fuentes';
     else if (typeof go === 'number' && EVENTS[go]) targetId = 'sec-' + EVENTS[go].id;
-    if (!targetId) return;
+    else {
+      // back from /explorar: the same point of the story
+      try {
+        const y = sessionStorage.getItem(RETURN_KEY);
+        sessionStorage.removeItem(RETURN_KEY);
+        if (y !== null && !location.hash) top = +y;
+      } catch { /* storage blocked: start from the top */ }
+    }
+    if (!targetId && top === null) return;
 
     const jump = () => {
+      if (top !== null) { window.scrollTo({ top, behavior: 'auto' }); return; }
       const el = document.getElementById(targetId);
       if (!el) return;
-      const top = targetId === 'fuentes'
+      const i = SECTIONS.findIndex((s) => s.id === targetId);
+      if (i >= 0) frac = entryOf(i);
+      const y = targetId === 'fuentes'
         ? Math.ceil(el.getBoundingClientRect().top + window.scrollY)
-        : Math.ceil(el.getBoundingClientRect().top + window.scrollY - window.innerHeight * FOCAL) + 1;
-      window.scrollTo({ top, behavior: 'auto' });
+        : Math.ceil(el.getBoundingClientRect().top + window.scrollY + el.offsetHeight * frac - window.innerHeight * FOCAL) + 1;
+      window.scrollTo({ top: y, behavior: 'auto' });
     };
-
-    if (document.fonts?.ready) {
-      document.fonts.ready.then(() => {
-        requestAnimationFrame(() => {
-          jump();
-          requestAnimationFrame(jump);
-        });
-      });
-    } else {
-      requestAnimationFrame(() => {
-        jump();
-        requestAnimationFrame(jump);
-      });
-    }
+    const twice = () => requestAnimationFrame(() => { jump(); requestAnimationFrame(jump); });
+    if (document.fonts?.ready) document.fonts.ready.then(twice); else twice();
   }, []);
 
   return (
@@ -75,6 +91,8 @@ export default function ScrollyExperience() {
       <TourMap />
       <TourStage />
       <CloudCurtain />
+      <Landscape />
+      <Scrim />
       <TourHud />
 
       <main className={styles.track}>
@@ -89,31 +107,12 @@ export default function ScrollyExperience() {
 
         {TOUR_EVENTS.map((ev, i) => (
           <section key={ev.id} id={'sec-' + ev.id} className={styles.story} style={vh('sec-' + ev.id)}>
-            <div className={styles.podSlot}>
-              <StoryPod ev={ev} index={i} total={TOUR_EVENTS.length} />
-            </div>
+            <StoryPod ev={ev} index={i} total={TOUR_EVENTS.length} />
           </section>
         ))}
 
-        <section id="sec-wide" className={styles.story} style={vh('sec-wide')} aria-labelledby="wide-h">
-          <div className={styles.podSlot}>
-            <article className={styles.widePod}>
-              <h2 id="wide-h" className={styles.wideTitle}>Las seis, juntas</h2>
-              <p>Selva, esteros, sierras, islas, piedemonte y bosque andino: el fuego no tiene un solo paisaje.</p>
-            </article>
-          </div>
-        </section>
-
         <section id="sec-more" className={styles.story} style={vh('sec-more')} aria-label="Dónde más ardió">
-          <div className={styles.podSlot}>
-            <MoreSection />
-          </div>
-        </section>
-
-        <section id="sec-explore" className={styles.story} style={vh('sec-explore')} aria-label="Explorá año por año">
-          <div className={styles.podSlot}>
-            <ExploreSection />
-          </div>
+          <MoreSection />
         </section>
 
         <section id="sec-epilogue" className={styles.epilogue} style={vh('sec-epilogue')}>
@@ -122,6 +121,7 @@ export default function ScrollyExperience() {
       </main>
 
       <SourcesSection />
+      <StoryDialog />
     </div>
   );
 }

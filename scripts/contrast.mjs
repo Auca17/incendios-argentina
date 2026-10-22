@@ -58,6 +58,11 @@ const S = {
   // cover title: the shader keeps a sunlit patch behind it (rgb .985 .985 .98)
   tCloudShade: [251, 251, 250, 1],
   tAmber: parse('var(--t-amber)'),
+  // regions: reading text on the left scrim (at least .84 of #05080d) over the brightest sunlit slope
+  tScrim: over(parse('rgba(5, 8, 13, 0.84)'), parse('#ad9e8c')),
+  // "Más información" sheet and the /explorar panel (.92 over the same slope)
+  tSheet: parse('#0b1018'),
+  tPanel: over(parse('rgba(5, 8, 13, 0.92)'), parse('#ad9e8c')),
   // source cards over the smoke, composited over the brightest ember of the shader
   tSmokeCard: over(parse('var(--t-smoke-card)'), [255, 92, 31, 1]),
 };
@@ -101,7 +106,7 @@ const PAIRS = [
   T('tour: ink-2 on the cloud interior', 'var(--t-ink-2)', 'tCloud', 14),
   T('tour: red figures and labels on the cloud', 'var(--t-red)', 'tCloud', 14),
   T('tour: cover title ink on the sunlit patch', 'var(--t-ink)', 'tCloudShade', 56),
-  T('tour: cover subtitle red on the sunlit patch (24 px bold)', 'var(--t-red)', 'tCloudShade', 24, true),
+  T('tour: cover subtitle red on the sunlit patch (16 px, semibold)', 'var(--t-red)', 'tCloudShade', 16, true),
   U('tour: Ver más border (ink) on the cloud', 'var(--t-ink)', 'tCloud'),
   T('tour: white on source cards over an ember', '#ffffff', 'tSmokeCard', 14),
   T('tour: text on source cards over an ember', 'var(--t-text)', 'tSmokeCard', 14),
@@ -125,6 +130,19 @@ const PAIRS = [
   U('tour: control border on chip over hot foci', 'var(--t-control)', 'tChip'),
   U('tour: control border on sources paper', 'var(--t-control)', 'tPaper'),
   U('tour: focus outline amber on pod', 'var(--accent)', 'tPod'),
+  T('regions: title text on the scrim', 'var(--t-text)', 'tScrim', 26, true),
+  T('regions: body text-2 on the scrim', 'var(--t-text-2)', 'tScrim', 14),
+  T('regions: muted sources on the scrim', 'var(--t-muted)', 'tScrim', 12),
+  T('regions: ember figures and labels on the scrim', 'var(--t-ember)', 'tScrim', 14),
+  U('regions: Más información border on the scrim', 'var(--t-control)', 'tScrim'),
+  T('dialog: text on the sheet', 'var(--t-text)', 'tSheet', 16),
+  T('dialog: muted notes on the sheet', 'var(--t-muted)', 'tSheet', 12),
+  T('dialog: ember headings on the sheet', 'var(--t-ember)', 'tSheet', 12, true),
+  U('dialog: close border on the sheet', 'var(--t-control)', 'tSheet'),
+  T('explorar: text-2 on the panel', 'var(--t-text-2)', 'tPanel', 14),
+  T('explorar: muted on the panel', 'var(--t-muted)', 'tPanel', 10),
+  T('explorar: ember year on the panel', 'var(--t-ember)', 'tPanel', 32, true),
+  U('explorar: inactive bar #bf5b30 on the panel', '#bf5b30', 'tPanel'),
   U('explore: inactive bar #bf5b30 on cloud', '#bf5b30', 'tCloud'),
   // atlas map: every fire core is drawn on a tight shadow rgba(6,3,1,.78); its background is that
   // shadow over the land: #2b2520 on the brightest sunlit slope (#ad9e8c), #140f0b on flat land

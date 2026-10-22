@@ -18,7 +18,9 @@ export const sceneWidth = (w: number) => clamp(w * 0.26, 280, 400);
 /** Horizontal band [left, right] the map fits into, in CSS px of the map canvas. */
 export function mapRect(w: number, chapter: number): [number, number] {
   if (w < DESKTOP) return [8, w - 8];
-  const left = podRight(w) + BANK_EDGE;
+  // the regions and the interlude have no cloud bank: the reading text sits on a dark scrim and the
+  // territory takes the rest of the screen
+  const left = podRight(w) + ((chapter >= 0 && chapter <= 5) || chapter === 7 || chapter === 8 ? 24 : BANK_EDGE);
   const right = chapter >= 0 && chapter <= 5 ? w - HUD_W - sceneWidth(w) - 24 : w - HUD_W;
   return [left, right];
 }

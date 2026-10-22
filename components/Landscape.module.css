@@ -1,0 +1,74 @@
+/* Establishing shots and veils: over the map and the clouds' open bank, under the reading text. */
+.wrap { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+.canvas { display: block; width: 100%; height: 100%; visibility: hidden; }
+
+/*
+ * Title cards: white type straight on the landscape, placed where each picture leaves room.
+ * --k (0..1) is the card's progress: the region name settles in from a little wider letter spacing.
+ */
+.card {
+  position: absolute;
+  max-width: min(640px, calc(100vw - 2 * var(--s-3)));
+  color: #fff;
+  opacity: 0;
+  visibility: hidden;
+  text-shadow: 0 2px 28px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.kicker {
+  font: 600 var(--fs-14) / 1.3 var(--t-font-read);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+}
+.kicker span { font-family: var(--t-font-mono); color: var(--t-ember); margin-right: var(--s-1); }
+.region {
+  margin-top: var(--s-1);
+  font: 400 clamp(56px, 8.5vw, 124px) / 0.95 var(--t-font-title);
+  letter-spacing: calc((1 - var(--k, 1)) * 0.08em);
+}
+.sub {
+  margin-top: var(--s-2);
+  max-width: 34ch;
+  font: 600 clamp(18px, 1.7vw, 24px) / 1.3 var(--t-font-read);
+  color: rgba(255, 255, 255, 0.94);
+}
+
+/* each landscape leaves room in a different place */
+.misiones { left: 6vw; bottom: 16vh; }
+.corrientes { left: 50%; top: 14vh; transform: translateX(-50%); text-align: center; }
+.corrientes .sub { margin-inline: auto; }
+.cordoba { left: 6vw; top: 12vh; }
+.delta { left: 6vw; top: 22vh; }
+.delta .region { letter-spacing: calc(0.02em + (1 - var(--k, 1)) * 0.08em); }
+.mendoza { right: calc(var(--t-hud-w) + 2vw); top: 10vh; text-align: right; }
+.mendoza .sub { margin-left: auto; }
+.chubut { left: 6vw; bottom: 14vh; }
+
+/* what the picture is: an illustration, never a record of the fire */
+.note {
+  position: absolute;
+  right: calc(var(--t-hud-w) + var(--s-1));
+  bottom: var(--s-3);
+  max-width: min(460px, 60vw);
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-2);
+  background: var(--t-chip);
+  box-shadow: 0 0 0 1px var(--t-line);
+  font: 400 var(--fs-12) / 1.45 var(--t-font-read);
+  color: var(--t-text-2);
+  opacity: 0;
+  visibility: hidden;
+}
+.note b { font-weight: 600; color: var(--t-text); }
+
+@media (max-width: 1023.98px) {
+  .wrap { z-index: 7; }
+  .card,
+  .corrientes,
+  .mendoza { left: var(--s-2); right: var(--s-2); top: auto; bottom: 22vh; transform: none; text-align: left; }
+  .cordoba, .delta { top: 10vh; bottom: auto; left: var(--s-2); right: var(--s-2); }
+  .corrientes .sub, .mendoza .sub { margin-inline: 0; }
+  .region { font-size: clamp(48px, 14vw, 72px); }
+  .sub { font-size: var(--fs-16); }
+  .note { left: var(--s-1); right: var(--s-1); bottom: var(--s-1); max-width: none; }
+}

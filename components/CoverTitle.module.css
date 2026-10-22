@@ -16,14 +16,14 @@
 }
 .sub {
   margin-top: var(--s-2);
-  font: 700 var(--fs-24) / 1.2 var(--t-font-read);
+  font: 600 18px / 1.3 var(--t-font-read);
   color: var(--t-red);
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   text-shadow: 0 0 2px #fff, 0 0 14px rgba(255, 255, 255, 0.95), 0 0 28px rgba(255, 255, 255, 0.85);
 }
 
 @media (max-width: 1023.98px) {
   .title { z-index: 10; }
   .h1 { font-size: 40px; }
-  .sub { font-size: var(--fs-20); }
+  .sub { font-size: var(--fs-16); }
 }

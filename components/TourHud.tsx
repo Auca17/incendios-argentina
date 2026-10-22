@@ -1,17 +1,18 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FOCAL, SECTIONS, TOUR_EVENTS } from '../lib/tour';
+import { FOCAL, SECTIONS, TOUR_EVENTS, entryOf } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
+import ExploreLink from './ExploreLink';
 import styles from './TourHud.module.css';
 
 const FIRST_STORY = SECTIONS.findIndex((s) => s.kind === 'story');
 
-/** Scrolls so the start of a section sits on the focal line (t = 0: first week of a fire). */
+/** Scrolls so a section's entry point (a region's title card, past the smoke) sits on the focal line. */
 export function goToSection(i: number) {
   const el = document.getElementById(SECTIONS[i]?.id);
   if (!el) return;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const top = i === 0 ? 0 : Math.ceil(el.getBoundingClientRect().top + window.scrollY - window.innerHeight * FOCAL) + 1;
+  const top = i === 0 ? 0 : Math.ceil(el.getBoundingClientRect().top + window.scrollY + el.offsetHeight * entryOf(i) - window.innerHeight * FOCAL) + 1;
   window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
 }
 
@@ -84,6 +85,8 @@ export default function TourHud() {
             );
           })}
         </ol>
+        {/* the detailed map is a page of its own: a quiet way there from anywhere in the story */}
+        <ExploreLink className={styles.explore} label="Explorar los datos" />
       </nav>
       <p className="sr-only" aria-live="polite">
         {active ? `Historia ${state.chapter + 1} de 6: ${active.region}, ${active.when}` : ''}

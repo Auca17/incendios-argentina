@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { subscribe } from '../lib/scrollDriver';
 import SourcesLink from './SourcesLink';
+import ExploreLink from './ExploreLink';
 import styles from './Epilogue.module.css';
 
 /**
@@ -42,6 +43,7 @@ export default function Epilogue() {
 
       <div className={styles.actions}>
         <SourcesLink className={styles.primary} label="Ver las fuentes" />
+        <ExploreLink className={styles.secondary} label="Explorar el mapa, año por año" />
         <button
           type="button"
           className={styles.secondary}

@@ -1,66 +1,80 @@
 /*
- * Reading text written straight on the big cloud on the left (the static bank drawn by
- * CloudCurtain): no box. The bank keeps a flat, bright interior under the whole text column, so
- * dark ink stays AA; padding-right keeps the text away from the cloud's shaded, puffy edge.
+ * Reading text of a region, fixed on the left over a dark scrim (ScrollyExperience .scrim): light type
+ * on dark, the territory on the right. --p (0..1) is the reveal progress; each block comes in at its
+ * own point (b0..b3), each with its own small movement.
  */
 .pod {
-  position: relative;
+  position: fixed;
+  left: 32px;
+  top: max(var(--s-6), calc(50vh - 290px));
   width: var(--t-pod-w);
-  padding: var(--s-1) var(--s-3) var(--s-3) 0;
-  color: var(--t-ink-2);
-  font: 400 var(--fs-16) / 1.55 var(--t-font-read);
+  padding-right: var(--s-3);
+  color: var(--t-text-2);
+  font: 400 var(--fs-16) / 1.6 var(--t-font-read);
+  opacity: 0;
+  visibility: hidden;
+  --p: 0;
 }
+.pod[data-on='1'] { visibility: visible; }
+
+/* phases: label and title, then the cause, then the figure, then the action */
+.b0 { --a: 0; }
+.b1 { --a: 0.3; }
+.b2 { --a: 0.55; }
+.b3 { --a: 0.78; }
+.b0, .b1, .b2, .b3 {
+  --q: clamp(0, calc((var(--p) - var(--a)) / 0.2), 1);
+  opacity: var(--q);
+}
+.title { transform: translateY(calc((1 - var(--q)) * 10px)); }
+.quote { transform: translateX(calc((1 - var(--q)) * -8px)); }
+.figure .num { letter-spacing: calc((1 - var(--q)) * 0.12em); }
 
 .label {
   margin-bottom: var(--s-1);
-  font-size: var(--fs-14);
-  font-weight: 600;
-  color: var(--t-ink-2);
+  font: 600 var(--fs-14) / 1.4 var(--t-font-read);
+  color: var(--t-text-2);
 }
-.count {
-  font-family: var(--t-font-mono);
-  color: var(--t-red);
-  margin-right: var(--s-half);
-}
+.count { font-family: var(--t-font-mono); color: var(--t-ember); margin-right: var(--s-half); }
 .title {
-  margin-bottom: var(--s-2);
-  font: 700 var(--fs-24) / 1.25 var(--t-font-read);
-  color: var(--t-ink);
+  margin-bottom: var(--s-3);
+  font: 700 clamp(26px, 2.3vw, 34px) / 1.18 var(--t-font-read);
+  color: var(--t-text);
   text-wrap: balance;
 }
 
 .quote {
   margin: 0 0 var(--s-3);
   padding-left: var(--s-2);
-  border-left: 3px solid var(--t-red);
+  border-left: 2px solid var(--t-ember);
 }
-.quote p { color: var(--t-ink); }
+.quote p { color: var(--t-text); }
 .quote footer {
   margin-top: var(--s-half);
   font-size: var(--fs-14);
-  color: var(--t-ink-2);
+  color: var(--t-muted);
   font-style: italic;
 }
 
-.figure { margin-bottom: var(--s-2); }
+.figure { margin-bottom: var(--s-3); }
 .num {
-  font: 600 var(--fs-32) / 1.1 var(--t-font-mono);
-  color: var(--t-red);
+  font: 600 clamp(36px, 3.4vw, 48px) / 1.05 var(--t-font-mono);
+  color: var(--t-ember);
   font-variant-numeric: tabular-nums;
 }
-.unit { font-size: var(--fs-20); }
+.unit { font-size: 0.5em; margin-left: 0.15em; }
+.figLabel {
+  margin-top: var(--s-1);
+  max-width: 40ch;
+  font-size: var(--fs-14);
+  line-height: 1.5;
+  color: var(--t-text-2);
+}
 .total {
   display: block;
   margin-top: var(--s-half);
-  font-size: var(--fs-14);
-  font-weight: 600;
-  color: var(--t-ink);
-}
-.figLabel {
-  margin-top: var(--s-half);
-  font-size: var(--fs-14);
-  line-height: 1.5;
-  color: var(--t-ink-2);
+  font-size: var(--fs-12);
+  color: var(--t-muted);
 }
 
 .more {
@@ -69,82 +83,44 @@
   gap: var(--s-1);
   min-height: 44px;
   padding: 0 var(--s-3);
-  border: 2px solid var(--t-ink);
+  border: 1px solid var(--t-control);
   border-radius: 999px;
-  background: transparent;
-  color: var(--t-ink);
-  font: 700 var(--fs-14) / 1 var(--t-font-read);
+  background: rgba(8, 12, 18, 0.6);
+  color: var(--t-text);
+  font: 600 var(--fs-14) / 1 var(--t-font-read);
   cursor: pointer;
+  transition: background 200ms var(--ease), border-color 200ms var(--ease);
 }
-.more:hover { background: var(--t-ink); color: #fff; }
-.more:hover .chev { color: #fff; }
-.more:focus-visible { outline: 3px solid var(--t-red); outline-offset: 2px; }
-.chev { font-family: var(--t-font-mono); color: var(--t-red); }
-
-.drawer {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 250ms var(--ease);
-}
-.drawerOpen { grid-template-rows: 1fr; }
-.drawerInner { min-height: 0; overflow: hidden; }
-.drawerOpen .drawerInner { padding-top: var(--s-2); }
-
-.h3 {
-  margin: var(--s-2) 0 var(--s-half);
-  font: 700 var(--fs-16) / 1.4 var(--t-font-read);
-  color: var(--t-ink);
-}
-.body { font-size: var(--fs-14); line-height: 1.55; color: var(--t-ink); }
-
-.facts { display: grid; gap: var(--s-1); margin: 0; padding: 0; list-style: none; }
-.facts li { display: grid; grid-template-columns: auto 1fr; gap: var(--s-1); font-size: var(--fs-14); line-height: 1.45; color: var(--t-ink); }
-.facts b { font-family: var(--t-font-mono); color: var(--t-red); white-space: nowrap; }
-
-.alt {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.alt li {
-  display: grid;
-  gap: var(--s-half);
-  padding: var(--s-1);
-  border: 1px solid rgba(17, 20, 24, 0.35);
-  border-radius: var(--r-1);
-  font-size: var(--fs-12);
-  line-height: 1.4;
-  color: var(--t-ink);
-}
-.alt b { font: 600 var(--fs-14) / 1.3 var(--t-font-mono); color: var(--t-ink); }
-
-/* monthly chart: re-inked for the white cloud (the component was drawn for a dark page) */
-.chart { margin-top: var(--s-2); }
-.chart :global(svg) { display: block; width: 100%; max-height: 96px; }
-.chart :global(svg text) { fill: var(--t-ink-2); }
-.chart :global(figcaption), .chart :global(p) { color: var(--t-ink); }
-.chart :global(b) { color: var(--t-ink); }
-.chartNote {
-  margin-top: var(--s-1);
-  font-size: var(--fs-12);
-  line-height: 1.5;
-  color: var(--t-ink-2);
-}
-
-.photos { display: grid; gap: var(--s-2); margin-top: var(--s-2); }
-.photo { margin: 0; }
-.photo img { display: block; width: 100%; height: auto; border-radius: var(--r-1); }
-.photo figcaption { margin-top: var(--s-half); font-size: var(--fs-12); line-height: 1.45; color: var(--t-ink-2); }
-.photo figcaption a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
-.photo figcaption a:hover { color: var(--t-ink); }
+.more:hover { background: var(--t-text); border-color: var(--t-text); color: var(--t-sea-1); }
+.more:hover .chev { color: var(--t-red); }
+.more:focus-visible { outline: 3px solid var(--t-ember); outline-offset: 3px; }
+.chev { font-family: var(--t-font-mono); color: var(--t-ember); }
 
 @media (prefers-reduced-motion: reduce) {
-  .drawer { transition: none; }
+  .title, .quote { transform: none; }
+  .figure .num { letter-spacing: 0; }
+  .more { transition: none; }
 }
 
+/* mobile: a reading panel under the map stage, on the page's dark paper */
 @media (max-width: 1023.98px) {
-  .pod { width: auto; padding: var(--s-2) var(--s-1) var(--s-3); }
+  .pod {
+    left: 0;
+    right: 0;
+    top: var(--t-stage-h);
+    bottom: 0;
+    width: auto;
+    z-index: 8;
+    padding: var(--s-2) var(--s-2) var(--s-3);
+    background: var(--t-paper);
+    box-shadow: 0 -1px 0 var(--t-line);
+    /* not scrollable on purpose: a swipe on the text keeps moving the story */
+    overflow: hidden;
+    font-size: var(--fs-14);
+    line-height: 1.5;
+  }
+  .title { margin-bottom: var(--s-2); font-size: var(--fs-20); }
+  .quote { margin-bottom: var(--s-2); }
+  .figure { margin-bottom: var(--s-2); }
+  .num { font-size: 30px; }
 }

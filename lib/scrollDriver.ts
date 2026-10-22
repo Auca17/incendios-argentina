@@ -26,7 +26,7 @@ let reduced = false;
 let last: Frame | null = null;
 
 /** Continuous fields that ease; discrete ones (section, chapter, province) switch at once. */
-const EASED = ['open', 'close', 'borders', 'hud', 'title', 'titleDock', 'bank', 'smoke', 'ash', 'epi', 'chapterT', 'moreT'] as const;
+const EASED = ['open', 'close', 'borders', 'hud', 'title', 'titleDock', 'bank', 'smoke', 'ash', 'epi', 'chapterT', 'moreT', 'land', 'landT', 'veil', 'card', 'pod'] as const;
 const TAU = 0.12; // seconds
 let shown: TourState | null = null;
 let lastT = 0;
@@ -41,7 +41,7 @@ function ease(target: TourState): [TourState, boolean] {
   let moving = false;
   for (const f of EASED) {
     // a new chapter starts from its own progress, not from the previous chapter's
-    if ((f === 'chapterT' || f === 'moreT') && target.chapter !== shown.chapter) continue;
+    if ((f === 'chapterT' || f === 'moreT' || f === 'landT') && target.chapter !== shown.chapter) continue;
     const d = target[f] - shown[f];
     if (Math.abs(d) < 0.002) continue;
     out[f] = shown[f] + d * k;
@@ -70,9 +70,18 @@ function frame() {
   if (document.documentElement.scrollHeight !== docH) measure();
   const vh = window.innerHeight;
   const vw = window.innerWidth;
-  const scrollY = window.scrollY;
-  const [st, easing] = ease(tourState(scrollY + vh * FOCAL, tops, heights, reduced, scrollY));
-  const f: Frame = { st, scrollY, vw, vh, progress: tourProgress(scrollY, tops, heights, vh), reduced };
+  // a dialog over the story holds it: the same state, whatever the page does underneath
+  if (held && last && last.vw === vw && last.vh === vh) {
+    let settling = false;
+    subs.forEach((fn) => { if (fn(last!)) settling = true; });
+    if (settling) request();
+    return;
+  }
+  const scrollY = held && last ? last.scrollY : window.scrollY;
+  const [st, easing] = pinned
+    ? [pinned, false]
+    : ease(tourState(scrollY + vh * FOCAL, tops, heights, reduced, scrollY));
+  const f: Frame = { st, scrollY, vw, vh, progress: pinned ? 0 : tourProgress(scrollY, tops, heights, vh), reduced };
   last = f;
   let again = easing;
   subs.forEach((fn) => { if (fn(f)) again = true; });
@@ -115,3 +124,25 @@ export function remeasure() {
 }
 
 export const sectionTop = (i: number) => tops[i] ?? 0;
+
+let pinned: TourState | null = null;
+let held = false;
+
+/**
+ * A page without the tour (/explorar) pins the map to one state: the scroll no longer drives it.
+ * Called before the first subscriber, so the map never draws a frame of the tour.
+ */
+export function pin(st: TourState | null) {
+  pinned = st;
+  shown = st;
+  if (typeof window !== 'undefined') request();
+}
+
+/**
+ * Holds the story while a dialog is open over it: the subscribers keep the last frame, so nothing
+ * advances, rewinds or restarts, whatever happens to the page under the dialog.
+ */
+export function hold(on: boolean) {
+  held = on;
+  request();
+}

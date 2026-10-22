@@ -217,7 +217,23 @@ export default function TourMap() {
       const target = [...boxFor(st.chapter, st.open, st.more, scene, sf), rl, rw];
       moreNow = st.more;
       moreTNow = st.moreT;
-      if (!cam || f.reduced) cam = target.slice();
+      // a landscape or the smoke between regions covers the map: the camera is already where it goes
+      // (its travel is hidden) and nothing is drawn underneath
+      const covered = st.land > 0.995 || st.veil > 0.995;
+      coveredNow = covered;
+      if (!cam || f.reduced || covered) { cam = target.slice(); vel.fill(0); }
+      if (covered) {
+        if (lastKey !== 'covered') {
+          lastKey = 'covered';
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.fillStyle = C.sea;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          fctx.setTransform(1, 0, 0, 1, 0, 0);
+          fctx.clearRect(0, 0, fxc.width, fxc.height);
+          fxDrawn = false;
+        }
+        return false;
+      }
       let moving = false;
       for (let i = 0; i < 6; i++) {
         vel[i] = (vel[i] + (target[i] - cam[i]) * TENSION) * FRICTION;
@@ -258,12 +274,13 @@ export default function TourMap() {
     let sf: SceneFrame | null = null;
     let still = false;
     let reducedNow = false;
+    let coveredNow = false;
     let fxFoci: Foci | null = null;
     let sites: Sites | null = null;
     let fxDrawn = false;
     let ticking = 0;
     const drawScene = () => {
-      const active = !!scene && !!sf && sf.zoom > 0.001 && !!fxFoci;
+      const active = !coveredNow && !!scene && !!sf && sf.zoom > 0.001 && !!fxFoci;
       if (!active) {
         if (fxDrawn) { fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, fxc.width, fxc.height); fxDrawn = false; }
         return;

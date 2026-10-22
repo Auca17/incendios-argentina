@@ -9,16 +9,17 @@ export const TOUR_EVENTS: any[] = NORTH_TO_SOUTH.map((id) => EVENTS.find((e) => 
 /*
  * Sections of the page, top to bottom. Heights are in viewport heights; the whole tour is a pure
  * function of the scroll position: the section that crosses the focal line and the local progress t.
- *   opening  0-8 %   clouds only, no text
- *   title    8-14 %  title pod on the left, centre and right clouds start to part
- *   reveal   14-22 % Argentina appears, then the provincial borders and the HUD
- *   stories  22-88 % six fires, north to south
- *   wide     camera opens on the whole country
- *   more     where else it burned: the provinces with most foci outside the stories
- *   explore  year by year map, province series and ranking (state in the address)
- *   epilogue 93-100 % clouds close completely, epilogue on them, then smoke into the sources
+ *   opening   clouds and the title
+ *   title     the title moves to the reading column, the clouds start to part
+ *   reveal    Argentina appears, then the provincial borders; a haze rises to carry the reader down
+ *   stories   six fires, north to south. Each one: the haze clears on an illustrated landscape of the
+ *             region with its title card, the landscape lifts onto the map, the scene plays with the
+ *             reading text revealed in phases, and smoke rises to carry the reader to the next one
+ *   more      change of scale: the whole country, then the provinces with most foci outside the stories
+ *   epilogue  clouds close completely, epilogue on them, then smoke into the sources
+ * The year by year explorer is a page of its own (/explorar).
  */
-export type Kind = 'opening' | 'title' | 'reveal' | 'story' | 'wide' | 'more' | 'explore' | 'epilogue';
+export type Kind = 'opening' | 'title' | 'reveal' | 'story' | 'more' | 'epilogue';
 
 /** "Dónde más ardió": the provinces with the most foci in 2012-2026 that are not in the six stories. */
 export const MORE_PROVINCES = ['Formosa', 'Chaco', 'Santiago del Estero', 'Salta'];
@@ -27,21 +28,44 @@ export const MORE_OPEN = 0.24;
 export type Section = { id: string; kind: Kind; vh: number; story?: number };
 
 /*
- * Scroll length of each story: enough to read the pod and watch its scene play (lib/scenes.ts), no
- * more. The two reference scenes, Mendoza and Chubut, are the longest.
+ * Scroll length of each story's map scene: enough to read the pod and watch its scene play
+ * (lib/scenes.ts), no more. The two reference scenes, Mendoza and Chubut, are the longest.
  */
 const STORY_VH: Record<string, number> = { misiones: 190, corrientes: 200, cordoba: 220, delta: 220, mendoza: 230, chubut: 330 };
+/**
+ * Before the map, the illustrated landscape of the region (components/Landscape.tsx); after it, the
+ * smoke that carries the reader to the next region. Chubut has no landscape: its cinematic opening
+ * (lib/cine.ts) is its establishing shot, and its scene starts right away.
+ */
+export const INTRO_VH: Record<string, number> = { misiones: 110, corrientes: 100, cordoba: 100, delta: 100, mendoza: 110, chubut: 0 };
+export const OUTRO_VH = 45;
 
 export const SECTIONS: Section[] = [
   { id: 'sec-opening', kind: 'opening', vh: 130 },
   { id: 'sec-title', kind: 'title', vh: 95 },
-  { id: 'sec-reveal', kind: 'reveal', vh: 125 },
-  ...TOUR_EVENTS.map((ev, i): Section => ({ id: 'sec-' + ev.id, kind: 'story', vh: STORY_VH[ev.id] ?? 150, story: i })),
-  { id: 'sec-wide', kind: 'wide', vh: 85 },
+  { id: 'sec-reveal', kind: 'reveal', vh: 160 },
+  ...TOUR_EVENTS.map((ev, i): Section => ({ id: 'sec-' + ev.id, kind: 'story', vh: INTRO_VH[ev.id] + STORY_VH[ev.id] + OUTRO_VH, story: i })),
   { id: 'sec-more', kind: 'more', vh: 420 },
-  { id: 'sec-explore', kind: 'explore', vh: 190 },
   { id: 'sec-epilogue', kind: 'epilogue', vh: 250 },
 ];
+
+/**
+ * Where a jump to a section lands (0..1 of it): past the smoke, on the title card of a region, or on
+ * the opening of the interlude, never on a covered screen.
+ */
+export function entryOf(i: number): number {
+  const s = SECTIONS[i];
+  if (s?.kind === 'story') { const [a, b] = storySpan(s.story!); return a > 0 ? a * 0.34 : b * 0.04; }
+  if (s?.kind === 'more') return 0.05;
+  return 0;
+}
+
+/** Where a story's map scene starts and ends inside its section (0..1). */
+export function storySpan(story: number): [number, number] {
+  const id = TOUR_EVENTS[story].id;
+  const H = INTRO_VH[id] + STORY_VH[id] + OUTRO_VH;
+  return [INTRO_VH[id] / H, 1 - OUTRO_VH / H];
+}
 
 /** Focal line, as a fraction of the viewport height. */
 export const FOCAL = 0.45;
@@ -60,7 +84,7 @@ export type TourState = {
   /** Title visibility, and how far it moved from the centre of the cover to the side (0..1). */
   title: number;
   titleDock: number;
-  /** -2 = South America, -1 = Argentina, 0..5 = fire, 6 = wide shot, 7 = explore by year, 8 = where else it burned. */
+  /** -2 = South America, -1 = Argentina, 0..5 = fire, 6 = wide shot, 7 = explore by year (/explorar), 8 = where else it burned. */
   chapter: number;
   /** Progress inside the fire (0..1); 1 outside the stories. */
   chapterT: number;
@@ -78,6 +102,15 @@ export type TourState = {
   ash: number;
   /** Opacity of the epilogue text: it fades out before the clouds turn to smoke. */
   epi: number;
+  /** The region's illustrated landscape covers the map (0..1), and how far its shot has run (0..1). */
+  land: number;
+  landT: number;
+  /** Haze or smoke over everything at the change of region (0..1): it hides the camera's travel. */
+  veil: number;
+  /** The chapter's title card over its landscape (0..1). */
+  card: number;
+  /** Reading text of the chapter, revealed in phases (0..1); it fades with the veil. */
+  pod: number;
 };
 
 /**
@@ -100,7 +133,7 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     }
   }
   const sec = SECTIONS[idx];
-  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, titleDock: 0, chapter: -2, chapterT: 1, bank: 1, smoke: 0, drift: 0, ash: 0, epi: 1, more: -1, moreT: 0 };
+  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, titleDock: 0, chapter: -2, chapterT: 1, bank: 1, smoke: 0, drift: 0, ash: 0, epi: 1, more: -1, moreT: 0, land: 0, landT: 0, veil: 0, card: 0, pod: 0 };
   switch (sec.kind) {
     case 'opening':
       st.title = 1;
@@ -116,28 +149,37 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
       st.titleDock = 1;
       st.open = 0.45 + 0.55 * seg(t, 0, 0.45);
       st.chapter = t < 0.55 ? -2 : -1;
-      st.borders = seg(t, 0.55, 0.85);
-      st.hud = seg(t, 0.8, 1);
+      st.borders = seg(t, 0.55, 0.8);
+      st.hud = seg(t, 0.7, 0.85);
+      // a haze rises: the camera goes down through the atmosphere to the first region
+      st.veil = seg(t, 0.84, 1);
       break;
-    case 'story':
-      st.open = 1; st.borders = 1; st.hud = 1;
+    case 'story': {
+      st.open = 1; st.borders = 1; st.hud = 1; st.bank = 0;
       st.chapter = sec.story!;
-      st.chapterT = t;
+      const [a, b] = storySpan(sec.story!);
+      st.chapterT = seg(t, a, b);
+      // in: the haze clears on the landscape (in Chubut, on its cinematic opening); out: smoke rises
+      st.veil = Math.max(1 - seg(t, 0, a > 0 ? a * 0.28 : 0.012), seg(t, b + (1 - b) * 0.15, 1));
+      if (a > 0) {
+        st.land = 1 - seg(t, a * 0.66, a);
+        st.landT = seg(t, 0, a);
+        st.card = seg(t, a * 0.14, a * 0.3) * (1 - seg(t, a * 0.58, a * 0.74));
+        st.pod = seg(t, a * 0.8, a + (b - a) * 0.3);
+      } else {
+        st.card = seg(st.chapterT, 0.02, 0.05) * (1 - seg(st.chapterT, 0.11, 0.14));
+        st.pod = seg(st.chapterT, 0.2, 0.36);
+      }
       break;
-    case 'wide':
-      st.open = 1; st.borders = 1; st.hud = 1;
-      st.chapter = 6;
-      break;
+    }
     case 'more':
-      st.open = 1; st.borders = 1; st.hud = 1;
+      st.open = 1; st.borders = 1; st.hud = 1; st.bank = 0;
       st.chapter = 8;
       st.moreT = t;
+      st.veil = 1 - seg(t, 0, 0.035);
+      st.pod = seg(t, 0.02, 0.06);
       // a national opening (the whole country, the ranking), then the four provinces one by one
       st.more = t < MORE_OPEN ? -1 : Math.min(MORE_PROVINCES.length - 1, Math.floor(((t - MORE_OPEN) / (1 - MORE_OPEN)) * MORE_PROVINCES.length));
-      break;
-    case 'explore':
-      st.open = 1; st.borders = 1; st.hud = 1;
-      st.chapter = 7;
       break;
     case 'epilogue':
       st.open = 1; st.borders = 1; st.chapter = 6;

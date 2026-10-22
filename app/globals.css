@@ -102,3 +102,7 @@ a { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* the page keeps its scrollbar gutter, so locking the scroll under a dialog moves nothing */
+html { scrollbar-gutter: stable; }
+html[data-dialog] { overflow: hidden; }

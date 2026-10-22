@@ -27,7 +27,7 @@ export default function CoverTitle() {
   return (
     <div ref={ref} className={styles.title} style={{ opacity: 1 }}>
       <h1 className={styles.h1}>Lo que el fuego se llevó</h1>
-      <p className={styles.sub}>6 historias · 2012–2026</p>
+      <p className={styles.sub}>Seis incendios, de la selva a la Patagonia</p>
     </div>
   );
 }

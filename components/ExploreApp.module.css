@@ -1,0 +1,49 @@
+/* /explorar: the map fills the screen; the panel sits on the left on the same dark paper as the story. */
+.root { position: relative; min-height: 100vh; background: var(--t-sea-1); color: var(--t-text-2); font-family: var(--t-font-read); }
+
+.bar {
+  position: fixed;
+  z-index: 4;
+  top: 0;
+  left: 0;
+  width: calc(32px + var(--t-pod-w) + 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3) var(--s-2) 32px;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-height: 44px;
+  padding: 0 var(--s-2);
+  border: 1px solid var(--t-control);
+  border-radius: 999px;
+  color: var(--t-text);
+  font: 600 var(--fs-14) / 1 var(--t-font-read);
+  text-decoration: none;
+}
+.back:hover { background: var(--t-text); color: var(--t-sea-1); }
+.back:focus-visible { outline: 3px solid var(--t-ember); outline-offset: 2px; }
+.brand { font: 400 var(--fs-20) / 1 var(--t-font-title); color: var(--t-text); }
+
+.panel {
+  position: fixed;
+  z-index: 3;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(32px + var(--t-pod-w) + 24px);
+  padding: 92px var(--s-3) var(--s-4) 32px;
+  overflow-y: auto;
+  background: rgba(5, 8, 13, 0.92);
+  box-shadow: 1px 0 0 var(--t-line);
+}
+
+@media (max-width: 1023.98px) {
+  .bar { width: 100%; padding: var(--s-1) var(--s-2); top: auto; bottom: 0; z-index: 7; background: var(--t-paper); box-shadow: 0 -1px 0 var(--t-line); }
+  .brand { font-size: var(--fs-16); }
+  .panel { top: var(--t-stage-h); bottom: 60px; width: 100%; padding: var(--s-2); z-index: 6; }
+}

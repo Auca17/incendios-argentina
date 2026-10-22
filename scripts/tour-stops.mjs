@@ -1,8 +1,9 @@
 // Prints `name:px` scroll positions that put the focal line (45 % of the viewport) at t = 0, 50 and
 // 100 % of every tour section, for `node scripts/shots.mjs --ys $(node scripts/tour-stops.mjs 900)`.
 const vh = +(process.argv[2] || 900);
-const S = [['opening', 130], ['title', 95], ['reveal', 125], ['misiones', 180], ['corrientes', 180], ['cordoba', 180],
-  ['delta', 180], ['mendoza', 180], ['chubut', 180], ['wide', 85], ['more', 360], ['explore', 190], ['epilogue', 250]];
+// heights as in lib/tour.ts (story = landscape intro + map scene + smoke outro)
+const S = [['opening', 130], ['title', 95], ['reveal', 160], ['misiones', 345], ['corrientes', 345], ['cordoba', 365],
+  ['delta', 365], ['mendoza', 385], ['chubut', 375], ['more', 420], ['epilogue', 250]];
 let top = 0;
 const out = [];
 for (const [n, h] of S) {

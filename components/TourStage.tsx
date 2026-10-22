@@ -8,10 +8,11 @@ import { STORY_PHOTOS } from '../lib/photos';
 import { TOUR_EVENTS } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
 import { MAP_COLORS, GRID_MAX } from './TourMap';
+import Locator from './Locator';
 import styles from './TourStage.module.css';
 
 /** close: a scene's close-up note is on; ill: it is the illustration note (else the flames note). */
-type View = { chapter: number; week: number; revealed: boolean; close: boolean; ill: boolean; balance: boolean; cine: boolean };
+type View = { chapter: number; week: number; revealed: boolean; close: boolean; ill: boolean; balance: boolean; cine: boolean; shown: boolean };
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 /** "21 de enero de 2026" → "21 de enero". */
@@ -25,7 +26,7 @@ const firstDay = (E: Foci) => new Date(E.start + 'T00:00:00').toLocaleDateString
  * follow the scroll state; React re-renders only when the chapter or the week change.
  */
 export default function TourStage() {
-  const [v, setV] = useState<View>({ chapter: -1, week: 0, revealed: false, close: false, ill: false, balance: false, cine: false });
+  const [v, setV] = useState<View>({ chapter: -1, week: 0, revealed: false, close: false, ill: false, balance: false, cine: false, shown: false });
   const [foci, setFoci] = useState<Record<string, Foci>>({});
 
   useEffect(() => {
@@ -45,8 +46,10 @@ export default function TourStage() {
     const cine = !!sf?.cine;
     const close = !!sf && (sf.flames || ill || cine);
     const balance = !!sf && sf.balance;
-    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed && o.close === close && o.ill === ill && o.balance === balance && o.cine === cine
-      ? o : { chapter: st.chapter, week, revealed, close, ill, balance, cine }));
+    // nothing over the map while a landscape or the smoke between regions covers it
+    const shown = st.land < 0.5 && st.veil < 0.5;
+    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed && o.close === close && o.ill === ill && o.balance === balance && o.cine === cine && o.shown === shown
+      ? o : { chapter: st.chapter, week, revealed, close, ill, balance, cine, shown }));
   }), [foci]);
 
   const story = v.chapter >= 0 && v.chapter <= 5;
@@ -58,11 +61,17 @@ export default function TourStage() {
 
   return (
     <>
-      <p className={v.revealed && !v.close ? `${styles.notice} ${styles.on}` : styles.notice}>
+      <p className={v.revealed && !v.close && v.shown ? `${styles.notice} ${styles.on}` : styles.notice}>
         <b>Focos de calor</b> ≠ hectáreas quemadas ≠ incendios forestales
       </p>
 
-      <div className={story ? `${styles.counter} ${styles.on}` : styles.counter} aria-live="off">
+      {TOUR_EVENTS.map((e, i) => (
+        <div key={e.id} className={v.chapter === i && v.shown && !v.cine ? `${styles.locator} ${styles.on}` : styles.locator} aria-hidden="true">
+          <Locator provs={e.provs} marker={e.marker} label={`${e.region} en el mapa de Argentina`} className={styles.locatorMap} />
+        </div>
+      ))}
+
+      <div className={story && v.shown && !v.cine ? `${styles.counter} ${styles.on}` : styles.counter} aria-live="off">
         {E && ev && v.balance && (
           <>
             {/* the fire's own weeks apart from the whole observation period */}
@@ -101,11 +110,11 @@ export default function TourStage() {
         </p>
       </div>
 
-      <p className={v.close ? `${styles.fxNote} ${styles.on}` : styles.fxNote}>
+      <p className={v.close && v.shown ? `${styles.fxNote} ${styles.on}` : styles.fxNote}>
         {note && <><b>{note[0]}</b>{note[1]}</>}
       </p>
 
-      <figure className={photo && !v.close ? `${styles.scene} ${styles.on}` : photo ? `${styles.scene} ${styles.on} ${styles.sceneAside}` : styles.scene}>
+      <figure className={photo && !v.close && v.shown ? `${styles.scene} ${styles.on}` : photo ? `${styles.scene} ${styles.on} ${styles.sceneAside}` : styles.scene}>
         {photo && (
           <>
             <img src={BASE + photo.src} alt={photo.alt} width={photo.width} height={photo.height} className={styles.photo} />
