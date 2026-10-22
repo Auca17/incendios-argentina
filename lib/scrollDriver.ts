@@ -7,6 +7,11 @@ import { FOCAL, SECTIONS, tourProgress, tourState, type TourState } from './tour
  * are measured once and cached (re-measured on resize and when the document height changes), so a
  * frame does no layout reads beyond scrollY. A subscriber returns true while it still needs frames
  * (the map camera settling); the loop stops as soon as nothing moves.
+ *
+ * Fast scrolling: the state handed out follows the scroll's state with a short ease (about 120 ms),
+ * field by field, so a big jump in the page becomes a brief transition instead of a cut (clouds,
+ * title, scenes). Slow scrolling barely notices it. It always lands exactly on the scroll's state, so
+ * a position still has one frame; the scroll itself is never held. Not under reduced motion.
  */
 export type Frame = { st: TourState; scrollY: number; vw: number; vh: number; progress: number; reduced: boolean };
 type Sub = (f: Frame) => boolean | void;
@@ -19,6 +24,32 @@ let started = false;
 let docH = 0;
 let reduced = false;
 let last: Frame | null = null;
+
+/** Continuous fields that ease; discrete ones (section, chapter, province) switch at once. */
+const EASED = ['open', 'close', 'borders', 'hud', 'title', 'titleDock', 'bank', 'smoke', 'ash', 'epi', 'chapterT', 'moreT'] as const;
+const TAU = 0.12; // seconds
+let shown: TourState | null = null;
+let lastT = 0;
+
+function ease(target: TourState): [TourState, boolean] {
+  const now = performance.now();
+  const dt = Math.min(0.1, Math.max(0, (now - lastT) / 1000));
+  lastT = now;
+  if (reduced || !shown || dt === 0) { shown = target; return [target, false]; }
+  const k = 1 - Math.exp(-dt / TAU);
+  const out = { ...target };
+  let moving = false;
+  for (const f of EASED) {
+    // a new chapter starts from its own progress, not from the previous chapter's
+    if ((f === 'chapterT' || f === 'moreT') && target.chapter !== shown.chapter) continue;
+    const d = target[f] - shown[f];
+    if (Math.abs(d) < 0.002) continue;
+    out[f] = shown[f] + d * k;
+    moving = true;
+  }
+  shown = out;
+  return [out, moving];
+}
 
 function measure() {
   const y = window.scrollY;
@@ -40,11 +71,14 @@ function frame() {
   const vh = window.innerHeight;
   const vw = window.innerWidth;
   const scrollY = window.scrollY;
-  const st = tourState(scrollY + vh * FOCAL, tops, heights, reduced, scrollY);
+  const [st, easing] = ease(tourState(scrollY + vh * FOCAL, tops, heights, reduced, scrollY));
   const f: Frame = { st, scrollY, vw, vh, progress: tourProgress(scrollY, tops, heights, vh), reduced };
   last = f;
-  let again = false;
+  let again = easing;
   subs.forEach((fn) => { if (fn(f)) again = true; });
+  // the visual tests wait for this: '1' once nothing eases or settles any more
+  const settled = again ? '0' : '1';
+  if (document.documentElement.dataset.tourSettled !== settled) document.documentElement.dataset.tourSettled = settled;
   if (again) request();
 }
 

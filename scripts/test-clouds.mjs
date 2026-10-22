@@ -88,9 +88,15 @@ await send('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/` 
 await loaded;
 await sleep(2000);
 
+// the page eases a jump of the scroll into a short transition (lib/scrollDriver.ts), so wait until it
+// reports that it settled (html[data-tour-settled="1"], at most 3 s): that settled frame is what the
+// page promises
 const covAt = (y) => evaluate(`(async () => {
   window.scrollTo(0, ${y});
-  await new Promise((r) => setTimeout(r, 160));
+  const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
+  await frame();
+  await frame();
+  for (let i = 0; i < 60 && document.documentElement.dataset.tourSettled !== '1'; i++) await new Promise((r) => setTimeout(r, 50));
   return +document.querySelector('canvas[data-tour-canvas="clouds"]').dataset.coverage;
 })()`);
 // in-page sample of the cloud canvas: alpha per cell of a 192-wide grid
