@@ -120,8 +120,10 @@ export type Air = {
 };
 
 export function airScene(u: number, reduced = false): Air {
-  let zoom = smooth(seg(u, 0.03, 0.16)) * (1 - smooth(seg(u, 0.9, 0.99)));
-  if (reduced) zoom = u >= 0.09 && u < 0.945 ? 1 : 0; // the camera cuts instead of travelling
+  // the cinematic opening (lib/cine.ts) leaves the camera already on the valleys: it only opens
+  // back to the province at the end
+  let zoom = 1 - smooth(seg(u, 0.9, 0.99));
+  if (reduced) zoom = u < 0.945 ? 1 : 0; // the camera cuts instead of travelling
   const wf = pieces(u, [[0, 0], [0.06, 0.6], [0.42, 4.5], [0.82, 4.85], [0.9, EPISODE_WEEKS]]);
   const plane = seg(u, 0.44, 0.82);
   const routeIn = smooth(seg(u, 0.36, 0.46));

@@ -30,7 +30,7 @@ export type Section = { id: string; kind: Kind; vh: number; story?: number };
  * Scroll length of each story: enough to read the pod and watch its scene play (lib/scenes.ts), no
  * more. The two reference scenes, Mendoza and Chubut, are the longest.
  */
-const STORY_VH: Record<string, number> = { misiones: 190, corrientes: 200, cordoba: 220, delta: 220, mendoza: 230, chubut: 260 };
+const STORY_VH: Record<string, number> = { misiones: 190, corrientes: 200, cordoba: 220, delta: 220, mendoza: 230, chubut: 330 };
 
 export const SECTIONS: Section[] = [
   { id: 'sec-opening', kind: 'opening', vh: 130 },

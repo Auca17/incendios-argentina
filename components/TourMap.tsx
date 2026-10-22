@@ -7,6 +7,7 @@ import type { Sites } from '../lib/fx';
 import { MORE_OPEN, MORE_PROVINCES, TOUR_EVENTS } from '../lib/tour';
 import { request, subscribe, type Frame } from '../lib/scrollDriver';
 import { mapRect } from '../lib/tourLayout';
+import CineFire from './CineFire';
 import styles from './TourMap.module.css';
 
 /*
@@ -716,6 +717,7 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
         aria-label="Mapa de Sudamérica con las provincias argentinas y los focos de calor semanales detectados por satélite en cada incendio del recorrido"
       />
       <canvas ref={fxv} className={styles.fx} data-tour-canvas="fx" aria-hidden="true" />
+      <CineFire />
     </div>
   );
 }

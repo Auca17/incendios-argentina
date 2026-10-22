@@ -6,6 +6,7 @@ import { drawFx, fireSites, type Proj, type Sites } from './fx';
 import { drawGround } from './fxGround';
 import { STORIES, storyState } from './storyScenes';
 import { drawStory } from './fxStories';
+import { CINE_END, afterCine } from './cine';
 
 /*
  * The story scenes, one per story that has one. Each is a pure function of the story's progress u
@@ -26,6 +27,8 @@ export type SceneFrame = {
   flames: boolean;
   /** Chubut's closing balance replaces the weekly counter. */
   balance: boolean;
+  /** Chubut's cinematic opening is on screen (its own note; the map waits under it). */
+  cine?: boolean;
   draw: (g: CanvasRenderingContext2D, a: DrawArgs, sites: Sites) => void;
 };
 export type Scene = {
@@ -36,7 +39,7 @@ export type Scene = {
   week: (E: Foci, u: number) => number;
   sites: (E: Foci) => Sites;
   /** Notes on the map: [bold lead, rest]. */
-  notes: { flames: [string, string]; ill: [string, string] };
+  notes: { flames: [string, string]; ill: [string, string]; cine?: [string, string] };
 };
 
 const FLAMES_NOTE: [string, string] = ['Las llamas', ' marcan dónde se acumularon más focos de calor. No miden superficie quemada.'];
@@ -44,16 +47,21 @@ const FLAMES_NOTE: [string, string] = ['Las llamas', ' marcan dónde se acumular
 const chubut: Scene = {
   box: () => HOTSPOT,
   relief: { src: '/map/closeup-epuyen.webp', box: [-73.6, -69.5, -43.8, -41.0] },
+  // the first part of the story is the cinematic opening (lib/cine.ts); the map's scene runs after it
   frame: (u, reduced) => {
-    const a = airScene(u, reduced);
+    const a = airScene(afterCine(u), reduced);
     return {
-      zoom: a.zoom, pan: a.pan, ill: a.ill, flames: a.zoom > 0.5 && a.phase !== 'balance', balance: a.phase === 'balance',
+      zoom: a.zoom, pan: a.pan, ill: a.ill, flames: a.zoom > 0.5 && a.phase !== 'balance', balance: a.phase === 'balance', cine: u < CINE_END - 0.02,
       draw: (g, d, sites) => drawFx(g, { ...d, zoom: a.zoom, wf: a.wf, plane: a.plane, routeIn: a.routeIn, routeDim: a.routeDim, ill: a.ill, sites }),
     };
   },
-  week: (E, u) => (u >= 0.9 ? E.weeks : clamp(Math.floor(airScene(u).wf) + 1, 1, E.weeks)),
+  week: (E, u) => (afterCine(u) >= 0.9 ? E.weeks : clamp(Math.floor(airScene(afterCine(u)).wf) + 1, 1, E.weeks)),
   sites: (E) => fireSites(E.cells, 0, EPISODE_WEEKS),
-  notes: { flames: FLAMES_NOTE, ill: ['Ilustración.', ' Aviones hidrantes combatieron este incendio; esta pasada no reproduce una operación concreta.'] },
+  notes: {
+    flames: FLAMES_NOTE,
+    ill: ['Ilustración.', ' Aviones hidrantes combatieron este incendio; esta pasada no reproduce una operación concreta.'],
+    cine: ['Recreación ilustrada.', ' Un bosque andino en llamas, no una imagen real de Epuyén. Los datos vuelven con el mapa.'],
+  },
 };
 
 const mendoza: Scene = {

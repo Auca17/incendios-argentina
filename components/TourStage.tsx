@@ -11,7 +11,7 @@ import { MAP_COLORS, GRID_MAX } from './TourMap';
 import styles from './TourStage.module.css';
 
 /** close: a scene's close-up note is on; ill: it is the illustration note (else the flames note). */
-type View = { chapter: number; week: number; revealed: boolean; close: boolean; ill: boolean; balance: boolean };
+type View = { chapter: number; week: number; revealed: boolean; close: boolean; ill: boolean; balance: boolean; cine: boolean };
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 /** "21 de enero de 2026" → "21 de enero". */
@@ -25,7 +25,7 @@ const firstDay = (E: Foci) => new Date(E.start + 'T00:00:00').toLocaleDateString
  * follow the scroll state; React re-renders only when the chapter or the week change.
  */
 export default function TourStage() {
-  const [v, setV] = useState<View>({ chapter: -1, week: 0, revealed: false, close: false, ill: false, balance: false });
+  const [v, setV] = useState<View>({ chapter: -1, week: 0, revealed: false, close: false, ill: false, balance: false, cine: false });
   const [foci, setFoci] = useState<Record<string, Foci>>({});
 
   useEffect(() => {
@@ -42,10 +42,11 @@ export default function TourStage() {
     const revealed = st.borders > 0 && st.close < 1;
     const sf = ev && SCENES[ev.id] ? SCENES[ev.id].frame(st.chapterT, reduced) : null;
     const ill = !!sf && sf.ill > 0.5;
-    const close = !!sf && (sf.flames || ill);
+    const cine = !!sf?.cine;
+    const close = !!sf && (sf.flames || ill || cine);
     const balance = !!sf && sf.balance;
-    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed && o.close === close && o.ill === ill && o.balance === balance
-      ? o : { chapter: st.chapter, week, revealed, close, ill, balance }));
+    setV((o) => (o.chapter === st.chapter && o.week === week && o.revealed === revealed && o.close === close && o.ill === ill && o.balance === balance && o.cine === cine
+      ? o : { chapter: st.chapter, week, revealed, close, ill, balance, cine }));
   }), [foci]);
 
   const story = v.chapter >= 0 && v.chapter <= 5;
@@ -53,7 +54,7 @@ export default function TourStage() {
   const E = ev ? foci[ev.id] : undefined;
   const photo = ev ? STORY_PHOTOS[ev.id]?.[0] : undefined;
   const sc = ev ? SCENES[ev.id] : undefined;
-  const note = sc ? (v.ill ? sc.notes.ill : sc.notes.flames) : null;
+  const note = sc ? (v.cine && sc.notes.cine ? sc.notes.cine : v.ill ? sc.notes.ill : sc.notes.flames) : null;
 
   return (
     <>
