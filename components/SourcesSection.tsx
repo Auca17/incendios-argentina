@@ -29,6 +29,14 @@ const DATA: Card[] = [
     what: ['Relieve sombreado (Natural Earth, Shaded Relief 1:50m), coloreado para el mapa', 'Límites de países y provincias'],
     url: 'https://www.naturalearthdata.com/',
   },
+  {
+    source: 'Terrain Tiles (Mapzen, AWS Open Data)',
+    what: [
+      'Relieve detallado de El Challao y de Epuyén, sombreado y coloreado para los acercamientos',
+      'Datos de elevación SRTM y GMTED2010, cortesía del U.S. Geological Survey; ETOPO1, NOAA',
+    ],
+    url: 'https://registry.opendata.aws/terrain-tiles/',
+  },
 ];
 
 /**
