@@ -1,0 +1,36 @@
+/*
+ * "Dónde más ardió" on the cloud bank: dark ink on white cloud, like the story pods. Provinces
+ * without a story in red (the point of the section), the ones with a story in ink grey.
+ */
+.lead { margin-top: var(--s-2); color: var(--t-ink); }
+.lead b { font-weight: 700; }
+
+.rank { display: grid; gap: var(--s-1); margin: var(--s-3) 0 var(--s-2); padding: 0; list-style: none; }
+.rank li {
+  display: grid;
+  grid-template-columns: minmax(0, 11.5em) 1fr 4.4em;
+  align-items: center;
+  gap: var(--s-1);
+  font: 400 var(--fs-14) / 1.3 var(--t-font-read);
+  color: var(--t-ink);
+}
+.rankName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.untold .rankName { font-weight: 700; }
+.bar { display: block; height: 10px; border-radius: 999px; background: rgba(17, 20, 24, 0.08); }
+.bar i { display: block; height: 100%; border-radius: inherit; }
+.untold .bar i { background: var(--t-red); }
+.told .bar i { background: #5b636c; }
+.rankN { font: 400 var(--fs-14) / 1 var(--t-font-mono); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.note { font-size: var(--fs-14); line-height: 1.5; color: var(--t-ink-2); }
+.keyUntold,
+.keyTold { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; }
+.keyUntold { background: var(--t-red); }
+.keyTold { background: #5b636c; }
+
+.months { margin: var(--s-3) 0 0; }
+.months figcaption { margin-bottom: var(--s-1); font: 600 var(--fs-14) / 1.4 var(--t-font-read); color: var(--t-ink); }
+.months svg { display: block; width: 100%; max-width: 360px; height: auto; }
+.months text { font: 400 8.5px var(--t-font-read); fill: var(--t-ink-2); }
+.mbar { fill: #5b636c; }
+.peak { fill: var(--t-red); }

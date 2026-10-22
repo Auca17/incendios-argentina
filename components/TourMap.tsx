@@ -4,7 +4,7 @@ import { loadFoci, loadGrid, loadProvincias, type Foci } from '../lib/data';
 import { getExplore, setExplore, subscribeExplore } from '../lib/exploreState';
 import { SCENES, storyWeek, type Scene, type SceneFrame } from '../lib/scenes';
 import type { Sites } from '../lib/fx';
-import { MORE_PROVINCES, TOUR_EVENTS } from '../lib/tour';
+import { MORE_OPEN, MORE_PROVINCES, TOUR_EVENTS } from '../lib/tour';
 import { request, subscribe, type Frame } from '../lib/scrollDriver';
 import { mapRect } from '../lib/tourLayout';
 import styles from './TourMap.module.css';
@@ -116,6 +116,7 @@ export default function TourMap() {
     const unsubExplore = subscribeExplore(() => request());
     let chapterNow = -2;
     let moreNow = -1;
+    let moreTNow = 0;
     let allYears: [number, number, number][] | null = null; // foci 2012-2026 per 0.25-degree cell
     let allMax = 1;
     const loadAllYears = () => {
@@ -214,6 +215,7 @@ export default function TourMap() {
       const rw = sf ? rr + (mapRect(w, 6)[1] - rr) * sf.zoom : rr;
       const target = [...boxFor(st.chapter, st.open, st.more, scene, sf), rl, rw];
       moreNow = st.more;
+      moreTNow = st.moreT;
       if (!cam || f.reduced) cam = target.slice();
       let moving = false;
       for (let i = 0; i < 6; i++) {
@@ -234,7 +236,7 @@ export default function TourMap() {
         loadGrid(ex.year).then((g) => { if (live) { grids.set(ex.year, g); baseKey = lastKey = ''; request(); } }, () => {});
       }
       if (st.chapter === 8) loadAllYears();
-      const exKey = st.chapter === 7 ? ex.year + ':' + (ex.prov || '') : st.chapter === 8 ? 'more:' + st.more + ':' + (allYears?.length || 0) : '';
+      const exKey = st.chapter === 7 ? ex.year + ':' + (ex.prov || '') : st.chapter === 8 ? 'more:' + st.more + ':' + (allYears?.length || 0) + ':' + Math.min(1, st.moreT / MORE_OPEN).toFixed(3) : '';
       const key = [cam.map((v) => v.toFixed(4)).join(','), st.chapter, week, st.borders.toFixed(3), provs.length, foci.size, w, h, exKey].join('|');
       if (key !== lastKey) {
         lastKey = key;
@@ -349,6 +351,9 @@ export default function TourMap() {
       return [b[0] - 0.6, b[1] + 0.6, b[2] - 0.6, b[3] + 0.6];
     };
     const FIRE_RES = 80; // px per degree: a 0.05-degree cell is 4 px
+    const ZOOM_RES = 480; // px per degree of the close-up plates of big fires
+    const zoomKeys: string[] = [];
+    const nearKeys: string[] = [];
     const oldPlate = (id: string, E: Foci, c0: number) => plate(`old:${id}:${c0}`, fireBox(E), FIRE_RES, (g, pp) => {
       const W = weeksOf(id, E);
       for (let wk = c0; wk < c0 + CHUNK; wk++) focusCells(g, W[wk] || [], E.step, FIRE_RES, pp, C.old, 0.22, 1, 0.4);
@@ -398,7 +403,7 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       const camKey = c.map((v) => v.toFixed(4)).join(',') + '|' + w + 'x' + h;
 
       const ex = getExplore();
-      const bk = [camKey, chapter, borders.toFixed(3), provs.length, foci.size, !!relief, !!neighbours, chapter === 7 ? ex.year + ':' + (ex.prov || '') + ':' + (grids.get(ex.year)?.cells.length || 0) : chapter === 8 ? moreNow + ':' + (allYears?.length || 0) : ''].join('|');
+      const bk = [camKey, chapter, borders.toFixed(3), provs.length, foci.size, !!relief, !!neighbours, chapter === 7 ? ex.year + ':' + (ex.prov || '') + ':' + (grids.get(ex.year)?.cells.length || 0) : chapter === 8 ? moreNow + ':' + (allYears?.length || 0) + ':' + Math.min(1, moreTNow / MORE_OPEN).toFixed(3) : ''].join('|');
       if (bk !== baseKey) {
         baseKey = bk;
         drawBase(bctx, world, chapter, borders, px, scale, proj);
@@ -425,7 +430,28 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       // older weeks come from fixed blocks of CHUNK weeks, each rendered once and kept; only the weeks
       // after the last whole block are drawn live. Same position, same blocks, same pixels.
       // in a close-up the cached plates would be enlarged into blocks: a small fire is drawn live instead
-      const sharp = scale > FIRE_RES * 1.3 && Ea.cells.length < 3000;
+      const close = scale > FIRE_RES * 1.3;
+      const sharp = close && Ea.cells.length < 3000;
+      const sc = SCENES[a.id];
+      if (close && !sharp && sc && sf && sf.zoom > 0.3) {
+        // a big fire in a close-up: its cells inside the scene's box, one plate per week at the
+        // close-up's resolution (rebuilt only when the week changes; the last few are kept)
+        const key = `zoom:${a.id}:${week}`;
+        if (!plates.has(key)) {
+          zoomKeys.push(key);
+          while (zoomKeys.length > 3) plates.delete(zoomKeys.shift()!);
+        }
+        const bx = sc.relief.box, res = ZOOM_RES;
+        const inBox = (c: Pt) => c[0] >= bx[0] && c[0] <= bx[1] && c[1] >= bx[2] && c[1] <= bx[3];
+        placePlate(ctx, world, plate(key, bx, res, (pg, pp) => {
+          for (let wk = 0; wk < week; wk++) {
+            const age = week - 1 - wk;
+            const col = age < 1 ? C.hot : age < 3 ? C.ember : age < LIVE_WEEKS ? C.deep : C.old;
+            focusCells(pg, W[wk].filter(inBox), Ea.step, res, pp, col, age < 1 ? 0.7 : age >= LIVE_WEEKS ? 0.3 : 0, 1, age >= LIVE_WEEKS ? 0.4 : 0, WEEK_REF, 4);
+          }
+        }));
+        return;
+      }
       const ashW = sharp ? 0 : Math.max(0, Math.floor((week - LIVE_WEEKS) / CHUNK) * CHUNK);
       for (let c0 = 0; c0 < ashW; c0 += CHUNK) placePlate(ctx, world, oldPlate(a.id, Ea, c0));
       for (let wk = ashW; wk < week; wk++) {
@@ -509,7 +535,8 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       }
 
       // visited fires: a faint warm outline and all their foci, dimmer than the active fire
-      const visited = chapter === 6 ? 6 : Math.max(0, chapter);
+      // in a scene's close-up the visited fires' plates would be enlarged into blocks: they wait
+      const visited = scale > FIRE_RES * 1.3 ? 0 : chapter === 6 ? 6 : Math.max(0, chapter);
       for (let i = 0; i < visited; i++) {
         const v = TOUR_EVENTS[i];
         world(g);
@@ -557,12 +584,33 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       if (allYears && allYears.length) {
         const cells = allYears;
         const lm = Math.log(allMax + 1);
-        placePlate(g, world, plate('grid:all', [-75, -52, -56, -21], 56, (pg, pp) => {
-          const tiers: Pt[][] = [[], [], [], []];
-          for (const [lon, lat, n] of cells) tiers[Math.min(3, Math.floor((Math.log(n + 1) / lm) * 4))].push([lon, lat, n]);
-          // fifteen years pile up: smaller squares keep it a density of points, not a filled area
-          tiers.forEach((list, i) => focusCells(pg, list, 0.25, 56, pp, C.grid[i], 0.25, 1, 0.42, allMax));
-        }));
+        const tiers: Pt[][] = [[], [], [], []];
+        for (const [lon, lat, n] of cells) tiers[Math.min(3, Math.floor((Math.log(n + 1) / lm) * 4))].push([lon, lat, n]);
+        // the national opening reveals the cells strongest first, one tier after another; fifteen
+        // years pile up, so small points keep it a density of detections, not a filled area
+        const r = Math.min(1, moreTNow / MORE_OPEN / 0.75);
+        const name = MORE_PROVINCES[moreNow];
+        const pv = name ? provs.find((p) => p.name === name) : undefined;
+        if (pv && 1 / px > 50) {
+          // on a province the 25 km cells would grow into big discs: a plate of its surroundings at a
+          // finer resolution keeps every cell a point of the same size (the last two are kept)
+          const b = pv.box, cx = (b[0] + b[1]) / 2, cy = (b[2] + b[3]) / 2, hw = Math.max((b[1] - b[0]) * 1.4, 6), hh = Math.max((b[3] - b[2]) * 1.4, 6);
+          const box: Box = [cx - hw, cx + hw, cy - hh, cy + hh];
+          const key = 'grid:all:near:' + name;
+          if (!plates.has(key)) { nearKeys.push(key); while (nearKeys.length > 2) plates.delete(nearKeys.shift()!); }
+          placePlate(g, world, plate(key, box, 150, (pg, pp) => {
+            const near = (c: Pt) => c[0] >= box[0] && c[0] <= box[1] && c[1] >= box[2] && c[1] <= box[3];
+            tiers.forEach((list, i) => focusCells(pg, list.filter(near), 0.25, 150, pp, C.grid[i], 0.4, 1, 0.42, allMax, 12));
+          }));
+        } else for (let i = 3; i >= 0; i--) {
+          const k = 3 - i, a = Math.min(1, Math.max(0, (r - k * 0.2) / 0.35));
+          if (a <= 0) continue;
+          g.globalAlpha = a;
+          placePlate(g, world, plate('grid:all:' + i, [-75, -52, -56, -21], 56, (pg, pp) => {
+            focusCells(pg, tiers[i], 0.25, 56, pp, C.grid[i], 0.25, 1, 0.42, allMax);
+          }));
+        }
+        g.globalAlpha = 1;
       }
       const name = MORE_PROVINCES[moreNow];
       world(g);

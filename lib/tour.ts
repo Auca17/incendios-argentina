@@ -22,13 +22,15 @@ export type Kind = 'opening' | 'title' | 'reveal' | 'story' | 'wide' | 'more' | 
 
 /** "Dónde más ardió": the provinces with the most foci in 2012-2026 that are not in the six stories. */
 export const MORE_PROVINCES = ['Formosa', 'Chaco', 'Santiago del Estero', 'Salta'];
+/** Share of "Dónde más ardió" given to its national opening. */
+export const MORE_OPEN = 0.24;
 export type Section = { id: string; kind: Kind; vh: number; story?: number };
 
 /*
- * Scroll length of each story: enough to read the pod and watch the weeks, no more. Chubut
- * and Mendoza are longer: their illustrated scenes play inside them (lib/scenes.ts).
+ * Scroll length of each story: enough to read the pod and watch its scene play (lib/scenes.ts), no
+ * more. The two reference scenes, Mendoza and Chubut, are the longest.
  */
-const STORY_VH: Record<string, number> = { mendoza: 230, chubut: 260 };
+const STORY_VH: Record<string, number> = { misiones: 190, corrientes: 200, cordoba: 220, delta: 220, mendoza: 230, chubut: 260 };
 
 export const SECTIONS: Section[] = [
   { id: 'sec-opening', kind: 'opening', vh: 130 },
@@ -36,7 +38,7 @@ export const SECTIONS: Section[] = [
   { id: 'sec-reveal', kind: 'reveal', vh: 125 },
   ...TOUR_EVENTS.map((ev, i): Section => ({ id: 'sec-' + ev.id, kind: 'story', vh: STORY_VH[ev.id] ?? 150, story: i })),
   { id: 'sec-wide', kind: 'wide', vh: 85 },
-  { id: 'sec-more', kind: 'more', vh: 360 },
+  { id: 'sec-more', kind: 'more', vh: 420 },
   { id: 'sec-explore', kind: 'explore', vh: 190 },
   { id: 'sec-epilogue', kind: 'epilogue', vh: 250 },
 ];
@@ -68,8 +70,10 @@ export type TourState = {
   smoke: number;
   /** Scroll-driven offset for embers and ash (0 while there is no smoke). */
   drift: number;
-  /** Province shown in "Dónde más ardió" (index in MORE_PROVINCES), -1 outside it. */
+  /** Province shown in "Dónde más ardió" (index in MORE_PROVINCES), -1 outside it and in its national opening. */
   more: number;
+  /** Progress inside "Dónde más ardió" (0..1): its opening reveals the national map, strongest cells first. */
+  moreT: number;
   /** Falling ash on the white clouds, before the smoke (0..1). */
   ash: number;
   /** Opacity of the epilogue text: it fades out before the clouds turn to smoke. */
@@ -96,7 +100,7 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     }
   }
   const sec = SECTIONS[idx];
-  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, titleDock: 0, chapter: -2, chapterT: 1, bank: 1, smoke: 0, drift: 0, ash: 0, epi: 1, more: -1 };
+  const st: TourState = { idx, t, open: 0, close: 0, borders: 0, hud: 0, title: 0, titleDock: 0, chapter: -2, chapterT: 1, bank: 1, smoke: 0, drift: 0, ash: 0, epi: 1, more: -1, moreT: 0 };
   switch (sec.kind) {
     case 'opening':
       st.title = 1;
@@ -127,7 +131,9 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
     case 'more':
       st.open = 1; st.borders = 1; st.hud = 1;
       st.chapter = 8;
-      st.more = Math.min(MORE_PROVINCES.length - 1, Math.floor(t * MORE_PROVINCES.length));
+      st.moreT = t;
+      // a national opening (the whole country, the ranking), then the four provinces one by one
+      st.more = t < MORE_OPEN ? -1 : Math.min(MORE_PROVINCES.length - 1, Math.floor(((t - MORE_OPEN) / (1 - MORE_OPEN)) * MORE_PROVINCES.length));
       break;
     case 'explore':
       st.open = 1; st.borders = 1; st.hud = 1;
