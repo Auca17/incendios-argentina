@@ -9,6 +9,11 @@ import styles from './StoryPod.module.css';
 type Props = { ev: any; index: number; total: number };
 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+/**
+ * Phones: the scene's progress (chapterT) at which the cause gives way to the figure. Chubut's text
+ * appears after its cinematic opening, so it swaps later.
+ */
+const SWAP: Record<string, number> = { chubut: 0.58 };
 
 /**
  * Reading text of one region, fixed on the left of the screen while its scene plays. It is revealed
@@ -26,12 +31,20 @@ export default function StoryPod({ ev, index, total }: Props) {
     if (!el) return;
     const on = st.chapter === index && st.pod > 0.001 && st.veil < 0.999;
     el.style.setProperty('--p', on ? st.pod.toFixed(3) : '0');
+    // phones show the cause, then the figure in its place (never more than two blocks at once); the
+    // swap follows the scene's own progress, so each block holds for a good stretch of scroll
+    const s0 = SWAP[ev.id] ?? 0.42;
+    const swap = on ? Math.min(1, Math.max(0, (st.chapterT - s0) / 0.06)) : 0;
+    el.style.setProperty('--swap', swap.toFixed(3));
+    // (phones) the figure and its button cannot be reached while they are not shown yet
+    const sw = swap < 0.01 ? '0' : '1';
+    if (el.dataset.swap !== sw) el.dataset.swap = sw;
     el.style.opacity = on ? (1 - st.veil).toFixed(3) : '0';
     if (el.dataset.on !== (on ? '1' : '0')) {
       el.dataset.on = on ? '1' : '0';
       el.inert = !on;
     }
-  }), [index]);
+  }), [index, ev.id]);
 
   return (
     <article ref={ref} className={styles.pod} aria-labelledby={id + 'h'} data-on="0">
@@ -40,11 +53,13 @@ export default function StoryPod({ ev, index, total }: Props) {
       </p>
       <h2 className={`${styles.title} ${styles.b0}`} id={id + 'h'}>{ev.title}</h2>
 
+      <div className={styles.turns}>
       <blockquote className={`${styles.quote} ${styles.b1}`}>
         <p>{ev.cause.text}</p>
         <footer>{CAUSE_BY[ev.id]}</footer>
       </blockquote>
 
+      <div className={styles.second}>
       <div className={`${styles.figure} ${styles.b2}`}>
         <p className={styles.num}>
           {fmt(ev.hero.value)} <span className={styles.unit}>{ev.hero.unit === 'hectáreas' ? 'ha' : ev.hero.unit}</span>
@@ -63,6 +78,8 @@ export default function StoryPod({ ev, index, total }: Props) {
         Más información
         <span aria-hidden="true" className={styles.chev}>+</span>
       </button>
+      </div>
+      </div>
     </article>
   );
 }

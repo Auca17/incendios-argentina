@@ -2,11 +2,12 @@
 import { useEffect, useRef } from 'react';
 import { loadFoci, loadGrid, loadProvincias, type Foci } from '../lib/data';
 import { getExplore, setExplore, subscribeExplore } from '../lib/exploreState';
-import { SCENES, storyWeek, type Scene, type SceneFrame } from '../lib/scenes';
+import { SCENES, storyWeek, storyWeekFrac, type Scene, type SceneFrame } from '../lib/scenes';
 import type { Sites } from '../lib/fx';
 import { MORE_OPEN, MORE_PROVINCES, TOUR_EVENTS } from '../lib/tour';
 import { request, subscribe, type Frame } from '../lib/scrollDriver';
 import { mapRect } from '../lib/tourLayout';
+import { mapGlow } from '../lib/mapGlow';
 import CineFire from './CineFire';
 import styles from './TourMap.module.css';
 
@@ -241,10 +242,21 @@ export default function TourMap() {
         const eps = i < 4 ? 0.01 : 1; // about a third of a pixel: the snap is invisible
         if (Math.abs(target[i] - cam[i]) < eps && Math.abs(vel[i]) < eps) { cam[i] = target[i]; vel[i] = 0; } else moving = true;
       }
+      // each edge springs on its own, so a deep zoom-in overshoots and the edges cross (the view flips
+      // and the plates are drawn enlarged into blocks): the span never goes below 90% of where it is going
+      for (const [i, j] of [[0, 1], [2, 3]]) {
+        const ts = target[j] - target[i];
+        if (cam[j] - cam[i] >= ts * 0.9) continue;
+        const m = (cam[i] + cam[j]) / 2, vm = (vel[i] + vel[j]) / 2;
+        cam[i] = m - ts * 0.45; cam[j] = m + ts * 0.45;
+        vel[i] = vel[j] = vm;
+        moving = true;
+      }
 
       const ev = st.chapter >= 0 && st.chapter <= 5 ? TOUR_EVENTS[st.chapter] : null;
       const E = ev ? foci.get(ev.id) : undefined;
       const week = E ? storyWeek(ev.id, E, st.chapterT) : 0;
+      frac = E ? storyWeekFrac(ev.id, E, st.chapterT) : 1;
       chapterNow = st.chapter;
       canvas.style.cursor = st.chapter === 7 ? 'pointer' : '';
       const ex = getExplore();
@@ -254,7 +266,7 @@ export default function TourMap() {
       }
       if (st.chapter === 8) loadAllYears();
       const exKey = st.chapter === 7 ? ex.year + ':' + (ex.prov || '') : st.chapter === 8 ? 'more:' + st.more + ':' + (allYears?.length || 0) + ':' + Math.min(1, st.moreT / MORE_OPEN).toFixed(3) : '';
-      const key = [cam.map((v) => v.toFixed(4)).join(','), st.chapter, week, st.borders.toFixed(3), provs.length, foci.size, w, h, exKey].join('|');
+      const key = [cam.map((v) => v.toFixed(4)).join(','), st.chapter, week, frac.toFixed(3), st.borders.toFixed(3), provs.length, foci.size, w, h, exKey].join('|');
       if (key !== lastKey) {
         lastKey = key;
         draw(st.chapter, week, st.borders);
@@ -306,6 +318,7 @@ export default function TourMap() {
     const base = document.createElement('canvas');
     const bctx = base.getContext('2d')!;
     let baseKey = '';
+
     const byWeek = new Map<string, Pt[][]>();
     /*
      * Plates: fire layers rendered once into an offscreen canvas in world coordinates (res px per
@@ -371,14 +384,25 @@ export default function TourMap() {
     const FIRE_RES = 80; // px per degree: a 0.05-degree cell is 4 px
     const ZOOM_RES = 480; // px per degree of the close-up plates of big fires
     const zoomKeys: string[] = [];
+    const zbaseKeys: string[] = [];
+    const weekKeys: string[] = [];
+    const smoothstep = (x: number) => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t); };
+    /** How far into the current week's stretch the scroll is (0..1): the newest week fades in with it. */
+    let frac = 1;
+    /*
+     * Weeks already past, and the fires of other stories: small points on their dark shadow, no halo.
+     * With a halo, and at their earlier size, thousands of them merged into solid red blocks that read
+     * as a burnt area; at this size they stay points, with the land showing between them.
+     */
+    const OLD_SIZE = 0.25;
     const nearKeys: string[] = [];
     const oldPlate = (id: string, E: Foci, c0: number) => plate(`old:${id}:${c0}`, fireBox(E), FIRE_RES, (g, pp) => {
       const W = weeksOf(id, E);
-      for (let wk = c0; wk < c0 + CHUNK; wk++) focusCells(g, W[wk] || [], E.step, FIRE_RES, pp, C.old, 0.22, 1, 0.4);
+      for (let wk = c0; wk < c0 + CHUNK; wk++) focusCells(g, W[wk] || [], E.step, FIRE_RES, pp, C.old, 0, 1, OLD_SIZE);
     });
     const visitedPlate = (id: string, E: Foci) => plate('visited:' + id, fireBox(E), FIRE_RES, (g, pp) => {
       const W = weeksOf(id, E);
-      for (let wk = 0; wk < E.weeks; wk++) focusCells(g, W[wk], E.step, FIRE_RES, pp, C.visitedFocus, 0.65, 1, 0.6);
+      for (let wk = 0; wk < E.weeks; wk++) focusCells(g, W[wk], E.step, FIRE_RES, pp, C.visitedFocus, 0, 1, OLD_SIZE);
     });
     // build every fire's plates ahead, one per idle slot, so scrolling never pays for them
     const warm: (() => void)[] = [];
@@ -389,6 +413,36 @@ export default function TourMap() {
       for (let c0 = 0; c0 + CHUNK <= E.weeks; c0 += CHUNK) warm.push(() => oldPlate(id, E, c0));
       warm.push(() => visitedPlate(id, E));
       if (start) idle(pump);
+    };
+    /*
+     * Close-up plates of a big fire (ZOOM_RES): the accumulated base of its old weeks (each one the
+     * previous plus a week) and a hot plate per week, inside the box the close-up can show.
+     */
+    const zoomBox = (id: string): Box => {
+      const sc = SCENES[id];
+      return sc.relief.box;
+    };
+    const inside = (bx: Box) => (c: Pt) => c[0] >= bx[0] && c[0] <= bx[1] && c[1] >= bx[2] && c[1] <= bx[3];
+    const zoomBase = (id: string, E: Foci, n: number): Plate | null => {
+      if (n <= 0) return null;
+      const bk = `zb:${id}:${n}`;
+      const hit = plates.get(bk);
+      if (hit) return hit;
+      const W = weeksOf(id, E), bx = zoomBox(id), inBox = inside(bx);
+      const prev = plates.get(`zb:${id}:${n - 1}`) || null;
+      const pl = plate(bk, bx, ZOOM_RES, (pg, pp) => {
+        if (prev) { pg.setTransform(1, 0, 0, 1, 0, 0); pg.drawImage(prev.c, 0, 0); }
+        for (let wk = prev ? n - 1 : 0; wk < n; wk++) focusCells(pg, W[wk].filter(inBox), E.step, ZOOM_RES, pp, C.old, 0, 1, OLD_SIZE, WEEK_REF, 4);
+      });
+      zbaseKeys.push(bk);
+      while (zbaseKeys.length > 2) plates.delete(zbaseKeys.shift()!);
+      return pl;
+    };
+    const zoomHot = (id: string, E: Foci, wk: number): Plate => {
+      const key = `zhot:${id}:${wk}`;
+      if (!plates.has(key)) { zoomKeys.push(key); while (zoomKeys.length > 3) plates.delete(zoomKeys.shift()!); }
+      const W = weeksOf(id, E), bx = zoomBox(id), inBox = inside(bx);
+      return plate(key, bx, ZOOM_RES, (pg, pp) => focusCells(pg, W[wk].filter(inBox), E.step, ZOOM_RES, pp, C.hot, 0.55, 1, 0, WEEK_REF, 7, 1, 1));
     };
     const LIVE_WEEKS = 3; // the last weeks of the active fire are drawn live and bright
 const CHUNK = 3; // older weeks are cached in plates of this many weeks
@@ -444,6 +498,12 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
         ctx.stroke(p.path);
       });
       if (!Ea) return;
+      // where this story's detections are on screen (the landscape's warm light goes there)
+      if (mapGlow.id !== a.id + camKey) {
+        let sx = 0, sy = 0, sn = 0;
+        for (const [lon, lat, , n] of Ea.cells) { const [x, y] = proj(lon, lat); sx += x * n; sy += y * n; sn += n; }
+        mapGlow.id = a.id + camKey; mapGlow.x = sn ? sx / sn : w / 2; mapGlow.y = sn ? sy / sn : h / 2; mapGlow.on = sn > 0;
+      }
       const W = weeksOf(a.id, Ea);
       // older weeks come from fixed blocks of CHUNK weeks, each rendered once and kept; only the weeks
       // after the last whole block are drawn live. Same position, same blocks, same pixels.
@@ -451,32 +511,69 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       const close = scale > FIRE_RES * 1.3;
       const sharp = close && Ea.cells.length < 3000;
       const sc = SCENES[a.id];
-      if (close && !sharp && sc && sf && sf.zoom > 0.3) {
-        // a big fire in a close-up: its cells inside the scene's box, one plate per week at the
-        // close-up's resolution (rebuilt only when the week changes; the last few are kept)
-        const key = `zoom:${a.id}:${week}`;
-        if (!plates.has(key)) {
-          zoomKeys.push(key);
-          while (zoomKeys.length > 3) plates.delete(zoomKeys.shift()!);
+      /*
+       * Each week comes in and cools down with the scroll, never at once: the newest week fades in
+       * over the first half of its stretch, hot (white-yellow); a week a step older cools to ember
+       * over the first half of the next stretch, and later to the dull red of the old weeks. The colour
+       * only tells how old a detection is; nothing moves, spreads or is added between real detections.
+       */
+      const cls = (age: number) => (age < 1 ? 0 : age < LIVE_WEEKS ? 1 : 2);
+      const STYLE = [
+        { col: C.hot, halo: 0.55, size: 0, cluster: 1 },
+        { col: C.ember, halo: 0, size: 0, cluster: 0.45 },
+        { col: C.old, halo: 0, size: OLD_SIZE, cluster: 0 },
+      ];
+      const fadeIn = reducedNow ? 1 : smoothstep(frac / 0.5);
+      const cool = reducedNow ? 1 : smoothstep(frac / 0.5);
+      /** The live weeks, each one drawn by `paint(wk, class, opacity)`; a week between two classes is drawn in both. */
+      const liveWeeks = (from: number, paint: (wk: number, c: number, alpha: number) => void) => {
+        for (let wk = from; wk < week; wk++) {
+          const age = week - 1 - wk;
+          if (age === 0) { paint(wk, 0, fadeIn); continue; }
+          const c = cls(age), pc = cls(age - 1);
+          // a real cross-fade: the old colour goes down as the new one comes up (drawn at full both, the
+          // two would add up and flash)
+          if (pc !== c && cool < 1) { paint(wk, c, cool); paint(wk, pc, 1 - cool); } else paint(wk, c, 1);
         }
-        const bx = sc.relief.box, res = ZOOM_RES;
-        const inBox = (c: Pt) => c[0] >= bx[0] && c[0] <= bx[1] && c[1] >= bx[2] && c[1] <= bx[3];
-        placePlate(ctx, world, plate(key, bx, res, (pg, pp) => {
-          for (let wk = 0; wk < week; wk++) {
-            const age = week - 1 - wk;
-            const col = age < 1 ? C.hot : age < 3 ? C.ember : age < LIVE_WEEKS ? C.deep : C.old;
-            focusCells(pg, W[wk].filter(inBox), Ea.step, res, pp, col, age < 1 ? 0.7 : age >= LIVE_WEEKS ? 0.3 : 0, 1, age >= LIVE_WEEKS ? 0.4 : 0, WEEK_REF, 4);
-          }
-        }));
+      };
+      if (close && !sharp && sc && sf && sf.zoom > 0.3) {
+        // a big fire in a close-up: an accumulated base of the old weeks (one plate per block of
+        // weeks), then each recent week from its own plate at the close-up's resolution, placed with
+        // its opacity (rebuilt only when a week first shows, the last few kept)
+        /*
+         * Two plates per week, not one per week and colour: an accumulated base where every past
+         * week is already in its old colour, and a hot plate per week. The newest week's hot plate
+         * fades in; the previous one's fades out over the base, where that week already is old.
+         */
+        const base = zoomBase(a.id, Ea, week - 1);
+        if (base) placePlate(ctx, world, base);
+        const place = (pl: Plate, alpha: number) => { if (alpha <= 0.001) return; ctx.globalAlpha = alpha; placePlate(ctx, world, pl); ctx.globalAlpha = 1; };
+        if (week >= 2) place(zoomHot(a.id, Ea, week - 2), 1 - cool);
+        place(zoomHot(a.id, Ea, week - 1), fadeIn);
         return;
       }
-      const ashW = sharp ? 0 : Math.max(0, Math.floor((week - LIVE_WEEKS) / CHUNK) * CHUNK);
+      const ashW = sharp ? 0 : Math.max(0, Math.floor((week - LIVE_WEEKS - 1) / CHUNK) * CHUNK);
       for (let c0 = 0; c0 < ashW; c0 += CHUNK) placePlate(ctx, world, oldPlate(a.id, Ea, c0));
-      for (let wk = ashW; wk < week; wk++) {
-        const age = week - 1 - wk;
-        const col = age < 1 ? C.hot : age < 3 ? C.ember : age < LIVE_WEEKS ? C.deep : C.old;
-        focusCells(ctx, W[wk], Ea.step, scale, proj, col, age < 1 ? 0.7 : age >= LIVE_WEEKS ? 0.3 : 0, dpr, age >= LIVE_WEEKS ? 0.4 : 0, WEEK_REF, sharp ? 5 : Infinity);
+      if (sharp) {
+        // a small fire in a close-up is drawn live (plates would be enlarged into blocks)
+        liveWeeks(0, (wk, c, alpha) => {
+          const st = STYLE[c];
+          focusCells(ctx, W[wk], Ea.step, scale, proj, st.col, st.halo, dpr, st.size, WEEK_REF, 5, alpha, st.cluster);
+        });
+        return;
       }
+      // each recent week from its own plate (map resolution), placed with its opacity
+      liveWeeks(ashW, (wk, c, alpha) => {
+        if (alpha <= 0.001) return;
+        const st = STYLE[c];
+        const key = `wk:${a.id}:${wk}:${c}`;
+        if (!plates.has(key)) { weekKeys.push(key); while (weekKeys.length > 8) plates.delete(weekKeys.shift()!); }
+        // away from a close-up the cluster glow is fainter: at that distance it would read as a burnt area
+        const pl = plate(key, fireBox(Ea), FIRE_RES, (pg, pp) => focusCells(pg, W[wk], Ea.step, FIRE_RES, pp, st.col, st.halo, 1, st.size, WEEK_REF, Infinity, 1, st.cluster * 0.4));
+        ctx.globalAlpha = alpha;
+        placePlate(ctx, world, pl);
+        ctx.globalAlpha = 1;
+      });
     };
 
     const drawBase = (g: CanvasRenderingContext2D, world: (g: CanvasRenderingContext2D) => void, chapter: number, borders: number, px: number, scale: number, proj: Proj) => {
@@ -667,7 +764,16 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       }
       return c;
     };
-    const focusCells = (g: CanvasRenderingContext2D, list: Pt[], step: number, scale: number, proj: Proj, color: string, halo: number, device = dpr, size = 0, ref = WEEK_REF, cap = Infinity) => {
+    /** fade: opacity of the whole set (a week coming in); cluster: strength of the glow where detections crowd together. */
+    /** The ceiling of a cluster's glow (its accumulated light is laid at most at this opacity). */
+    const GLOW_CEIL = 0.6;
+    let glowC: HTMLCanvasElement | null = null;
+    const glowCanvas = (cw: number, ch: number) => {
+      if (!glowC) glowC = document.createElement('canvas');
+      if (glowC.width !== cw || glowC.height !== ch) { glowC.width = cw; glowC.height = ch; }
+      return glowC;
+    };
+    const focusCells = (g: CanvasRenderingContext2D, list: Pt[], step: number, scale: number, proj: Proj, color: string, halo: number, device = dpr, size = 0, ref = WEEK_REF, cap = Infinity, fade = 1, cluster = 0) => {
       if (!list.length) return;
       g.setTransform(device, 0, 0, device, 0, 0);
       // px of the target; in a close-up a cell would grow into a disc, so it is capped: a detection
@@ -675,7 +781,10 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
       const cell = Math.min(step * scale, cap);
       const lr = Math.log(ref + 1);
       const weight = (n: number) => Math.min(1, Math.log((n || 1) + 1) / lr);
-      const glow = sprite('glow:' + color, [[0, color], [0.25, color + 'aa'], [1, color + '00']]);
+      // the halo of the newest detections is amber, not their near-white core colour: added up between
+      // neighbours a white halo burnt out into a pale patch (Chubut); the core stays white-yellow
+      const hc = color === C.hot ? C.ember : color;
+      const glow = sprite('glow:' + hc, [[0, hc], [0.25, hc + 'aa'], [1, hc + '00']]);
       // the detection itself: a small round core on a tight dark shadow, pre-composited in one sprite
       // (the shadow gives the core its contrast on sunlit slopes; it is too small to merge into a patch)
       let dot = sprites.get('dot:' + color);
@@ -699,6 +808,34 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
         sprites.set('dot:' + color, dot);
       }
       const k = size || 0.6;
+      if (fade <= 0.001) return;
+      // the glow of a cluster: a wide, faint light per detection, added up, so it only builds up where
+      // many detections crowd together (it marks density, not an outline: it has no edge)
+      if (cluster > 0) {
+        // a fixed size on the ground (about 0.1 degree), so it never grows into a patch when the
+        // camera is far: its reach on screen shrinks with the scale, like the land. Amber, added up
+        // apart and laid with a ceiling: where many detections crowd together it glows, but it never
+        // burns out to a white patch (that would read as the size of the fire)
+        const rc = Math.max(0.1 * scale, 6);
+        const amber = sprite('glow:' + C.ember, [[0, C.ember], [0.25, C.ember + 'aa'], [1, C.ember + '00']]);
+        const tmp = glowCanvas(g.canvas.width, g.canvas.height);
+        const tg = tmp.getContext('2d')!;
+        tg.setTransform(1, 0, 0, 1, 0, 0);
+        tg.clearRect(0, 0, tmp.width, tmp.height);
+        tg.setTransform(device, 0, 0, device, 0, 0);
+        tg.globalCompositeOperation = 'lighter';
+        for (const [lon, lat, n] of list) {
+          const [x, y] = proj(lon, lat);
+          tg.globalAlpha = Math.min(1, cluster * 0.11 * (0.3 + 0.7 * weight(n)));
+          tg.drawImage(amber, x - rc, y - rc, 2 * rc, 2 * rc);
+        }
+        g.save();
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.globalCompositeOperation = 'lighter';
+        g.globalAlpha = GLOW_CEIL * fade;
+        g.drawImage(tmp, 0, 0);
+        g.restore();
+      }
       // glow, sized and weighted by the detections
       if (halo > 0) {
         g.globalCompositeOperation = 'lighter';
@@ -706,18 +843,19 @@ const CHUNK = 3; // older weeks are cached in plates of this many weeks
           const w = weight(n);
           const [x, y] = proj(lon, lat);
           const r = Math.max(cell * (1 + 1.6 * w) * k * 1.4, 3);
-          g.globalAlpha = halo * (0.2 + 0.8 * w);
+          g.globalAlpha = halo * (0.2 + 0.8 * w) * fade;
           g.drawImage(glow, x - r, y - r, 2 * r, 2 * r);
         }
       }
       // shadow + core (the core is half the sprite's radius)
       g.globalCompositeOperation = 'source-over';
-      g.globalAlpha = 1;
+      g.globalAlpha = fade;
       for (const [lon, lat, n] of list) {
         const [x, y] = proj(lon, lat);
         const r = Math.max(cell * (0.35 + 0.35 * weight(n)) * k * 1.4, 1.1) * 2;
         g.drawImage(dot, x - r, y - r, 2 * r, 2 * r);
       }
+      g.globalAlpha = 1;
     };
 
     const unsub = subscribe(onFrame);

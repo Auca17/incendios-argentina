@@ -417,7 +417,15 @@ export type FireItem = { x: number; y: number; s: number; seed: number; douse: n
  * Glow on the ground and rising embers, the fires, then smoke and white steam. The smoke drifts east
  * with the westerlies unless `wind` gives each fire its own direction (a unit vector on screen).
  */
+/**
+ * The map shows data only: its detections are drawn by the map itself (TourMap: thermal dots and the
+ * glow of their clusters). Drawn flames, embers and smoke belong to the illustrated landscapes. Kept
+ * behind this switch so the illustrated map can be compared and restored.
+ */
+export const MAP_FLAMES = false;
+
 export function drawFires(g: CanvasRenderingContext2D, sites: FireItem[], z: number, span: number, time: number, wind?: (c: FireItem) => [number, number]) {
+  if (!MAP_FLAMES) return;
   const f = { time };
   const glow = blob('255, 104, 36', 0.3);
   const spark = blob('255, 200, 120', 0.2);

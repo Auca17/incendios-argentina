@@ -31,7 +31,7 @@ export default function Epilogue() {
         </li>
         <li>
           <b>200.741</b>
-          <span>focos durante los seis incendios del recorrido</span>
+          <span>focos en las provincias de las seis historias, en los meses de cada una</span>
         </li>
       </ul>
       <p className={styles.source}>NASA FIRMS, satélite VIIRS S-NPP.</p>
@@ -43,17 +43,8 @@ export default function Epilogue() {
 
       <div className={styles.actions}>
         <SourcesLink className={styles.primary} label="Ver las fuentes" />
+        {/* "Volver al inicio" lives at the end of the sources (SourcesSection) */}
         <ExploreLink className={styles.secondary} label="Explorar el mapa, año por año" />
-        <button
-          type="button"
-          className={styles.secondary}
-          onClick={() => {
-            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
-          }}
-        >
-          Volver al inicio
-        </button>
       </div>
     </article>
   );

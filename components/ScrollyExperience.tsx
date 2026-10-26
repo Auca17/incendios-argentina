@@ -8,6 +8,7 @@ import { subscribe } from '../lib/scrollDriver';
 import TourMap from './TourMap';
 import CloudCurtain from './CloudCurtain';
 import Landscape from './Landscape';
+import SceneInteraction from './SceneInteraction';
 import TourStage from './TourStage';
 import TourHud from './TourHud';
 import StoryPod from './StoryPod';
@@ -40,7 +41,8 @@ function Scrim() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => subscribe(({ st }) => {
     const on = (st.chapter >= 0 && st.chapter <= 5) || st.chapter === 8;
-    if (ref.current) ref.current.style.opacity = on ? (1 - st.land).toFixed(3) : '0';
+    // it goes as the clouds start closing over the map (it is over them: it would darken them)
+    if (ref.current) ref.current.style.opacity = on ? ((1 - st.land) * (1 - Math.min(1, st.close / 0.2))).toFixed(3) : '0';
   }), []);
   return <div ref={ref} className={styles.scrim} aria-hidden="true" />;
 }
@@ -92,6 +94,7 @@ export default function ScrollyExperience() {
       <TourStage />
       <CloudCurtain />
       <Landscape />
+      <SceneInteraction />
       <Scrim />
       <TourHud />
 

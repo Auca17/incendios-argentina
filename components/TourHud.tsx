@@ -22,7 +22,7 @@ export function goToSection(i: number) {
  * (PgUp/PgDn keep their native scrolling).
  */
 export default function TourHud() {
-  const [state, setState] = useState({ chapter: -1, visible: false, idx: 0 });
+  const [state, setState] = useState({ chapter: -1, visible: false, idx: 0, dim: false });
   const bar = useRef<HTMLSpanElement>(null);
   const idxRef = useRef(0);
 
@@ -30,7 +30,9 @@ export default function TourHud() {
     if (bar.current) bar.current.style.transform = `scaleY(${progress.toFixed(4)})`;
     idxRef.current = st.idx;
     const visible = st.hud > 0.5;
-    setState((o) => (o.chapter === st.chapter && o.visible === visible && o.idx === st.idx ? o : { chapter: st.chapter, visible, idx: st.idx }));
+    // quieter while a landscape or the smoke between regions fills the screen (still there, to keep one's bearings)
+    const dim = st.land > 0.5 || st.veil > 0.5;
+    setState((o) => (o.chapter === st.chapter && o.visible === visible && o.idx === st.idx && o.dim === dim ? o : { chapter: st.chapter, visible, idx: st.idx, dim }));
   }), []);
 
   const step = useCallback((d: number) => {
@@ -47,6 +49,8 @@ export default function TourHud() {
       if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
       const t = e.target as HTMLElement;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      // a scene interaction or a dialog holds the story: the arrows do not move it
+      if (document.documentElement.dataset.hold || document.documentElement.dataset.dialog) return;
       if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
     };
@@ -59,7 +63,7 @@ export default function TourHud() {
   return (
     <>
       <nav
-        className={state.visible ? `${styles.hud} ${styles.on}` : styles.hud}
+        className={`${styles.hud}${state.visible ? ' ' + styles.on : ''}${state.dim ? ' ' + styles.dim : ''}`}
         aria-label="Recorrido por las seis historias"
         inert={!state.visible}
       >

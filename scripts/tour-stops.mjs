@@ -2,8 +2,8 @@
 // 100 % of every tour section, for `node scripts/shots.mjs --ys $(node scripts/tour-stops.mjs 900)`.
 const vh = +(process.argv[2] || 900);
 // heights as in lib/tour.ts (story = landscape intro + map scene + smoke outro)
-const S = [['opening', 130], ['title', 95], ['reveal', 160], ['misiones', 345], ['corrientes', 345], ['cordoba', 365],
-  ['delta', 365], ['mendoza', 385], ['chubut', 375], ['more', 420], ['epilogue', 250]];
+const S = [['opening', 130], ['title', 95], ['reveal', 160], ['misiones', 385], ['corrientes', 385], ['cordoba', 425],
+  ['delta', 425], ['mendoza', 445], ['chubut', 375], ['more', 420], ['epilogue', 250]];
 let top = 0;
 const out = [];
 for (const [n, h] of S) {

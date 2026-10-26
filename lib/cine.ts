@@ -42,3 +42,11 @@ export function cineState(u: number, reduced = false): Cine {
 
 /** Story progress after the cinematic opening, 0..1 over the rest of the section. */
 export const afterCine = (u: number) => seg(u, CINE_END, 1);
+
+/*
+ * Whether the cinematic opening can be drawn here (WebGL2). Without it the map stays under the
+ * opening's span, and nothing that belongs to the opening (its note, the air drop) is offered.
+ */
+let ok = true;
+export const cineOk = () => ok;
+export const setCineOk = (v: boolean) => { ok = v; };

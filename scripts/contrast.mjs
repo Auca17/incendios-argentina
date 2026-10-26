@@ -61,8 +61,12 @@ const S = {
   // regions: reading text on the left scrim (at least .84 of #05080d) over the brightest sunlit slope
   tScrim: over(parse('rgba(5, 8, 13, 0.84)'), parse('#ad9e8c')),
   // "Más información" sheet and the /explorar panel (.92 over the same slope)
-  tSheet: parse('#0b1018'),
+  // (the overlay is .8 of #04070b at the reading column, over the brightest sunlit slope)
+  tSheet: over(parse('rgba(4, 7, 11, 0.8)'), parse('#ad9e8c')),
+  tSheetSide: over(parse('rgba(4, 7, 11, 0.72)'), parse('#ad9e8c')),
   tPanel: over(parse('rgba(5, 8, 13, 0.92)'), parse('#ad9e8c')),
+  // scene subtitle: the local shade at its lightest under the words (.52) over the palest landscape (the Delta's horizon)
+  tSubtitle: over(parse('rgba(4, 6, 10, 0.52)'), parse('#c4b49a')),
   // source cards over the smoke, composited over the brightest ember of the shader
   tSmokeCard: over(parse('var(--t-smoke-card)'), [255, 92, 31, 1]),
 };
@@ -137,6 +141,9 @@ const PAIRS = [
   U('regions: Más información border on the scrim', 'var(--t-control)', 'tScrim'),
   T('dialog: text on the sheet', 'var(--t-text)', 'tSheet', 16),
   T('dialog: muted notes on the sheet', 'var(--t-muted)', 'tSheet', 12),
+  T('dialog: muted captions in the side column', 'var(--t-muted)', 'tSheetSide', 12),
+  T('scene: subtitle white on its shade over the palest landscape (20 px)', '#ffffff', 'tSubtitle', 20),
+  T('scene: how-to line on its shade over the palest landscape', 'rgba(255, 255, 255, 0.88)', 'tSubtitle', 14),
   T('dialog: ember headings on the sheet', 'var(--t-ember)', 'tSheet', 12, true),
   U('dialog: close border on the sheet', 'var(--t-control)', 'tSheet'),
   T('explorar: text-2 on the panel', 'var(--t-text-2)', 'tPanel', 14),

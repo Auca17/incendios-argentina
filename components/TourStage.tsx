@@ -4,6 +4,7 @@ import { loadFoci, type Foci } from '../lib/data';
 import { fmt, weekDate } from '../lib/fire';
 import { EPISODE_WEEKS } from '../lib/airScene';
 import { SCENES, storyWeek } from '../lib/scenes';
+import { cineOk } from '../lib/cine';
 import { STORY_PHOTOS } from '../lib/photos';
 import { TOUR_EVENTS } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
@@ -18,10 +19,12 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
 /** "21 de enero de 2026" → "21 de enero". */
 const dayMonth = (s: string) => s.replace(/ de \d{4}$/, '');
 /** First day of a fire's weekly series, as "1 de enero". */
+/** The provinces of a fire's series, as a reader says them: "Santa Fe, Entre Ríos y Buenos Aires". */
+const provsOf = (ev: any) => (ev.months.prov as string[]).join(', ').replace(/, ([^,]*)$/, ' y $1');
 const firstDay = (E: Foci) => new Date(E.start + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
 
 /**
- * What sits on the map while the tour runs: the fixed foci notice, the weekly counter of the active
+ * What sits on the map while the tour runs: the foci notice (outside the regions), the map's footer of the active
  * fire, the explore legend, and, for the fires that have one, a verified photo with its credit. They
  * follow the scroll state; React re-renders only when the chapter or the week change.
  */
@@ -43,7 +46,7 @@ export default function TourStage() {
     const revealed = st.borders > 0 && st.close < 1;
     const sf = ev && SCENES[ev.id] ? SCENES[ev.id].frame(st.chapterT, reduced) : null;
     const ill = !!sf && sf.ill > 0.5;
-    const cine = !!sf?.cine;
+    const cine = !!sf?.cine && cineOk();
     const close = !!sf && (sf.flames || ill || cine);
     const balance = !!sf && sf.balance;
     // nothing over the map while a landscape or the smoke between regions covers it
@@ -61,7 +64,8 @@ export default function TourStage() {
 
   return (
     <>
-      <p className={v.revealed && !v.close && v.shown ? `${styles.notice} ${styles.on}` : styles.notice}>
+      {/* outside the regions (the interlude) the notice stays as it was; in a region it is in the footer */}
+      <p className={v.revealed && !story && v.shown ? `${styles.notice} ${styles.on}` : styles.notice}>
         <b>Focos de calor</b> ≠ hectáreas quemadas ≠ incendios forestales
       </p>
 
@@ -71,25 +75,30 @@ export default function TourStage() {
         </div>
       ))}
 
-      <div className={story && v.shown && !v.cine ? `${styles.counter} ${styles.on}` : styles.counter} aria-live="off">
-        {E && ev && v.balance && (
-          <>
-            {/* the fire's own weeks apart from the whole observation period */}
-            <span className={styles.counterLine}>
-              <b>{fmt(E.cum[EPISODE_WEEKS])} focos</b> del {firstDay(E)} al {dayMonth(weekDate(E, EPISODE_WEEKS))}
-            </span>
-            <span className={styles.counterHead}>
-              Después, hasta el {dayMonth(weekDate(E, E.weeks))}, solo {fmt(E.total - E.cum[EPISODE_WEEKS])} más.
-            </span>
-          </>
+      {/*
+        The map's footer: the count with its scope (the provinces and the dates it covers: the series
+        of each fire is every focus of its provinces in its months, lib/data semanas-<id>.json), then
+        what a focus is and, when there is one, what the picture on the map is.
+      */}
+      <div className={story && v.shown ? `${styles.footer} ${styles.on}` : styles.footer} aria-live="off">
+        {E && ev && !v.cine && (
+          <p className={styles.count}>
+            {v.balance ? (
+              <>
+                <b><span className={styles.n}>{fmt(E.cum[EPISODE_WEEKS])}</span> focos de calor</b> en {provsOf(ev)} del {firstDay(E)} al {dayMonth(weekDate(E, EPISODE_WEEKS))} de {ev.months.year}.
+                {' '}Después, hasta el {dayMonth(weekDate(E, E.weeks))}, solo {fmt(E.total - E.cum[EPISODE_WEEKS])} más.
+              </>
+            ) : (
+              <>
+                <b><span className={styles.n}>{fmt(E.cum[v.week])}</span> focos de calor</b> en {provsOf(ev)} del {firstDay(E)} al {dayMonth(weekDate(E, v.week))} de {ev.months.year}
+              </>
+            )}
+          </p>
         )}
-        {E && ev && !v.balance && (
-          <>
-            <span className={styles.counterLine}>
-              <b>{fmt(E.cum[v.week])} focos</b> hasta el {dayMonth(weekDate(E, v.week))}
-            </span>
-          </>
-        )}
+        <p className={styles.what}>
+          {!v.cine && <>Un foco de calor es un punto caliente visto por satélite: no equivale a hectáreas quemadas ni a un incendio.</>}
+          {v.close && note && <> <b>{note[0]}</b>{note[1]}</>}
+        </p>
       </div>
 
       <div className={v.chapter === 7 || v.chapter === 8 ? `${styles.legend} ${styles.on}` : styles.legend} aria-hidden={v.chapter !== 7 && v.chapter !== 8}>
@@ -110,15 +119,11 @@ export default function TourStage() {
         </p>
       </div>
 
-      <p className={v.close && v.shown ? `${styles.fxNote} ${styles.on}` : styles.fxNote}>
-        {note && <><b>{note[0]}</b>{note[1]}</>}
-      </p>
-
       <figure className={photo && !v.close && v.shown ? `${styles.scene} ${styles.on}` : photo ? `${styles.scene} ${styles.on} ${styles.sceneAside}` : styles.scene}>
         {photo && (
           <>
             <img src={BASE + photo.src} alt={photo.alt} width={photo.width} height={photo.height} className={styles.photo} />
-            <figcaption className={styles.photoCredit}>{photo.credit}</figcaption>
+            <figcaption className={styles.photoCredit}>{photo.credit}{photo.licenseText || ''}</figcaption>
           </>
         )}
       </figure>

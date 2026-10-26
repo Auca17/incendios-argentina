@@ -40,8 +40,10 @@ function ease(target: TourState): [TourState, boolean] {
   const out = { ...target };
   let moving = false;
   for (const f of EASED) {
-    // a new chapter starts from its own progress, not from the previous chapter's
-    if ((f === 'chapterT' || f === 'moreT' || f === 'landT') && target.chapter !== shown.chapter) continue;
+    // a new chapter starts from its own progress, not from the previous chapter's; an arriving
+    // landscape too (eased in from the previous chapter's 0, it would pass through the map's opening;
+    // a leaving one still eases out, through the smoke that hides the cut to the map)
+    if ((f === 'chapterT' || f === 'moreT' || f === 'landT' || (f === 'land' && target.land > shown.land)) && target.chapter !== shown.chapter) continue;
     const d = target[f] - shown[f];
     if (Math.abs(d) < 0.002) continue;
     out[f] = shown[f] + d * k;
@@ -71,13 +73,23 @@ function frame() {
   const vh = window.innerHeight;
   const vw = window.innerWidth;
   // a dialog over the story holds it: the same state, whatever the page does underneath
-  if (held && last && last.vw === vw && last.vh === vh) {
+  if (held) {
+    // the held frame is the exact state of the scroll position, never an eased one caught half way
+    // (a reader who jumps and touches a scene within the ease would otherwise freeze clouds and the
+    // cover title half faded over it for as long as the hold lasts)
+    if (!last || last.vw !== vw || last.vh !== vh || !frozen) {
+      const y = heldY;
+      const st = pinned ?? tourState(y + vh * FOCAL, tops, heights, reduced, y);
+      shown = st;
+      last = { st, scrollY: y, vw, vh, progress: pinned ? 0 : tourProgress(y, tops, heights, vh), reduced };
+      frozen = true;
+    }
     let settling = false;
     subs.forEach((fn) => { if (fn(last!)) settling = true; });
     if (settling) request();
     return;
   }
-  const scrollY = held && last ? last.scrollY : window.scrollY;
+  const scrollY = window.scrollY;
   const [st, easing] = pinned
     ? [pinned, false]
     : ease(tourState(scrollY + vh * FOCAL, tops, heights, reduced, scrollY));
@@ -127,6 +139,8 @@ export const sectionTop = (i: number) => tops[i] ?? 0;
 
 let pinned: TourState | null = null;
 let held = false;
+let heldY = 0;
+let frozen = false;
 
 /**
  * A page without the tour (/explorar) pins the map to one state: the scroll no longer drives it.
@@ -139,10 +153,14 @@ export function pin(st: TourState | null) {
 }
 
 /**
- * Holds the story while a dialog is open over it: the subscribers keep the last frame, so nothing
- * advances, rewinds or restarts, whatever happens to the page under the dialog.
+ * Holds the story while a dialog or a scene interaction is over it: the subscribers get one frame,
+ * the exact state of the scroll position at the moment of holding (not the eased one), so nothing
+ * advances, rewinds, restarts or stays half faded, whatever happens to the page meanwhile. Released,
+ * the ease resumes from that exact state.
  */
 export function hold(on: boolean) {
   held = on;
+  heldY = window.scrollY;
+  frozen = false;
   request();
 }

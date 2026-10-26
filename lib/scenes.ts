@@ -37,12 +37,14 @@ export type Scene = {
   relief: { src: string; box: Box };
   frame: (u: number, reduced: boolean) => SceneFrame;
   week: (E: Foci, u: number) => number;
+  /** The scene's continuous week at u, or null once the whole series is shown. */
+  wf: (u: number) => number | null;
   sites: (E: Foci) => Sites;
   /** Notes on the map: [bold lead, rest]. */
   notes: { flames: [string, string]; ill: [string, string]; cine?: [string, string] };
 };
 
-const FLAMES_NOTE: [string, string] = ['Llamas:', ' donde se acumularon más focos.'];
+const FLAMES_NOTE: [string, string] = ['Brillo:', ' donde el satélite acumuló más focos. No mide superficie quemada.'];
 
 const chubut: Scene = {
   box: () => HOTSPOT,
@@ -51,11 +53,14 @@ const chubut: Scene = {
   frame: (u, reduced) => {
     const a = airScene(afterCine(u), reduced);
     return {
-      zoom: a.zoom, pan: a.pan, ill: a.ill, flames: a.zoom > 0.5 && a.phase !== 'balance', balance: a.phase === 'balance', cine: u < CINE_END - 0.02,
-      draw: (g, d, sites) => drawFx(g, { ...d, zoom: a.zoom, wf: a.wf, plane: a.plane, routeIn: a.routeIn, routeDim: a.routeDim, ill: a.ill, sites }),
+      // the hydrant plane no longer flies over the map: it is part of the cinematic opening, where the
+      // reader calls it (lib/interaction.ts); the map keeps the fire's weeks and its flames
+      zoom: a.zoom, pan: a.pan, ill: 0, flames: a.zoom > 0.5 && a.phase !== 'balance', balance: a.phase === 'balance', cine: u < CINE_END - 0.02,
+      draw: (g, d, sites) => drawFx(g, { ...d, zoom: a.zoom, wf: a.wf, plane: 0, routeIn: 0, routeDim: a.routeDim, ill: 0, sites }),
     };
   },
   week: (E, u) => (afterCine(u) >= 0.9 ? E.weeks : clamp(Math.floor(airScene(afterCine(u)).wf) + 1, 1, E.weeks)),
+  wf: (u) => (afterCine(u) >= 0.9 ? null : airScene(afterCine(u)).wf),
   sites: (E) => fireSites(E.cells, 0, EPISODE_WEEKS),
   notes: {
     flames: FLAMES_NOTE,
@@ -68,13 +73,16 @@ const mendoza: Scene = {
   box: (w) => (w < 1024 ? CHALLAO_NARROW : CHALLAO_WIDE),
   relief: { src: '/map/closeup-challao.webp', box: [-70.6, -67.4, -34.2, -31.9] },
   frame: (u, reduced) => {
-    const s = groundScene(u, reduced);
+    // the brigade left the map (a side-view crew on a map from above did not sit in it): it works in
+    // the landscape of Mendoza, where the reader calls it (lib/interaction.ts). The map keeps the fire.
+    const s = { ...groundScene(u, reduced), truck: 0, walk: [0, 0, 0], jets: 0, douse: 0, ill: 0 };
     return {
       zoom: s.zoom, pan: [0, 0], ill: s.ill, flames: s.zoom > 0.5 && s.ill < 0.5, balance: false,
       draw: (g, d, sites) => drawGround(g, { ...d, st: s, sites }),
     };
   },
   week: (E, u) => (u >= 0.9 ? E.weeks : clamp(Math.floor(groundScene(u).wf) + 1, 1, E.weeks)),
+  wf: (u) => (u >= 0.9 ? null : groundScene(u).wf),
   // the cells of El Challao in the weeks around 29 October (one flame per cell: they are few). A
   // cell east of it, in the city, has detections almost every week of the year (a steady heat
   // source, not this fire): the 10 % share keeps it as a dot on the map but without a flame.
@@ -94,6 +102,7 @@ const lighter = Object.fromEntries(STORIES.map((c): [string, Scene] => [c.id, {
     };
   },
   week: (E, u) => (u >= c.full ? E.weeks : clamp(Math.floor(storyState(c, u).wf) + 1, 1, E.weeks)),
+  wf: (u) => (u >= c.full ? null : storyState(c, u).wf),
   sites: (E) => fireSites(E.cells, c.sites.w0, c.sites.w1, c.sites.max, c.sites.gap, c.sites.box),
   notes: { flames: c.note, ill: c.note },
 }]));
@@ -104,4 +113,14 @@ export const SCENES: Record<string, Scene> = { ...lighter, [AIR_STORY]: chubut, 
 export function storyWeek(id: string, E: Foci, u: number): number {
   const sc = SCENES[id];
   return sc ? sc.week(E, u) : fociWeek(E, u);
+}
+
+/**
+ * How far into the shown week's stretch the story is (0..1): the newest week fades in with it. 1 when
+ * the whole series is shown or the week does not move (nothing then is still coming in).
+ */
+export function storyWeekFrac(id: string, E: Foci, u: number): number {
+  const v = SCENES[id]?.wf(u);
+  if (v === null || v === undefined || Math.floor(v) + 1 > E.weeks || v < 0) return 1;
+  return v - Math.floor(v);
 }

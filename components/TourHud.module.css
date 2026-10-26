@@ -12,6 +12,8 @@
   transition: opacity 300ms var(--ease), visibility 0s linear 300ms;
 }
 .on { opacity: 1; visibility: visible; transition: opacity 300ms var(--ease), visibility 0s; }
+.on.dim { opacity: 0.4; }
+.on.dim:hover, .on.dim:focus-within { opacity: 1; }
 
 /* thin overall progress, behind the dots */
 .track {
@@ -99,6 +101,8 @@
 .explore:focus-visible { outline: 3px solid var(--t-ember); outline-offset: 2px; }
 
 @media (max-width: 1023.98px) {
+  /* phones: the way to the data stays in the bar, but not over a landscape */
+  .dim .explore { display: none; }
   .explore { writing-mode: horizontal-tb; margin: 0 0 0 var(--s-1); padding: var(--s-1); background: var(--t-chip); text-transform: none; letter-spacing: 0; }
   .hud {
     top: calc(var(--s-1) + 36px);

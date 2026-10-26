@@ -4,6 +4,9 @@ import { AIR_STORY } from '../lib/airScene';
 import { cineState } from '../lib/cine';
 import { TOUR_EVENTS } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
+import { getRun, isDone, stageNow, subscribeRun } from '../lib/interaction';
+import { setCineOk } from '../lib/cine';
+import { chubutHeat } from '../lib/landFire';
 import styles from './TourMap.module.css';
 
 /*
@@ -172,10 +175,14 @@ void main() {
 }`;
 
 export default function CineFire() {
-  const ref = useRef<HTMLCanvasElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const canvas = ref.current!;
+    const host = ref.current!;
+    // a fresh canvas for every time the scene comes into view: a canvas whose context was lost
+    // returns that same lost context forever, so reusing it left the scene blank after the first
+    // exit (the map showed through, under the note of a scene that was not there)
+    let canvas: HTMLCanvasElement | null = null;
     let gl: WebGL2RenderingContext | null = null;
     let prog: WebGLProgram | null = null;
     let U: Record<string, WebGLUniformLocation | null> = {};
@@ -183,9 +190,20 @@ export default function CineFire() {
     let last: ReturnType<typeof cineState> | null = null;
     let still = false;
 
-    const init = () => {
+    // compiling the shader is the costly part (it blocked whole frames on phones): it starts while the
+    // smoke before Chubut covers the screen, runs in parallel where the browser can, and the context is
+    // kept for the whole chapter instead of only the opening's span
+    let linking = false;
+    let par: any = null;
+    const start = () => {
+      canvas = document.createElement('canvas');
+      canvas.className = styles.cine;
+      canvas.dataset.tourCanvas = 'cine';
+      canvas.setAttribute('aria-hidden', 'true');
+      host.appendChild(canvas);
       gl = canvas.getContext('webgl2', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true });
-      if (!gl) return false;
+      if (!gl) { canvas.remove(); canvas = null; setCineOk(false); return; }
+      par = gl.getExtension('KHR_parallel_shader_compile');
       const sh = (type: number, src: string) => {
         const s = gl!.createShader(type)!;
         gl!.shaderSource(s, src);
@@ -196,7 +214,16 @@ export default function CineFire() {
       gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
       gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
       gl.linkProgram(prog);
-      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { gl = null; return false; }
+      linking = true;
+    };
+    /** True once the program is linked and set up; false while it still compiles (or failed). */
+    const ready = (): boolean => {
+      if (!gl || !prog) return false;
+      if (!linking) return true;
+      if (par && !gl.getProgramParameter(prog, par.COMPLETION_STATUS_KHR)) return false;
+      linking = false;
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { release(); setCineOk(false); return false; }
+      setCineOk(true);
       gl.useProgram(prog);
       const buf = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, buf);
@@ -212,13 +239,18 @@ export default function CineFire() {
       raf = 0;
       if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
       gl = null;
-      canvas.width = canvas.height = 1;
-      canvas.style.visibility = 'hidden';
+      prog = null;
+      linking = false;
+      canvas?.remove();
+      canvas = null;
     };
 
     const draw = () => {
       raf = 0;
-      if (!gl || !last) return;
+      if (!gl || !last || !canvas) return;
+      // still compiling: look again next frame
+      if (!ready()) { if (gl) raf = requestAnimationFrame(draw); return; }
+      canvas.style.visibility = 'visible';
       const w = canvas.clientWidth, h = canvas.clientHeight;
       const k = w < 1024 ? 0.42 : 0.6; // internal resolution: fire and smoke are soft
       const cw = Math.max(2, Math.round(w * k)), ch = Math.max(2, Math.round(h * k));
@@ -227,7 +259,10 @@ export default function CineFire() {
       gl.uniform2f(U.uRes, cw, ch);
       gl.uniform1f(U.uTime, still ? 0 : (performance.now() / 1000) % 1000);
       gl.uniform1f(U.uPush, last.push);
-      gl.uniform1f(U.uHeat, last.heat);
+      // the reader's air drop (lib/interaction.ts) knocks the fire down, then it partly recovers
+      const rn = getRun();
+      const sg = rn.id === AIR_STORY ? stageNow(performance.now(), false) : null;
+      gl.uniform1f(U.uHeat, last.heat * (sg ? chubutHeat(sg.phase === 'respond' ? 'respond' : 'done', sg.p) : isDone(AIR_STORY) ? chubutHeat('done', 1) : 1));
       gl.uniform1f(U.uRise, last.rise);
       gl.uniform1f(U.uReveal, last.reveal);
       gl.uniform1f(U.uEnter, last.enter);
@@ -240,20 +275,27 @@ export default function CineFire() {
     const unsub = subscribe(({ st, reduced }) => {
       still = reduced || !!(window as any).__tourStill;
       const i = TOUR_EVENTS.findIndex((e) => e.id === AIR_STORY);
+      // the context lives from the smoke before Chubut to the end of its chapter
+      const near = st.chapter === i || (st.chapter === i - 1 && st.chapterT > 0.8);
+      if (!near) { last = null; if (gl) release(); return; }
+      if (!gl) start();
       const c = st.chapter === i ? cineState(st.chapterT, reduced) : null;
       if (!c || !c.on) {
         last = null;
-        if (gl) release();
+        cancelAnimationFrame(raf);
+        raf = 0;
+        if (canvas) canvas.style.visibility = 'hidden';
+        // keep compiling meanwhile, without drawing
+        if (gl && linking && !raf) raf = requestAnimationFrame(function poll() { raf = 0; if (gl && !ready() && linking) raf = requestAnimationFrame(poll); });
         return;
       }
-      if (!gl && !init()) return;
-      canvas.style.visibility = 'visible';
       last = c;
       cancelAnimationFrame(raf);
       draw();
     });
-    return () => { unsub(); release(); };
+    const unsubRun = subscribeRun(() => { if (gl && last) { cancelAnimationFrame(raf); draw(); } });
+    return () => { unsub(); unsubRun(); release(); };
   }, []);
 
-  return <canvas ref={ref} className={styles.cine} data-tour-canvas="cine" aria-hidden="true" />;
+  return <div ref={ref} className={styles.cineHost} aria-hidden="true" />;
 }

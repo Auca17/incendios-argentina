@@ -1,5 +1,5 @@
 import { ROSARIO, type StoryCfg, type StoryState } from './storyScenes';
-import { blob, clamp01, drawFires, hash, lens, stamp, strength, type FireItem, type Proj, type Sites } from './fx';
+import { blob, clamp01, drawFires, hash, lens, stamp, strength, type FireItem, type Proj, type Sites, MAP_FLAMES } from './fx';
 
 /*
  * Illustrated layer of the lighter story scenes: the fires of their episode, cartographic labels,
@@ -64,7 +64,7 @@ export function drawStory(g: CanvasRenderingContext2D, f: StoryInput) {
   });
 
   // Misiones: embers that keep glowing inside the trunks after the flames have gone down
-  if (cfg.id === 'misiones') {
+  if (MAP_FLAMES && cfg.id === 'misiones') {
     const ember = blob('230, 60, 20', 0.3);
     const emberCore = blob('255, 150, 60', 0.2);
     g.globalCompositeOperation = 'lighter';
@@ -90,7 +90,7 @@ export function drawStory(g: CanvasRenderingContext2D, f: StoryInput) {
 
   // Delta: the smoke goes to Rosario (west of the islands), and a haze settles on the city
   let wind: ((it: FireItem) => [number, number]) | undefined;
-  if (cfg.id === 'delta') {
+  if (MAP_FLAMES && cfg.id === 'delta') {
     const [rx, ry] = f.proj(ROSARIO[0], ROSARIO[1]);
     wind = (it) => { const dx = rx - it.x, dy = ry - it.y, d = Math.hypot(dx, dy) || 1; return [dx / d, dy / d]; };
     const burning = items.reduce((m, it) => m + it.s, 0) / Math.max(1, items.length);

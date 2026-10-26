@@ -111,7 +111,8 @@
     bottom: 0;
     width: auto;
     z-index: 8;
-    padding: var(--s-2) var(--s-2) var(--s-3);
+    /* room at the foot for the map's footer (TourStage) */
+    padding: var(--s-2) var(--s-2) 104px;
     background: var(--t-paper);
     box-shadow: 0 -1px 0 var(--t-line);
     /* not scrollable on purpose: a swipe on the text keeps moving the story */
@@ -120,6 +121,12 @@
     line-height: 1.5;
   }
   .title { margin-bottom: var(--s-2); font-size: var(--fs-20); }
+  /* turns: the cause and then the figure share one place; each holds while the scene moves on */
+  .turns { display: grid; }
+  .turns > * { grid-area: 1 / 1; align-self: start; }
+  .quote { opacity: calc(var(--q) * (1 - var(--swap, 0))); visibility: visible; }
+  .second { opacity: var(--swap, 0); }
+  .pod[data-swap='0'] .second { visibility: hidden; }
   .quote { margin-bottom: var(--s-2); }
   .figure { margin-bottom: var(--s-2); }
   .num { font-size: 30px; }

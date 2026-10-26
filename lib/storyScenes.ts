@@ -36,7 +36,7 @@ export type StoryCfg = {
   note: [string, string];
 };
 
-const FLAMES: [string, string] = ['Llamas:', ' donde se acumularon más focos.'];
+const FLAMES: [string, string] = ['Brillo:', ' donde el satélite acumuló más focos. No mide superficie quemada.'];
 
 export const STORIES: StoryCfg[] = [
   {
@@ -47,7 +47,7 @@ export const STORIES: StoryCfg[] = [
     pace: [[0, 0], [0.28, 26], [0.7, 31.5], [0.86, 34]], full: 0.9,
     sites: { w0: 26, w1: 36, max: 7, gap: 0.12, box: [-54.75, -53.45, -27.55, -26.5] },
     labels: [{ lon: -53.95, lat: -27.05, text: 'Reserva de Biosfera Yabotí', from: 0.3, to: 0.9 }],
-    note: ['Brasas:', ' los troncos grandes siguieron ardiendo por dentro.'],
+    note: FLAMES,
   },
   {
     id: 'corrientes',

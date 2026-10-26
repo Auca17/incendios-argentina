@@ -31,13 +31,15 @@ export type Section = { id: string; kind: Kind; vh: number; story?: number };
  * Scroll length of each story's map scene: enough to read the pod and watch its scene play
  * (lib/scenes.ts), no more. The two reference scenes, Mendoza and Chubut, are the longest.
  */
-const STORY_VH: Record<string, number> = { misiones: 190, corrientes: 200, cordoba: 220, delta: 220, mendoza: 230, chubut: 330 };
+// Mendoza's map phase is ~20 % shorter than at first (230), Chubut's ~15 % (330): its cinematic
+// opening takes a fixed share of the section, so a deeper cut would shorten the opening too
+const STORY_VH: Record<string, number> = { misiones: 190, corrientes: 200, cordoba: 220, delta: 220, mendoza: 185, chubut: 280 };
 /**
  * Before the map, the illustrated landscape of the region (components/Landscape.tsx); after it, the
  * smoke that carries the reader to the next region. Chubut has no landscape: its cinematic opening
  * (lib/cine.ts) is its establishing shot, and its scene starts right away.
  */
-export const INTRO_VH: Record<string, number> = { misiones: 110, corrientes: 100, cordoba: 100, delta: 100, mendoza: 110, chubut: 0 };
+export const INTRO_VH: Record<string, number> = { misiones: 150, corrientes: 140, cordoba: 160, delta: 160, mendoza: 170, chubut: 0 };
 export const OUTRO_VH = 45;
 
 export const SECTIONS: Section[] = [
@@ -182,10 +184,20 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
       st.more = t < MORE_OPEN ? -1 : Math.min(MORE_PROVINCES.length - 1, Math.floor(((t - MORE_OPEN) / (1 - MORE_OPEN)) * MORE_PROVINCES.length));
       break;
     case 'epilogue':
-      st.open = 1; st.borders = 1; st.chapter = 6;
+      // no reading bank: it is off since the first story, and coming back here it popped in on the left
+      // before the clouds closed
+      st.open = 1; st.borders = 1; st.chapter = 6; st.bank = 0;
       // clouds close completely, the epilogue is read on them, it fades, then the clouds turn to smoke
       st.close = seg(t, 0, 0.18);
       st.hud = st.close > 0 ? 0 : 1;
+      // the clouds close over the last province of "Dónde más ardió", as it was left: the map changes
+      // only once they are shut (a little after, so the eased clouds are shut too), never in view
+      if (t < 0.26) {
+        st.chapter = 8;
+        st.more = MORE_PROVINCES.length - 1;
+        st.moreT = 1;
+        st.pod = 1 - Math.min(1, st.close / 0.2); // gone before the clouds reach it
+      }
       st.epi = 1 - seg(t, 0.6, 0.68);
       st.ash = seg(t, 0.3, 0.55);
       st.smoke = seg(t, 0.68, 0.84);

@@ -25,7 +25,25 @@ export type Layer = {
   /** Rises into view from below with k (Mendoza's vine rows). */
   rise?: boolean;
 };
-export type Land = { layers: Layer[]; grade: (g: CanvasRenderingContext2D, W: number, H: number, k: number) => void };
+/**
+ * The stretch of terrain where a scene's fire burns (lib/landFire.ts): the surface y(x) of one
+ * layer, in the same CSS-pixel frame the layer is painted in, and the part of it [x0, x1] that is in
+ * view (not hidden by a nearer plane). The fire, its smoke and the response are drawn on it, after
+ * that layer and with its transform, so they stay on the ground whatever the camera does.
+ */
+export type Ground = { layer: number; y: (x: number) => number; x0: number; x1: number };
+export type Land = {
+  layers: Layer[];
+  grade: (g: CanvasRenderingContext2D, W: number, H: number, k: number) => void;
+  /** The main stretch of terrain of the scene's fire (its spot is there). */
+  ground?: Ground;
+  /** Other stretches in the same layer, at other depths (the Delta: far and near islands). */
+  zones?: Ground[];
+  /** Screen height of the horizon, where there is one (rain and its haze follow it). */
+  horizon?: number;
+  /** Width the layers were painted at, wider than the screen when the shot pans (the Delta). */
+  wide?: number;
+};
 
 /* ---------- small deterministic tools ---------- */
 
@@ -391,12 +409,15 @@ function cordoba(W: number, H: number): Land {
   gs.fillRect(0, 0, W, H);
 
   const ridges: { c: HTMLCanvasElement; depth: number; foot: number }[] = [];
+  const crest: ((x: number) => number)[] = [];
   const cols = [['#8c8590', '#7a737e'], ['#6f6a6e', '#5e595d'], ['#55524d', '#46433f'], ['#3e3c33', '#2f2d26'], ['#272820', '#1b1c16']];
   cols.forEach(([top, bot], i) => {
     const [c, g] = layer(W, H);
     const n = fbm(70 + i * 9, 5);
     const base = H * (0.42 + i * 0.1), amp = H * (0.16 - i * 0.015);
-    ridge(g, W, H, (x) => base - Math.pow(n(x / (520 - i * 60) + i * 3), 1.6) * amp * 1.8 + amp * 0.4, vgrad(g, base - amp, base + H * 0.2, [[0, top], [1, bot]]));
+    const yr = (x: number) => base - Math.pow(n(x / (520 - i * 60) + i * 3), 1.6) * amp * 1.8 + amp * 0.4;
+    crest.push(yr);
+    ridge(g, W, H, yr, vgrad(g, base - amp, base + H * 0.2, [[0, top], [1, bot]]));
     if (i === cols.length - 1) {
       // the near slope: bushes and rocks of the bosque serrano
       const r = rng(88);
@@ -409,7 +430,21 @@ function cordoba(W: number, H: number): Land {
     ridges.push({ c, depth: 0.15 + i * 0.2, foot: base + amp * 0.4 });
   });
 
+  // the fire burns on the face of the third ridge, where it stands clear above the fourth one: the
+  // widest such stretch in the right half of the frame, at most a fifth of the width
+  const face = (x: number) => crest[3](x) - crest[2](x);
+  let best: [number, number] = [W * 0.6, W * 0.7], run0 = -1;
+  for (let x = W * 0.35; x <= W * 0.92; x += 4) {
+    const open = face(x) > H * 0.07;
+    if (open && run0 < 0) run0 = x;
+    if ((!open || x + 4 > W * 0.92) && run0 >= 0) { if (x - run0 > best[1] - best[0]) best = [run0, x]; run0 = -1; }
+  }
+  const mid = (best[0] + best[1]) / 2, half = Math.min((best[1] - best[0]) / 2 - 10, W * 0.1);
+  const ground: Ground = { layer: 3, y: (x) => Math.min(crest[2](x) + H * 0.02, crest[3](x) - H * 0.015), x0: mid - half, x1: mid + half };
+
   return {
+    ground,
+    horizon: H * 0.45,
     layers: [
       { c: sky, depth: 0 },
       ...ridges.map((r, i): Layer => ({
@@ -440,11 +475,13 @@ function delta(W: number, H: number): Land {
   // islands: long low strips, the nearer the thicker, with their reflection
   const [isl, gi] = layer(W, H);
   const ri = rng(121);
+  const strips: { y: number; h: number; x0: number; x1: number }[] = [];
   for (let i = 0; i < 7; i++) {
     const t = i / 6;
     const y = hz + (H - hz) * (0.02 + 0.5 * t * t);
     const h = 3 + 22 * t * t;
     const x0 = -40 + ri() * W * 0.5, x1 = x0 + W * (0.45 + 0.6 * ri());
+    strips.push({ y, h, x0, x1 });
     const n = fbm(130 + i, 3);
     const col = `rgb(${30 + 26 * (1 - t)},${38 + 26 * (1 - t)},${30 + 18 * (1 - t)})`;
     gi.fillStyle = col;
@@ -478,7 +515,20 @@ function delta(W: number, H: number): Land {
     gn.stroke();
   }
 
+  // the fire burns along one island in the middle distance: the nearest strip that reaches across
+  // the right half of the frame (the left half is the title's)
+  // three depths of the same delta: an island on the horizon, one in the middle distance (the main
+  // action, where the spot is) and the nearest one, half behind the juncos of the foreground
+  const on = (q: { y: number; h: number; x0: number; x1: number }, lo: number, hi: number): Ground => ({
+    layer: 1, y: () => q.y - q.h * 0.4, x0: Math.max(q.x0 + 40, W * lo), x1: Math.min(q.x1 - 40, W * hi),
+  });
+  const ground = on(strips[3], 0.3, 0.92);
+  const zones = [on(strips[1], 0.35, 0.95), on(strips[5], 0.45, 0.95)];
+
   return {
+    ground,
+    zones,
+    horizon: hz,
     layers: [
       { c: sky, depth: 0, after: (g, W2, H2, k) => {
         // the sun through the smoke, redder as the smoke thickens
@@ -532,7 +582,8 @@ function mendoza(W: number, H: number): Land {
 
   const [pied, gp] = layer(W, H);
   const np = fbm(220, 4);
-  ridge(gp, W, H, (x) => H * 0.55 - np(x / 300) * H * 0.07, vgrad(gp, H * 0.48, hz + 10, [[0, '#6a5444'], [1, '#4a3a2f']]));
+  const yP = (x: number) => H * 0.55 - np(x / 300) * H * 0.07;
+  ridge(gp, W, H, yP, vgrad(gp, H * 0.48, hz + 10, [[0, '#6a5444'], [1, '#4a3a2f']]));
   const rp = rng(222);
   for (let i = 0; i < 120; i++) {
     gp.fillStyle = 'rgba(40,34,26,0.7)';
@@ -582,6 +633,8 @@ function mendoza(W: number, H: number): Land {
   }
 
   return {
+    // the fire burns on the piedemonte, a little below its crest, left of the vanishing point
+    ground: { layer: 2, y: (x) => yP(x) + H * 0.012, x0: W * 0.24, x1: W * 0.5 },
     layers: [
       { c: sky, depth: 0 },
       { c: andes, depth: 0.12 },
@@ -599,9 +652,13 @@ function mendoza(W: number, H: number): Land {
 export const LANDSCAPES: Record<string, (W: number, H: number) => Land> = { misiones, corrientes, cordoba, delta, mendoza };
 
 /** Paints a region's layers at `res` pixels per CSS px. */
+/** Shots that pan sideways are painted this much wider than the screen. */
+export const PAN_WIDE: Record<string, number> = { delta: 1.2 };
+
 export function buildLand(id: string, W: number, H: number, res: number): Land {
   RES = res;
-  try { return LANDSCAPES[id](W, H); } finally { RES = 1; }
+  const k = PAN_WIDE[id] ?? 1;
+  try { const L = LANDSCAPES[id](W * k, H); if (k !== 1) L.wide = W * k; return L; } finally { RES = 1; }
 }
 
 /** One line under each landscape, so nobody takes it for a picture of the fire. */
