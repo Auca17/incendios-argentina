@@ -71,8 +71,9 @@ vec3 fireRamp(float t) {
 }
 
 // Everything above the water: sky, Andes, both rows of the forest, flames and smoke. The lake calls it
-// again at the mirrored point for its reflection.
-vec3 above(vec2 far, vec2 mid, float t, float heat) {
+// again at the mirrored point for its reflection, cheap: without the domain warps of the flames and the
+// smoke nor the smoke columns, which the ripples blur away anyway.
+vec3 above(vec2 far, vec2 mid, float t, float heat, bool cheap) {
   float fireLine = -0.04;
   // sky: smoke-dark above, an orange glow toward the fire
   float glow = exp(-max(0.0, far.y - fireLine) * 3.2) * heat;
@@ -91,7 +92,7 @@ vec3 above(vec2 far, vec2 mid, float t, float heat) {
 
   // flames: turbulent tongues rising from the forest line, taller with the heat
   vec2 fq = vec2(mid.x * 3.2, (mid.y - fireLine) * 2.4);
-  float warp = fbm(fq * 1.4 + vec2(0.0, -t * 1.1));
+  float warp = cheap ? 0.5 : fbm(fq * 1.4 + vec2(0.0, -t * 1.1));
   float f = fbm(vec2(fq.x + warp * 0.6, fq.y - t * 1.7));
   float height = 0.12 + 0.42 * heat;
   float flame = clamp(f * 1.75 - (mid.y - fireLine) / height - 0.25, 0.0, 1.0);
@@ -100,13 +101,15 @@ vec3 above(vec2 far, vec2 mid, float t, float heat) {
 
   // smoke: billows rising and drifting east, dark above, lit orange from below
   vec2 sq = vec2(mid.x * 1.4 - t * 0.03, (mid.y - fireLine) * 1.2 - t * 0.12);
-  float s = fbm(sq + 1.4 * fbm(sq * 1.6 + vec2(t * 0.05, 0.0)));
+  float s = fbm(sq + 1.4 * (cheap ? 0.5 : fbm(sq * 1.6 + vec2(t * 0.05, 0.0))));
   float rise = smoothstep(fireLine + 0.02, fireLine + 0.5, mid.y);
   float dens = smoothstep(0.38, 0.82, s) * (0.4 + 0.65 * heat) * (0.3 + 0.75 * rise);
   // columns: the smoke of each stretch of fire rises in its own plume, curling, before it merges above
-  float plume = 0.5 + 0.5 * sin(mid.x * 11.0 + 3.0 * fbm(vec2(mid.y * 2.2 - t * 0.25, mid.x * 1.7)));
-  float band = smoothstep(fireLine - 0.02, fireLine + 0.12, mid.y) * (1.0 - smoothstep(fireLine + 0.35, fireLine + 0.75, mid.y));
-  dens = max(dens, smoothstep(0.55, 1.0, plume) * smoothstep(0.3, 0.7, s) * band * heat * 0.55);
+  if (!cheap) {
+    float plume = 0.5 + 0.5 * sin(mid.x * 11.0 + 3.0 * fbm(vec2(mid.y * 2.2 - t * 0.25, mid.x * 1.7)));
+    float band = smoothstep(fireLine - 0.02, fireLine + 0.12, mid.y) * (1.0 - smoothstep(fireLine + 0.35, fireLine + 0.75, mid.y));
+    dens = max(dens, smoothstep(0.55, 1.0, plume) * smoothstep(0.3, 0.7, s) * band * heat * 0.55);
+  }
   dens = max(dens, smoothstep(0.35, 0.8, s) * uRise * 0.9);   // above the smoke when the camera climbs
   float under = exp(-max(0.0, mid.y - fireLine) * 2.6) * heat;
   vec3 scol = mix(vec3(0.11, 0.09, 0.085), vec3(0.95, 0.38, 0.11), under * 0.8);
@@ -139,7 +142,7 @@ void main() {
   far.x += shimmer;
 
 
-  vec3 col = above(far, mid, t, heat);
+  vec3 col = above(far, mid, t, heat, false);
 
   // a narrow burnt bank at the foot of the trees
   float bank = smoothstep(fireLine - 0.012, fireLine - 0.026, mid.y);
@@ -153,7 +156,7 @@ void main() {
     float d = shore - mid.y;
     float rip = (noise(vec2(mid.x * 5.0, 3.0 / (0.02 + d) - t * 0.7)) - 0.5) * (0.004 + 0.05 * d);
     vec2 off = vec2(rip, 2.0 * d);
-    vec3 rcol = above(far + off, mid + off, t, heat);
+    vec3 rcol = above(far + off, mid + off, t, heat, true);
     // the water reflects less as it comes toward the viewer (it is seen less obliquely)
     float fres = 0.72 - 0.42 * smoothstep(0.0, 0.4, d);
     vec3 water = vec3(0.015, 0.014, 0.018) + rcol * fres;
@@ -293,7 +296,17 @@ export default function CineFire() {
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       if (held && seqDone(AIR_STORY)) { held = false; request(); }
-      if (!still) raf = requestAnimationFrame(draw);
+      drawnAt = performance.now();
+      if (!still) raf = requestAnimationFrame(tick);
+    };
+    // the flicker alone runs at about 30 fps: the shader is the heaviest of the page and more frames
+    // do not show in the fire (a high-refresh screen would otherwise draw it 120 times a second);
+    // the scroll still draws at once (subscribe below calls draw directly)
+    let drawnAt = 0;
+    const tick = (now: number) => {
+      raf = 0;
+      if (now - drawnAt < 31) { raf = requestAnimationFrame(tick); return; }
+      draw();
     };
 
     const unsub = subscribe(({ st, reduced }) => {

@@ -11,7 +11,7 @@ import styles from './SceneInteraction.module.css';
 
 /**
  * The captions of the story, as film subtitles: under a landscape, what its illustrated sequence shows
- * at each stage (lib/interaction.ts), marked as an illustration; over a map, what advances on it and
+ * at each stage (lib/interaction.ts); over a map, what advances on it and
  * what the camera does (lib/mapCaptions.ts), centred on the map, clear of the reading column.
  * Over the map each caption takes the top or the bottom of the map, whichever covers fewer foci and
  * keeps clear of the figures panel and of the other caption (lib/placement.ts).
@@ -69,13 +69,8 @@ export default function SceneInteraction() {
         {onMap.text && <p key={onMap.text} className={styles.says}>{onMap.text}</p>}
       </div>
       <div ref={seqRef} className={`${styles.bar}${sides.seq === 'top' ? ' ' + styles.high : ''}${d && says ? ' ' + styles.on : ''}`} style={sides.seq ? { left: sides.mapLeft } : undefined} role="region" aria-label="Escena ilustrada">
-        {d && says && (
-          <>
-            <p className={styles.kicker}>{shown!.id === 'chubut' ? 'Recreación ilustrada' : 'Ilustración'}</p>
-            {/* the key restarts the fade when the text changes */}
-            <p key={shown!.phase} className={styles.says} aria-live="polite">{says}</p>
-          </>
-        )}
+        {/* the key restarts the fade when the text changes */}
+        {d && says && <p key={shown!.phase} className={styles.says} aria-live="polite">{says}</p>}
       </div>
     </>
   );
