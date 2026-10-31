@@ -108,6 +108,9 @@ a { color: var(--accent); }
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 
-/* the page keeps its scrollbar gutter, so locking the scroll under a dialog moves nothing */
-html { scrollbar-gutter: stable; }
+/* the story is read with the wheel and the chapter bar shows where the reader is: the page's own
+   scrollbar is hidden, so the clouds and the map reach the edge (and locking the scroll under a
+   dialog moves nothing); inner panels keep theirs */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
 html[data-dialog] { overflow: hidden; }
