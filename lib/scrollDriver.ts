@@ -1,5 +1,6 @@
 'use client';
 import { FOCAL, SECTIONS, tourProgress, tourState, type TourState } from './tour';
+import { smoothActive } from './smoothScroll';
 
 /*
  * One requestAnimationFrame loop for the whole tour. Every frame it reads scrollY and the viewport
@@ -8,7 +9,7 @@ import { FOCAL, SECTIONS, tourProgress, tourState, type TourState } from './tour
  * frame does no layout reads beyond scrollY. A subscriber returns true while it still needs frames
  * (the map camera settling); the loop stops as soon as nothing moves.
  *
- * Fast scrolling: the state handed out follows the scroll's state with a short ease (about 120 ms),
+ * Fast scrolling: the state handed out follows the scroll's state with a short ease (about 220 ms),
  * field by field, so a big jump in the page becomes a brief transition instead of a cut (clouds,
  * title, scenes). Slow scrolling barely notices it. It always lands exactly on the scroll's state, so
  * a position still has one frame; the scroll itself is never held. Not under reduced motion.
@@ -27,23 +28,28 @@ let last: Frame | null = null;
 
 /** Continuous fields that ease; discrete ones (section, chapter, province) switch at once. */
 const EASED = ['open', 'close', 'borders', 'hud', 'title', 'titleDock', 'bank', 'smoke', 'ash', 'epi', 'chapterT', 'moreT', 'land', 'landT', 'veil', 'card', 'pod'] as const;
-const TAU = 0.12; // seconds
+// seconds; shorter when the wheel already glides (lib/smoothScroll.ts): two eases in a row would lag
+const TAU = 0.22;
+const TAU_SMOOTH = 0.12;
 let shown: TourState | null = null;
 let lastT = 0;
 
 function ease(target: TourState): [TourState, boolean] {
   const now = performance.now();
-  const dt = Math.min(0.1, Math.max(0, (now - lastT) / 1000));
+  // at most two frames: the first frame after a pause (the loop sleeps while nothing moves) would
+  // otherwise count the whole pause and cover half the distance at once, the cut the ease is there for
+  const dt = Math.min(1 / 30, Math.max(0, (now - lastT) / 1000));
   lastT = now;
   if (reduced || !shown || dt === 0) { shown = target; return [target, false]; }
-  const k = 1 - Math.exp(-dt / TAU);
+  const k = 1 - Math.exp(-dt / (smoothActive() ? TAU_SMOOTH : TAU));
   const out = { ...target };
   let moving = false;
   for (const f of EASED) {
-    // a new chapter starts from its own progress, not from the previous chapter's; an arriving
+    // a new chapter starts from its own progress, not from the previous chapter's (its title card and its
+    // text too: the ones left behind fade on their own, components/Landscape.tsx and MoreSection.tsx); an arriving
     // landscape too (eased in from the previous chapter's 0, it would pass through the map's opening;
     // a leaving one still eases out, through the smoke that hides the cut to the map)
-    if ((f === 'chapterT' || f === 'moreT' || f === 'landT' || (f === 'land' && target.land > shown.land)) && target.chapter !== shown.chapter) continue;
+    if ((f === 'chapterT' || f === 'moreT' || f === 'landT' || f === 'card' || f === 'pod' || (f === 'land' && target.land > shown.land)) && target.chapter !== shown.chapter) continue;
     const d = target[f] - shown[f];
     if (Math.abs(d) < 0.002) continue;
     out[f] = shown[f] + d * k;

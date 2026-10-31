@@ -1,5 +1,6 @@
 'use client';
 import { setReturnPoint } from '../lib/returnPoint';
+import { scrollToY } from '../lib/smoothScroll';
 
 /**
  * Link to the technical sources section of the same page (#fuentes). It remembers where the reader
@@ -16,7 +17,7 @@ export default function SourcesLink({ className, label = 'Fuentes' }: { classNam
         e.preventDefault();
         setReturnPoint(window.scrollY);
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+        scrollToY(Math.ceil(el.getBoundingClientRect().top + window.scrollY), !reduced);
         history.replaceState(null, '', '#fuentes');
         el.focus({ preventScroll: true });
       }}

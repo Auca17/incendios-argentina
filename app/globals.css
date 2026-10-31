@@ -60,7 +60,10 @@
   --t-amber-dim: rgba(255, 162, 54, 0.55);
   --t-line: rgba(195, 204, 213, 0.16);
   --t-control: rgba(195, 204, 213, 0.55); /* control borders: 3:1 on the dark surfaces */
-  --t-font-title: var(--font-rocker), Georgia, serif;
+  --t-font-title: var(--font-rocker), Georgia, serif; /* the cover title only */
+  /* headings (regions, story titles, sections) */
+  --t-font-head: var(--font-fraunces), Georgia, serif;
+  --t-head-weight: 600;
   --t-ink: #111418; /* text on white clouds */
   --t-ink-2: #1f262e; /* secondary text on clouds: >= 4.5:1 even on the darkest cloud shade */
   --t-red: #b3261e;
@@ -68,6 +71,8 @@
   --t-ember: #ff9a5c;
   --t-font-read: var(--font-jakarta), system-ui, sans-serif;
   --t-font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  /* figures large enough to be read as a shape: the reading face, heavy, with tabular digits */
+  --t-font-figure: var(--font-jakarta), system-ui, sans-serif;
   --t-pod-w: clamp(340px, 30vw, 460px);
   --t-scene-w: clamp(280px, 26vw, 400px);
   --t-hud-w: 72px;

@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { AIR_STORY } from '../lib/airScene';
-import { cineState } from '../lib/cine';
+import { CINE_END, cineShown, cineState, setCineShown } from '../lib/cine';
 import { TOUR_EVENTS } from '../lib/tour';
-import { subscribe } from '../lib/scrollDriver';
-import { getRun, isDone, stageNow, subscribeRun } from '../lib/interaction';
+import { request, subscribe } from '../lib/scrollDriver';
+import { seqDone, seqStage } from '../lib/interaction';
 import { setCineOk } from '../lib/cine';
 import { chubutHeat } from '../lib/landFire';
 import styles from './TourMap.module.css';
@@ -70,24 +70,10 @@ vec3 fireRamp(float t) {
   return mix(c, vec3(1.0, 0.97, 0.86), smoothstep(0.85, 1.0, t));
 }
 
-void main() {
-  vec2 frag = gl_FragCoord.xy;
-  vec2 p = (frag - 0.5 * uRes) / uRes.y;   // aspect-correct, y up
-  float t = uTime;
-  float zoom = 1.0 + 0.55 * uPush;
-  // each plane moves by its depth: the near trees fly past, the mountains barely move; the camera
-  // rising makes the ground sink, more for the near planes
-  vec2 far = p / (1.0 + (zoom - 1.0) * 0.25) + vec2(0.0, 0.18 * uRise);
-  vec2 mid = p / (1.0 + (zoom - 1.0) * 0.7) + vec2(0.0, 0.45 * uRise);
-  vec2 near = p / zoom + vec2(0.0, 0.9 * uRise);
-
-  float fireLine = -0.04; // where the burning forest stands (mid plane)
-  float heat = uHeat;
-
-  // heat shimmer above the fire
-  float shimmer = (noise(mid * vec2(18.0, 10.0) + vec2(0.0, -t * 3.0)) - 0.5) * 0.006 * heat * smoothstep(0.5, -0.05, mid.y - fireLine);
-  far.x += shimmer;
-
+// Everything above the water: sky, Andes, both rows of the forest, flames and smoke. The lake calls it
+// again at the mirrored point for its reflection.
+vec3 above(vec2 far, vec2 mid, float t, float heat) {
+  float fireLine = -0.04;
   // sky: smoke-dark above, an orange glow toward the fire
   float glow = exp(-max(0.0, far.y - fireLine) * 3.2) * heat;
   vec3 col = mix(vec3(0.045, 0.034, 0.03), vec3(0.42, 0.14, 0.05), glow);
@@ -116,7 +102,11 @@ void main() {
   vec2 sq = vec2(mid.x * 1.4 - t * 0.03, (mid.y - fireLine) * 1.2 - t * 0.12);
   float s = fbm(sq + 1.4 * fbm(sq * 1.6 + vec2(t * 0.05, 0.0)));
   float rise = smoothstep(fireLine + 0.02, fireLine + 0.5, mid.y);
-  float dens = smoothstep(0.42, 0.85, s) * (0.35 + 0.65 * heat) * (0.25 + 0.75 * rise);
+  float dens = smoothstep(0.38, 0.82, s) * (0.4 + 0.65 * heat) * (0.3 + 0.75 * rise);
+  // columns: the smoke of each stretch of fire rises in its own plume, curling, before it merges above
+  float plume = 0.5 + 0.5 * sin(mid.x * 11.0 + 3.0 * fbm(vec2(mid.y * 2.2 - t * 0.25, mid.x * 1.7)));
+  float band = smoothstep(fireLine - 0.02, fireLine + 0.12, mid.y) * (1.0 - smoothstep(fireLine + 0.35, fireLine + 0.75, mid.y));
+  dens = max(dens, smoothstep(0.55, 1.0, plume) * smoothstep(0.3, 0.7, s) * band * heat * 0.55);
   dens = max(dens, smoothstep(0.35, 0.8, s) * uRise * 0.9);   // above the smoke when the camera climbs
   float under = exp(-max(0.0, mid.y - fireLine) * 2.6) * heat;
   vec3 scol = mix(vec3(0.11, 0.09, 0.085), vec3(0.95, 0.38, 0.11), under * 0.8);
@@ -127,21 +117,49 @@ void main() {
   float tm = trees(mid, 9.0, fireLine - 0.03, 0.22, 1.0);
   vec3 tcol = vec3(0.025, 0.018, 0.015) + vec3(0.6, 0.18, 0.04) * heat * smoothstep(0.3, 0.0, mid.y - fireLine) * 0.4;
   col = mix(col, tcol, tm * (1.0 - 0.55 * flame));
+  return col;
+}
 
-  // the slope in front: burnt ground with embers and a fire line creeping toward the camera
-  float slope = fireLine - 0.05 - 0.22 * smoothstep(-0.9, 0.9, -mid.x) - 0.04 * fbm(vec2(mid.x * 3.0, 2.0));
-  if (mid.y < slope) {
-    float depth = clamp((slope - mid.y) / 0.5, 0.0, 1.0);
-    vec3 gcol = mix(vec3(0.09, 0.05, 0.035), vec3(0.03, 0.022, 0.02), depth);
-    gcol += vec3(0.55, 0.16, 0.04) * heat * exp(-depth * 4.0) * 0.8;       // fire light on the slope
-    float em = smoothstep(0.6, 0.8, fbm(mid * vec2(10.0, 18.0) + vec2(0.0, t * 0.15)));
-    gcol += vec3(1.0, 0.36, 0.07) * em * heat * 1.4 * (0.4 + 0.6 * noise(mid * 30.0 + t * 2.0)) * (1.0 - depth * 0.5);
-    col = gcol;
-    // a creeping ground fire: low flames along a ragged line on the slope
-    float gl = slope - 0.09 - 0.05 * fbm(vec2(mid.x * 4.0, 5.0));
-    float gf = clamp(fbm(vec2(mid.x * 9.0, (mid.y - gl) * 6.0 - t * 2.2)) * 1.6 - (mid.y - gl) / (0.04 + 0.06 * heat) - 0.3, 0.0, 1.0);
-    gf *= smoothstep(-0.02, 0.01, mid.y - gl) * step(-0.3, mid.x) * heat;
-    col += fireRamp(gf) * gf;
+void main() {
+  vec2 frag = gl_FragCoord.xy;
+  vec2 p = (frag - 0.5 * uRes) / uRes.y;   // aspect-correct, y up
+  float t = uTime;
+  float zoom = 1.0 + 0.55 * uPush;
+  // each plane moves by its depth: the near trees fly past, the mountains barely move; the camera
+  // rising makes the ground sink, more for the near planes
+  vec2 far = p / (1.0 + (zoom - 1.0) * 0.25) + vec2(0.0, 0.18 * uRise);
+  vec2 mid = p / (1.0 + (zoom - 1.0) * 0.7) + vec2(0.0, 0.45 * uRise);
+  vec2 near = p / zoom + vec2(0.0, 0.9 * uRise);
+
+  float fireLine = -0.04; // where the burning forest stands (mid plane)
+  float heat = uHeat;
+
+  // heat shimmer above the fire
+  float shimmer = (noise(mid * vec2(18.0, 10.0) + vec2(0.0, -t * 3.0)) - 0.5) * 0.006 * heat * smoothstep(0.5, -0.05, mid.y - fireLine);
+  far.x += shimmer;
+
+
+  vec3 col = above(far, mid, t, heat);
+
+  // a narrow burnt bank at the foot of the trees
+  float bank = smoothstep(fireLine - 0.012, fireLine - 0.026, mid.y);
+  col = mix(col, vec3(0.05, 0.03, 0.025) + vec3(0.55, 0.16, 0.04) * heat * 0.35, bank);
+
+  // the lake in front (Epuyén lies on the shore of its lake): a dark surface that mirrors the burning
+  // forest, broken by ripples, with fire light glinting on them; the shoreline is soft, never a hard cut
+  float shore = fireLine - 0.03 - 0.01 * fbm(vec2(mid.x * 2.5, 2.0));
+  float wet = smoothstep(-1.5 / uRes.y, 1.5 / uRes.y, shore - mid.y);
+  if (wet > 0.0) {
+    float d = shore - mid.y;
+    float rip = (noise(vec2(mid.x * 5.0, 3.0 / (0.02 + d) - t * 0.7)) - 0.5) * (0.004 + 0.05 * d);
+    vec2 off = vec2(rip, 2.0 * d);
+    vec3 rcol = above(far + off, mid + off, t, heat);
+    // the water reflects less as it comes toward the viewer (it is seen less obliquely)
+    float fres = 0.72 - 0.42 * smoothstep(0.0, 0.4, d);
+    vec3 water = vec3(0.015, 0.014, 0.018) + rcol * fres;
+    float gl = smoothstep(0.7, 0.95, noise(vec2(mid.x * 26.0 + rip * 400.0, d * 160.0 - t * 1.2))) * exp(-d * 5.0) * heat;
+    water += vec3(1.0, 0.52, 0.2) * gl * 0.4;
+    col = mix(col, water, wet);
   }
 
   // foreground: grass blades against the fire light, passing as the camera pushes in
@@ -188,6 +206,9 @@ export default function CineFire() {
     let U: Record<string, WebGLUniformLocation | null> = {};
     let raf = 0;
     let last: ReturnType<typeof cineState> | null = null;
+    let lastU = 0;
+    // the opening held on screen past its stretch while the plane finishes its pass
+    let held = false;
     let still = false;
 
     // compiling the shader is the costly part (it blocked whole frames on phones): it starts while the
@@ -235,6 +256,7 @@ export default function CineFire() {
       return true;
     };
     const release = () => {
+      setCineShown(false);
       cancelAnimationFrame(raf);
       raf = 0;
       if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
@@ -251,6 +273,8 @@ export default function CineFire() {
       // still compiling: look again next frame
       if (!ready()) { if (gl) raf = requestAnimationFrame(draw); return; }
       canvas.style.visibility = 'visible';
+      // the first drawn frame: the other renderers (the plane, its captions) may now draw over it
+      if (!cineShown()) { setCineShown(true); request(); }
       const w = canvas.clientWidth, h = canvas.clientHeight;
       const k = w < 1024 ? 0.42 : 0.6; // internal resolution: fire and smoke are soft
       const cw = Math.max(2, Math.round(w * k)), ch = Math.max(2, Math.round(h * k));
@@ -259,16 +283,16 @@ export default function CineFire() {
       gl.uniform2f(U.uRes, cw, ch);
       gl.uniform1f(U.uTime, still ? 0 : (performance.now() / 1000) % 1000);
       gl.uniform1f(U.uPush, last.push);
-      // the reader's air drop (lib/interaction.ts) knocks the fire down, then it partly recovers
-      const rn = getRun();
-      const sg = rn.id === AIR_STORY ? stageNow(performance.now(), false) : null;
-      gl.uniform1f(U.uHeat, last.heat * (sg ? chubutHeat(sg.phase === 'respond' ? 'respond' : 'done', sg.p) : isDone(AIR_STORY) ? chubutHeat('done', 1) : 1));
+      // the air drop (lib/interaction.ts) knocks the fire down, then it partly recovers
+      const sg = seqStage(AIR_STORY, lastU / CINE_END, still);
+      gl.uniform1f(U.uHeat, last.heat * (sg ? chubutHeat(sg.phase, sg.p) : 1));
       gl.uniform1f(U.uRise, last.rise);
       gl.uniform1f(U.uReveal, last.reveal);
       gl.uniform1f(U.uEnter, last.enter);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      if (held && seqDone(AIR_STORY)) { held = false; request(); }
       if (!still) raf = requestAnimationFrame(draw);
     };
 
@@ -279,22 +303,30 @@ export default function CineFire() {
       const near = st.chapter === i || (st.chapter === i - 1 && st.chapterT > 0.8);
       if (!near) { last = null; if (gl) release(); return; }
       if (!gl) start();
-      const c = st.chapter === i ? cineState(st.chapterT, reduced) : null;
+      // a fast scroll does not cut the plane's pass: the opening holds where its smoke is still closed
+      // until the pass ends, then follows the scroll again
+      // just past the opening, it waits for the plane's pass to be seen whole (the pass starts with
+      // the first drawn frame of the opening, in draw)
+      const hold = !reduced && st.chapter === i && st.chapterT > CINE_END * 0.66 && st.chapterT < CINE_END * 1.6 && !seqDone(AIR_STORY);
+      held = hold;
+      const u = hold ? CINE_END * 0.66 : st.chapterT;
+      const c = st.chapter === i ? cineState(u, reduced) : null;
       if (!c || !c.on) {
         last = null;
         cancelAnimationFrame(raf);
         raf = 0;
         if (canvas) canvas.style.visibility = 'hidden';
+        setCineShown(false);
         // keep compiling meanwhile, without drawing
         if (gl && linking && !raf) raf = requestAnimationFrame(function poll() { raf = 0; if (gl && !ready() && linking) raf = requestAnimationFrame(poll); });
         return;
       }
       last = c;
+      lastU = u;
       cancelAnimationFrame(raf);
       draw();
     });
-    const unsubRun = subscribeRun(() => { if (gl && last) { cancelAnimationFrame(raf); draw(); } });
-    return () => { unsub(); unsubRun(); release(); };
+    return () => { unsub(); release(); };
   }, []);
 
   return <div ref={ref} className={styles.cineHost} aria-hidden="true" />;

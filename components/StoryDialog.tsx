@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadProvinciaMes } from '../lib/data';
 import { ALT, fmt, monthSeries } from '../lib/fire';
-import { CAUSE_BY, MORE_PROVINCES, TOUR_EVENTS } from '../lib/tour';
+import { CAUSE_BY, TOUR_EVENTS } from '../lib/tour';
 import { hold } from '../lib/scrollDriver';
+import { pauseSmoothScroll, scrollToY } from '../lib/smoothScroll';
 import { STORY_PHOTOS } from '../lib/photos';
 import { closeDialog, dialogOpener, subscribeDialog, type DialogTarget } from '../lib/storyDialog';
 import MonthChart from './MonthChart';
@@ -15,12 +16,12 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 /** What the pictures of each chapter are: illustrations, never records of the fire. */
 const IMAGES: Record<string, string> = {
-  misiones: 'El paisaje que abre el capítulo es una ilustración de la selva. En el mapa, los puntos y su brillo son los focos que detectó el satélite.',
-  corrientes: 'El paisaje que abre el capítulo es una ilustración de los esteros. En el mapa, los puntos y su brillo son los focos que detectó el satélite; no miden superficie quemada.',
-  cordoba: 'El paisaje que abre el capítulo es una ilustración de las sierras. En el mapa, los puntos y su brillo son los focos que detectó el satélite; no miden superficie quemada.',
-  delta: 'El paisaje que abre el capítulo es una ilustración de las islas. En el mapa, los puntos y su brillo son los focos que detectó el satélite; la calidad del aire en Rosario es dato de la fuente.',
-  mendoza: 'Los viñedos del paisaje que abre el capítulo son un símbolo de Mendoza: el incendio de 2023 fue en el piedemonte de El Challao, no en viñedos. La brigada de la escena interactiva es una ilustración; no reproduce una operación concreta.',
-  chubut: 'La apertura es una recreación ilustrada de un bosque andino en llamas, no una imagen de Epuyén. El avión hidrante de la escena interactiva también es una ilustración: hubo aviones hidrantes en este incendio, pero esa pasada no reproduce una operación concreta.',
+  misiones: 'El paisaje que abre el capítulo es una ilustración de la selva. En el mapa, cada marca es una celda de unos 5 km donde el satélite detectó focos; su color (de amarillo a rojo) y su tamaño dicen cuántos acumuló, no cuánta superficie se quemó ni cuántos incendios hubo.',
+  corrientes: 'El paisaje que abre el capítulo es una ilustración de los esteros. En el mapa, cada marca es una celda de unos 5 km donde el satélite detectó focos; su color (de amarillo a rojo) y su tamaño dicen cuántos acumuló, no cuánta superficie se quemó ni cuántos incendios hubo.',
+  cordoba: 'El paisaje que abre el capítulo es una ilustración de las sierras. En el mapa, cada marca es una celda de unos 5 km donde el satélite detectó focos; su color (de amarillo a rojo) y su tamaño dicen cuántos acumuló, no cuánta superficie se quemó ni cuántos incendios hubo.',
+  delta: 'El paisaje que abre el capítulo es una ilustración de las islas. En el mapa, cada marca es una celda de unos 5 km donde el satélite detectó focos; su color (de amarillo a rojo) y su tamaño dicen cuántos acumuló, no cuánta superficie se quemó ni cuántos incendios hubo. La calidad del aire en Rosario es dato de la fuente.',
+  mendoza: 'Los viñedos del paisaje que abre el capítulo son un símbolo de Mendoza: el incendio de 2023 fue en el piedemonte de El Challao, no en viñedos. Las brigadas de la escena son una ilustración; no reproduce una operación concreta. En el mapa, cada marca es una celda de unos 5 km donde el satélite detectó focos; su color (de amarillo a rojo) y su tamaño dicen cuántos acumuló, no cuánta superficie se quemó ni cuántos incendios hubo.',
+  chubut: 'La apertura es una recreación ilustrada de un bosque andino en llamas, no una imagen de Epuyén. El avión hidrante de la apertura también es una ilustración: hubo aviones hidrantes en este incendio, pero esa pasada no reproduce una operación concreta. En el mapa, cada marca es una celda de unos 5 km donde el satélite detectó focos; su color (de amarillo a rojo) y su tamaño dicen cuántos acumuló, no cuánta superficie se quemó ni cuántos incendios hubo.',
 };
 
 /**
@@ -45,6 +46,7 @@ export default function StoryDialog() {
     if (target === null) return;
     saved.current = window.scrollY;
     hold(true);
+    pauseSmoothScroll(true);
     document.documentElement.dataset.dialog = '1';
     if (!d.open) d.showModal();
     d.scrollTop = 0;
@@ -55,7 +57,8 @@ export default function StoryDialog() {
     return () => {
       if (d.open) d.close();
       delete document.documentElement.dataset.dialog;
-      if (Math.abs(window.scrollY - saved.current) > 1) window.scrollTo(0, saved.current);
+      pauseSmoothScroll(false);
+      if (Math.abs(window.scrollY - saved.current) > 1) scrollToY(saved.current, false);
       hold(false);
       // back to the button that opened it; if that button is not shown any more, to its region's text
       const o = dialogOpener();
@@ -208,8 +211,8 @@ export default function StoryDialog() {
                   <h3 className={styles.h3}>Qué se compara</h3>
                   <p className={styles.body}>
                     El ranking ordena las provincias por la cantidad de focos de todo el período, y cada porcentaje es la parte de
-                    esa provincia en el total del país. {MORE_PROVINCES.join(', ').replace(/, ([^,]*)$/, ' y $1')} son las cuatro
-                    con más focos fuera de las seis historias.
+                    esa provincia en el total del país. Formosa, Chaco, Santiago del Estero y Salta (1.ª, 4.ª, 5.ª y 6.ª) son las
+                    cuatro con más focos fuera de las seis historias.
                   </p>
                 </section>
                 <section className={styles.block}>

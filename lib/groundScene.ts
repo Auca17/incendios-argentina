@@ -9,18 +9,17 @@ import { seg } from './fire';
  * detections in the province and its strongest cell (-68.975, -32.875, 82 detections) is in El
  * Challao. The source also says that brigades of the provincial fire plan fought it; the crew
  * below is an illustration of that kind of work, not a reconstruction of a real operation.
- *   0.00-0.30  the year 2023 week by week on the province
- *   0.24-0.40  the camera goes down to El Challao; the week of 29 October lights it up
- *   0.38-0.50  a fire engine drives in from the east along a track and stops
- *   0.48-0.58  three brigade members get down and walk toward the fire, hoses unrolling behind them
- *   0.58-0.80  water on the fire: it is knocked down where the jets reach
- *   0.80-0.88  the crew holds its ground; the fire smoulders
- *   0.88-1.00  the camera opens back to the province
+ *   0.00-0.34  the year 2023 week by week on the province
+ *   0.30-0.46  the camera goes down to El Challao; the weeks around 29 October light it up
+ *   0.46-0.74  the close-up holds while those weeks run (the brigade works in the landscape before
+ *              the map, components/Landscape.tsx, not here)
+ *   0.74-1.00  the camera stays; the rest of the year fills in
+ * The engine and crew fields below are kept for the drawing code and stay at rest on the map.
  */
 export const GROUND_STORY = 'mendoza';
 
 /** Close-up on El Challao (minLon, maxLon, minLat, maxLat); tighter on narrow screens. */
-export const CHALLAO_WIDE: [number, number, number, number] = [-69.42, -68.52, -33.14, -32.6];
+export const CHALLAO_WIDE: [number, number, number, number] = [-69.95, -68.0, -33.55, -32.25];
 export const CHALLAO_NARROW: [number, number, number, number] = [-69.17, -68.67, -33.06, -32.7];
 
 /** The engine's track (lon, lat), from the east edge of the close-up to where it stops. */
@@ -60,9 +59,10 @@ export type Ground = {
 };
 
 export function groundScene(u: number, reduced = false): Ground {
-  let zoom = smooth(seg(u, 0.24, 0.4)) * (1 - smooth(seg(u, 0.88, 0.98)));
-  if (reduced) zoom = u >= 0.32 && u < 0.93 ? 1 : 0;
-  const wf = pieces(u, [[0, 0], [0.3, 42], [0.4, 43.2], [0.8, 43.6], [0.88, 45], [0.9, 52]]);
+  // one approach only, wide enough to keep the city and the foothills in view; no pull back at the end
+  let zoom = smooth(seg(u, 0.3, 0.5));
+  if (reduced) zoom = u >= 0.4 ? 1 : 0;
+  const wf = pieces(u, [[0, 0], [0.34, 42], [0.5, 43.2], [0.66, 44.2], [0.74, 45], [0.9, 52]]);
   const t = seg(u, 0.38, 0.5);
   const truck = 1 - (1 - t) * (1 - t); // decelerates into its stop
   const walk = [0, 1, 2].map((i) => smooth(seg(u, 0.48 + i * 0.02, 0.56 + i * 0.02)));

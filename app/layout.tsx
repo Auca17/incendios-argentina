@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { New_Rocker, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { New_Rocker, Plus_Jakarta_Sans, JetBrains_Mono, Fraunces } from 'next/font/google';
 import './globals.css';
 
 const newRocker = New_Rocker({
@@ -13,6 +13,14 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
   weight: ['400', '600', '700'],
   variable: '--font-jakarta',
+  display: 'swap',
+});
+
+// headings: regions, story titles, dialogs and sections
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  weight: ['400', '600'],
+  variable: '--font-fraunces',
   display: 'swap',
 });
 
@@ -41,7 +49,7 @@ export const viewport: Viewport = { themeColor: "#050c16" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${newRocker.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}>
+    <html lang="es" className={`${newRocker.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable} ${fraunces.variable}`}>
       <body>{children}</body>
     </html>
   );

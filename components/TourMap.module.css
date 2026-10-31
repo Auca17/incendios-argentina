@@ -14,3 +14,27 @@
 /* the cinematic opening of Chubut (components/CineFire.tsx), over the map and its scene layer */
 .cineHost { position: absolute; inset: 0; pointer-events: none; }
 .cine { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; visibility: hidden; }
+
+/* the tooltip of a map mark: small, dark, beside the pointer; it never takes the pointer itself */
+.tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 7;
+  display: grid;
+  gap: 4px;
+  max-width: 290px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(10, 10, 12, 0.9);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  color: var(--t-text-2);
+  font: 400 var(--fs-12) / 1.4 var(--t-font-read);
+  pointer-events: none;
+}
+.tip[hidden] { display: none; }
+.tip b { font: 600 var(--fs-14) / 1.3 var(--t-font-read); color: var(--t-text); }
+.tipWhen { font: 400 11px / 1.35 var(--t-font-mono); color: var(--t-muted); }
+.tipClass { display: flex; align-items: center; gap: 6px; color: var(--t-text); }
+.tipClass i { flex: none; width: 10px; height: 10px; box-shadow: 0 0 0 1px rgba(20, 8, 4, 0.9); }

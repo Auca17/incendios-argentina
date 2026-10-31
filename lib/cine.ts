@@ -12,7 +12,7 @@ import { seg } from './fire';
  *              opening) and reveals the map of Epuyén with the satellite detections
  * The rest of the story (the chronology, the air drop) runs over the remaining part of u.
  */
-export const CINE_END = 0.22;
+export const CINE_END = 0.45;
 
 export type Cine = {
   /** The scene is drawn at all. */
@@ -32,11 +32,13 @@ export type Cine = {
 const smooth = (x: number) => x * x * (3 - 2 * x);
 
 export function cineState(u: number, reduced = false): Cine {
-  const enter = smooth(seg(u, 0, 0.03));
-  const push = reduced ? 0.5 : smooth(seg(u, 0.03, 0.17));
-  const heat = 0.35 + 0.65 * smooth(seg(u, 0.03, 0.15));
-  const rise = reduced ? 0 : smooth(seg(u, 0.15, 0.22));
-  const reveal = smooth(seg(u, 0.16, 0.22));
+  // phases as fractions of the opening, so its length can change without retiming it
+  const c = u / CINE_END;
+  const enter = smooth(seg(c, 0, 0.14));
+  const push = reduced ? 0.5 : smooth(seg(c, 0.14, 0.77));
+  const heat = 0.35 + 0.65 * smooth(seg(c, 0.14, 0.5));
+  const rise = reduced ? 0 : smooth(seg(c, 0.7, 1));
+  const reveal = smooth(seg(c, 0.74, 1));
   return { on: u < CINE_END && enter > 0, enter, push, heat, rise, reveal };
 }
 
@@ -50,3 +52,7 @@ export const afterCine = (u: number) => seg(u, CINE_END, 1);
 let ok = true;
 export const cineOk = () => ok;
 export const setCineOk = (v: boolean) => { ok = v; };
+/** The opening is on screen right now (compiled and drawn): only then does the plane fly over it. */
+let shown = false;
+export const cineShown = () => shown;
+export const setCineShown = (v: boolean) => { shown = v; };

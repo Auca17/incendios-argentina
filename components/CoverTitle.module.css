@@ -21,9 +21,48 @@
   letter-spacing: 0.02em;
   text-shadow: 0 0 2px #fff, 0 0 14px rgba(255, 255, 255, 0.95), 0 0 28px rgba(255, 255, 255, 0.85);
 }
+/* what a focus is: beside the map, under the docked title, before the first points appear */
+.note {
+  margin-top: var(--s-5);
+  padding-left: var(--s-2);
+  border-left: 3px solid var(--t-red);
+  text-align: left;
+  font: 400 var(--fs-16) / 1.5 var(--t-font-read);
+  color: var(--t-ink);
+  opacity: var(--note, 0);
+  transform: translateY(calc((1 - var(--note, 0)) * 12px));
+}
+.note b {
+  display: block;
+  margin-bottom: 4px;
+  font: var(--t-head-weight) var(--fs-20) / 1.2 var(--t-font-head);
+}
+/* the reader's province (optional): under the note, with it */
+.home {
+  margin-top: var(--s-3);
+  text-align: left;
+  opacity: var(--note, 0);
+  transform: translateY(calc((1 - var(--note, 0)) * 12px));
+  pointer-events: auto;
+}
+.home[inert] { pointer-events: none; }
+.homeAsk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.homeAsk span { font: var(--t-head-weight) var(--fs-20) / 1.2 var(--t-font-head); color: var(--t-ink); }
+.homeAsk select {
+  font: 500 var(--fs-16) / 1 var(--t-font-read);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(20, 24, 30, 0.25);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--t-ink);
+  cursor: pointer;
+}
+.homeAsk select:focus-visible { outline: 3px solid var(--t-red); outline-offset: 2px; }
+.homeHint { margin-top: 6px; font: 400 14px / 1.4 var(--t-font-read); color: rgba(20, 24, 30, 0.7); }
 
 @media (max-width: 1023.98px) {
   .title { z-index: 10; }
   .h1 { font-size: 40px; }
   .sub { font-size: var(--fs-16); }
+  .note { margin-top: var(--s-3); font-size: 14px; }
 }

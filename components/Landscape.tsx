@@ -3,9 +3,9 @@ import { useEffect, useRef } from 'react';
 import { LANDSCAPES, LAND_NOTES, buildLand, veilTexture, type Land } from '../lib/landscapes';
 import { TOUR_EVENTS } from '../lib/tour';
 import { subscribe, type Frame } from '../lib/scrollDriver';
-import { DEFS, getRun, isDone, stageNow, subscribeRun } from '../lib/interaction';
+import { DEFS, publish, seqPlaying, seqStage, type SeqPhase } from '../lib/interaction';
 import { drawInteraction, drawWeather, spotOn, type Stage } from '../lib/landFire';
-import { CINE_END, cineOk } from '../lib/cine';
+import { CINE_END, cineOk, cineShown } from '../lib/cine';
 import { mapGlow } from '../lib/mapGlow';
 import styles from './Landscape.module.css';
 
@@ -71,15 +71,43 @@ export default function Landscape() {
 
     let cur: Frame | null = null;
     let loop = 0;
-    const onFrame = (f: Frame) => { cur = f; paint(); return false; };
+    // a card left behind by a fast scroll into another region fades on its own instead of vanishing
+    // (st.card is the current region's: the scroll driver does not carry it across regions)
+    const cardV: number[] = [];
+    let cardT = 0;
+    let cardFading = false;
+    const onFrame = (f: Frame) => { cur = f; paint(); return cardFading; };
+    const smooth01 = (x: number) => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t); };
+    // fades a drawing that sets its own alphas: every alpha it sets is scaled by `mul` (the canvas
+    // multiplies its colours and gradients by globalAlpha). Compositing through an offscreen canvas
+    // instead cost hundreds of ms a frame
+    let mul = 1;
+    const ga = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'globalAlpha')!;
+    Object.defineProperty(g, 'globalAlpha', {
+      configurable: true,
+      get() { return ga.get!.call(g) / mul; },
+      set(v: number) { ga.set!.call(g, v * mul); },
+    });
+    const faded = (c: CanvasRenderingContext2D, a: number, draw: (c: CanvasRenderingContext2D) => void) => {
+      if (a <= 0.002) return;
+      if (a >= 0.998) { draw(c); return; }
+      c.save();
+      mul = a;
+      c.globalAlpha = 1;
+      try { draw(c); } finally { mul = 1; c.restore(); }
+    };
     const paint = () => {
+      // one paint a frame: a call from the scroll driver takes the place of the pending one (left
+      // pending, every scrolled frame started one more self-renewing loop, and they piled up)
+      if (loop) cancelAnimationFrame(loop);
       loop = 0;
       if (!cur) return;
       const { st, vw, vh, reduced } = cur;
       if (vw !== W || vh !== H) {
         W = vw; H = vh;
-        // soft painted light needs no full resolution: about 3/4 of a CSS px, upscaled by the browser
-        r = Math.min(window.devicePixelRatio || 1, 1) * (W < 1024 ? 0.6 : 0.75);
+        // full resolution on desktop (up to 1.25 device px per CSS px), so the fire and its smoke stay
+        // crisp; phones keep a lighter canvas
+        r = W < 1024 ? Math.min(window.devicePixelRatio || 1, 1) * 0.6 : Math.min(window.devicePixelRatio || 1, 1.25);
         res = r;
         canvas.width = Math.round(W * r);
         canvas.height = Math.round(H * r);
@@ -92,28 +120,42 @@ export default function Landscape() {
       // the interaction of this region: running (it advances here, and only here), or its end state
       const sid = ev && DEFS[ev.id] ? ev.id : '';
       let stage: Stage | null = null;
+      let seqLive = false;
       const still = reduced || !!(window as any).__tourStill;
+      // Chubut's opening stays on screen while its plane is still flying (a fast scroll never cuts it)
+      const cine = sid === 'chubut' && (st.chapterT < CINE_END || seqPlaying('chubut')) && cineOk() && cineShown();
       if (sid) {
-        const rn = getRun();
-        if (rn.id === sid && rn.phase !== 'idle' && rn.phase !== 'done') {
-          const now = stageNow();
-          if (now) stage = { ...now, time: still ? 0 : performance.now() / 1000, still, reduced, responded: now.phase === 'done' && !!DEFS[sid].respond };
-        } else if (isDone(sid)) {
-          stage = { phase: 'done', p: 1, time: still ? 0 : performance.now() / 1000, still, reduced, responded: !!DEFS[sid].respond };
+        // the sequence of this region: inside the landscape shot, or over Chubut's cinematic opening
+        const d = DEFS[sid];
+        const inShot = d.on === 'land' ? st.land > 0.5 : cine;
+        const sq = inShot ? seqStage(sid, d.on === 'land' ? st.landT : st.chapterT / CINE_END, reduced || still) : null;
+        if (sq) {
+          stage = { phase: sq.phase, p: sq.p, time: still ? 0 : performance.now() / 1000, still, reduced, responded: sq.phase === 'done' };
+          seqLive = sq.live;
         }
       }
-      // the bar's progress line follows the running stage
-      document.documentElement.style.setProperty('--run-p', stage && (stage.phase === 'ignite' || stage.phase === 'respond') ? stage.p.toFixed(3) : stage?.phase === 'ready' ? '1' : '0');
-      const cine = sid === 'chubut' && st.chapterT < CINE_END && cineOk();
+      publish(stage && sid ? { id: sid, phase: stage.phase as SeqPhase } : null);
+      // the scene's own fire, smoke, crew and plane go first, then the shot opens onto the map: before
+      // the landscape lifts (landT 0.66), or before Chubut's opening opens in holes (its reveal, 0.74)
+      const decor = sid === 'chubut'
+        ? (seqPlaying('chubut') ? 1 : 1 - smooth01((st.chapterT / CINE_END - 0.66) / 0.08))
+        : 1 - smooth01((st.landT - 0.6) / 0.08);
       // the veil clears at the start of a region and rises at its end; haze on the way down from the
       // clouds into the first region, smoke between regions
       const inbound = st.chapter === 8 || (st.chapter >= 0 && st.chapter <= 5 && st.chapterT < 0.5);
       const haze = st.chapter === -1 || (st.chapter === 0 && inbound);
 
+      const now = performance.now();
+      const fade = Math.exp(-Math.min(0.1, Math.max(0, (now - cardT) / 1000)) / 0.08);
+      cardT = now;
+      cardFading = false;
       cards.current.forEach((c, i) => {
         if (!c) return;
-        // the title card steps aside while the reader is inside the scene
-        const o = i === st.chapter && !stage ? st.card : 0;
+        // the title card has faded (lib/tour.ts) before the scene's sequence starts
+        const left = reduced ? 0 : (cardV[i] ?? 0) * fade;
+        const o = i === st.chapter ? st.card : left < 0.002 ? 0 : left;
+        cardV[i] = o;
+        if (i !== st.chapter && o > 0) cardFading = true;
         c.style.opacity = o.toFixed(3);
         c.style.visibility = o > 0.001 ? 'visible' : 'hidden';
         c.style.setProperty('--k', o.toFixed(3));
@@ -138,7 +180,8 @@ export default function Landscape() {
       }
 
       const show = (id !== '' && st.land > 0.001) || st.veil > 0.001 || (cine && !!stage);
-      const live = !!stage && (stage.phase === 'ignite' || stage.phase === 'respond' || !still);
+      // the sequence moves on its own clock, and its flames flicker: keep drawing while it is on screen
+      const live = !!stage && (seqLive || !still);
       const k = [id, st.land.toFixed(3), st.landT.toFixed(3), st.veil.toFixed(3), haze, inbound, W, H, reduced, stage ? stage.phase + stage.p.toFixed(4) : ''].join('|');
       if (k === key && !live) return;
       key = k;
@@ -166,13 +209,14 @@ export default function Landscape() {
         // the Delta pans: a slow camera travel to the right, nearer planes faster (none under reduced
         // motion); it follows the shot's progress, so it rewinds with the scroll and holds in a pause
         const panAt = (depth: number) => (wide ? -(LW - W) / 2 + (reduced ? 0 : (0.5 - st.landT) * (LW - W) * 0.9 * (0.35 + 0.65 * depth)) : 0);
-        // Mendoza: during the brigade's response the camera closes in a little on the fire (1.3x)
+        // Mendoza: the camera closes in on the fire as it grows, and holds there while the brigade works
         let zoom = 1, zx = W * 0.5, zy = H * 0.62;
-        if (id === 'mendoza' && stage?.phase === 'respond' && !reduced && ground) {
-          const z = Math.min(1, stage.p / 0.22) * (1 - Math.max(0, (stage.p - 0.85) / 0.15));
-          zoom = 1 + 0.3 * (z * z * (3 - 2 * z));
+        if (id === 'mendoza' && stage && !reduced && ground) {
+          const k = stage.phase === 'ignite' ? 0.45 * stage.p : stage.phase === 'respond' ? 0.45 + 0.55 * Math.min(1, stage.p / 0.3) : 1;
+          // a gentle push only: the whole slope, both fronts and both lines stay in view
+          zoom = 1 + 0.22 * (k * k * (3 - 2 * k));
           const [fx, fy] = spotOn(id, ground);
-          zx = fx + (ground.x1 - ground.x0) * 0.2; zy = fy;
+          zx = fx + (ground.x1 - ground.x0) * 0.12; zy = fy;
         }
         const kT = st.landT;
         // a slow push into the landscape while its shot runs, then the lift onto the map
@@ -198,15 +242,7 @@ export default function Landscape() {
           g.globalAlpha = 1;
           if (ground && ground.layer === li) {
             // the fire is drawn on its ground, in this layer's frame: it moves with the terrain
-            if (stage) drawInteraction(id, g, LW, H, stage, ground, zones);
-            // and the spot the reader touches sits on that same ground, in screen coordinates
-            if (DEFS[id]) {
-              const [gx, gy] = spotOn(id, ground);
-              const html = document.documentElement.style;
-              const sx = ax + (gx + px - ax) * s, sy = ay + dy + (gy - ay) * s;
-              html.setProperty('--spot-x', ((zx + (sx - zx) * zoom) / W * 100).toFixed(2) + '%');
-              html.setProperty('--spot-y', ((zy + (sy - zy) * zoom) / H * 100).toFixed(2) + '%');
-            }
+            if (stage) faded(g, decor, (c) => drawInteraction(id, c, LW, H, stage!, ground, zones));
           }
           g.globalAlpha = 1;
           g.restore();
@@ -246,8 +282,8 @@ export default function Landscape() {
           if (fa && mapGlow.on) {
             const k = op * op * (3 - 2 * op);
             const x = W * fa[0] + (mapGlow.x - W * fa[0]) * k, y = H * fa[1] + (mapGlow.y - H * fa[1]) * k;
-            const rad = H * (0.28 - 0.2 * k);
-            const a = Math.sin(Math.PI * Math.min(1, op * 1.15)) * 0.7;
+            const rad = H * (0.18 - 0.12 * k);
+            const a = Math.sin(Math.PI * Math.min(1, op * 1.15)) * 0.38;
             const gl = g.createRadialGradient(x, y, 0, x, y, rad);
             gl.addColorStop(0, `rgba(255,170,80,${a})`);
             gl.addColorStop(0.4, `rgba(255,120,40,${a * 0.45})`);
@@ -260,7 +296,7 @@ export default function Landscape() {
         }
       }
       // Chubut: the plane and its water over the cinematic opening (its fire is the shader's)
-      if (cine && stage) drawInteraction('chubut', g, W, H, stage);
+      if (cine && stage) faded(g, decor, (c) => drawInteraction('chubut', c, W, H, stage!));
 
       if (st.veil > 0.001) {
         const rgb = haze ? HAZE : SMOKE;
@@ -279,13 +315,27 @@ export default function Landscape() {
           g.drawImage(t, -W * dx, -run * H * sp, W * (1 + 2 * dx), H * (1 + 2 * sp) + 2);
         }
         g.globalAlpha = 1;
+        // smoke between regions (not the haze from the clouds): embers glow low under it, as light from
+        // a fire out of frame, faint and only along the bottom edge
+        if (!haze) {
+          const e = 0.2 * Math.min(1, v * 1.5);
+          const glow = g.createLinearGradient(0, H, 0, H * 0.55);
+          glow.addColorStop(0, `rgba(255,96,24,${e})`);
+          glow.addColorStop(0.45, `rgba(196,48,12,${e * 0.35})`);
+          glow.addColorStop(1, 'rgba(196,48,12,0)');
+          g.globalCompositeOperation = 'screen';
+          g.fillStyle = glow;
+          g.fillRect(0, H * 0.55, W, H * 0.45);
+          g.globalCompositeOperation = 'source-over';
+        }
       }
       // the interaction runs on its own clock: keep drawing while it moves, and only then
       if (live && show && !loop) loop = requestAnimationFrame(paint);
     };
-    const unsubRun = subscribeRun(() => { key = ''; if (!loop) loop = requestAnimationFrame(paint); });
     const unsub = subscribe(onFrame);
-    return () => { unsub(); unsubRun(); cancelAnimationFrame(loop); };
+    // the smoke's opening mask reads its noise back once: done while idle, not in the middle of a scroll
+    idle(() => openMask(1));
+    return () => { unsub(); cancelAnimationFrame(loop); publish(null); };
   }, []);
 
   return (

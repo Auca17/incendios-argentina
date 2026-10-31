@@ -38,7 +38,7 @@
 .count { font-family: var(--t-font-mono); color: var(--t-ember); margin-right: var(--s-half); }
 .title {
   margin-bottom: var(--s-3);
-  font: 700 clamp(26px, 2.3vw, 34px) / 1.18 var(--t-font-read);
+  font: var(--t-head-weight) clamp(26px, 2.3vw, 34px) / 1.18 var(--t-font-head);
   color: var(--t-text);
   text-wrap: balance;
 }
@@ -58,7 +58,8 @@
 
 .figure { margin-bottom: var(--s-3); }
 .num {
-  font: 600 clamp(36px, 3.4vw, 48px) / 1.05 var(--t-font-mono);
+  font: 800 clamp(36px, 3.4vw, 48px) / 1.05 var(--t-font-figure);
+  letter-spacing: -0.015em;
   color: var(--t-ember);
   font-variant-numeric: tabular-nums;
 }

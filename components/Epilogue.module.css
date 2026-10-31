@@ -7,7 +7,7 @@
 }
 .title {
   margin-bottom: var(--s-2);
-  font: 400 var(--fs-56) / 1.05 var(--t-font-title);
+  font: var(--t-head-weight) var(--fs-56) / 1.05 var(--t-font-head);
   color: var(--t-ink);
   text-wrap: balance;
 }
@@ -23,7 +23,9 @@
 }
 .figures li { display: grid; gap: var(--s-half); align-content: start; }
 .figures b {
-  font: 600 var(--fs-32) / 1.1 var(--t-font-mono);
+  font: 800 var(--fs-32) / 1.1 var(--t-font-figure);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
   color: var(--t-red);
   font-variant-numeric: tabular-nums;
 }
@@ -38,7 +40,32 @@
   font-weight: 600;
 }
 
-.actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-4); }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); margin-top: var(--s-4); }
+/* the way into /explorar: a dark card with the years in it, the strongest call of the ending */
+.explore {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s-3);
+  padding: 18px 22px;
+  border-radius: 14px;
+  background: var(--t-ink);
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 10px 30px rgba(10, 14, 20, 0.25);
+  transition: transform 200ms var(--ease), box-shadow 200ms var(--ease);
+}
+.explore:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(10, 14, 20, 0.32); }
+.explore:focus-visible { outline: 3px solid var(--t-red); outline-offset: 3px; }
+.exploreText { display: grid; gap: 6px; align-content: center; }
+.exploreKicker { font: 700 var(--fs-12) / 1 var(--t-font-read); letter-spacing: 0.14em; text-transform: uppercase; color: #ff9a5a; }
+.exploreTitle { font: var(--t-head-weight) var(--fs-24) / 1.1 var(--t-font-head); }
+.exploreSub { font: 500 var(--fs-14) / 1.3 var(--t-font-read); color: rgba(255, 255, 255, 0.8); }
+.explore:hover .exploreSub span { display: inline-block; transform: translateX(3px); }
+.exploreBars { position: relative; display: flex; align-items: flex-end; gap: 3px; width: 150px; height: 64px; padding-bottom: 14px; }
+.exploreBars i { flex: 1; background: rgba(255, 140, 70, 0.55); border-radius: 1px; }
+.exploreBars i.barTop { background: #ff9a5a; }
+.exploreBars small { position: absolute; bottom: 0; font: 400 10px / 1 var(--t-font-mono); color: rgba(255, 255, 255, 0.55); }
+.exploreBars small:last-of-type { right: 0; }
 .primary,
 .secondary {
   display: inline-flex;
@@ -52,12 +79,90 @@
 }
 .primary { border: 2px solid var(--t-ink); background: var(--t-ink); color: #fff; }
 .primary:hover { background: var(--t-red); border-color: var(--t-red); }
-.secondary { border: 2px solid var(--t-ink); background: transparent; color: var(--t-ink); }
-.secondary:hover { background: var(--t-ink); color: #fff; }
+.secondary { min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--t-ink); text-decoration: underline; text-underline-offset: 5px; }
+.secondary:hover { color: var(--t-red); }
 .primary:focus-visible, .secondary:focus-visible { outline: 3px solid var(--t-red); outline-offset: 3px; }
 
 @media (max-width: 719.98px) {
   .title { font-size: 40px; }
   .summary { font-size: var(--fs-16); }
   .figures { grid-template-columns: 1fr; gap: var(--s-2); }
+}
+
+/* the way into the explorer is the epilogue's last word: a larger card with a slow ember edge */
+.explore { position: relative; padding: var(--s-3) var(--s-4); isolation: isolate; }
+.explore::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: 15px;
+  background: linear-gradient(110deg, rgba(255, 90, 30, 0.85), rgba(255, 190, 90, 0.4), rgba(255, 90, 30, 0.85));
+  background-size: 220% 100%;
+  animation: ember 6s linear infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  padding: 1.5px;
+}
+@keyframes ember { to { background-position: -220% 0; } }
+.explore .exploreTitle { font-size: var(--fs-32); }
+
+/* "¿De dónde sos?": the question on the clouds, and the clearing that opens onto the province */
+.home { margin: var(--s-4) 0 var(--s-3); }
+.homeAsk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.homeAsk span { font: var(--t-head-weight) var(--fs-24) / 1.2 var(--t-font-head); color: var(--t-ink); }
+.homeAsk select {
+  font: 500 var(--fs-16) / 1 var(--t-font-read);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(20, 24, 30, 0.25);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--t-ink);
+}
+.homeAsk select:focus-visible { outline: 3px solid var(--t-red); outline-offset: 2px; }
+/*
+ * the clearing: a hole in the clouds shaped like the clouds around it (a billowing outline with soft
+ * edges, stretched to the box), opening from its centre
+ */
+.clearing {
+  --cloud: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 260' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-10%25' y='-10%25' width='120%25' height='120%25'%3E%3CfeGaussianBlur stdDeviation='7'/%3E%3C/filter%3E%3Cg filter='url(%23b)' fill='%23000'%3E%3Crect x='44' y='64' width='312' height='142' rx='60'/%3E%3Ccircle cx='72' cy='148' r='54'/%3E%3Ccircle cx='122' cy='82' r='58'/%3E%3Ccircle cx='200' cy='64' r='56'/%3E%3Ccircle cx='278' cy='80' r='58'/%3E%3Ccircle cx='332' cy='142' r='54'/%3E%3Ccircle cx='288' cy='198' r='50'/%3E%3Ccircle cx='200' cy='204' r='50'/%3E%3Ccircle cx='112' cy='198' r='48'/%3E%3C/g%3E%3C/svg%3E");
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr;
+  gap: var(--s-3);
+  align-items: center;
+  margin-top: var(--s-2);
+  padding: 0 72px;
+  max-height: 0;
+  overflow: hidden;
+  background: radial-gradient(120% 120% at 30% 40%, #2a2420, #121014 70%);
+  color: #f4ece2;
+  clip-path: circle(0% at 50% 50%);
+  -webkit-mask: var(--cloud) center / 100% 100% no-repeat;
+  mask: var(--cloud) center / 100% 100% no-repeat;
+  transition: clip-path 900ms var(--ease), max-height 600ms var(--ease), padding 600ms var(--ease);
+}
+.clearing.open {
+  max-height: 640px;
+  padding: 64px 72px;
+  clip-path: circle(75% at 50% 50%);
+}
+.clearingMap { width: 100%; aspect-ratio: 3 / 4; height: auto; filter: drop-shadow(0 0 18px rgba(255, 120, 40, 0.25)); }
+.clearingText { display: grid; gap: var(--s-1); font: 400 var(--fs-16) / 1.5 var(--t-font-read); }
+.clearingName { font: var(--t-head-weight) var(--fs-32) / 1.05 var(--t-font-head); color: #fff; }
+.clearingBig { font-size: var(--fs-20); line-height: 1.35; }
+.clearingBig b { font: 800 1.4em / 1 var(--t-font-figure); color: #ff9a5a; font-variant-numeric: tabular-nums; }
+.clearingSource { font-size: var(--fs-12); color: rgba(244, 236, 226, 0.6); }
+.clearingClose {
+  position: absolute; top: 72px; right: 108px; /* inside the cloud outline */
+  width: 32px; height: 32px; border: 0; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1); color: #fff; font: 400 20px / 1 var(--t-font-read); cursor: pointer;
+}
+.clearingClose:hover { background: rgba(255, 255, 255, 0.2); }
+.clearingClose:focus-visible { outline: 3px solid var(--t-ember); outline-offset: 2px; }
+@media (max-width: 640px) {
+  .clearing { grid-template-columns: 1fr; padding: 0 40px; }
+  .clearing.open { padding: 56px 40px; }
+  .clearingMap { max-width: 180px; justify-self: center; }
 }

@@ -13,6 +13,19 @@
   opacity: 0;
   visibility: hidden;
   text-shadow: 0 2px 28px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.5);
+  isolation: isolate;
+}
+/*
+ * A low ember light behind the region's name, as if the fire lit it from below: warm, faint, wider
+ * than the type and fading to nothing, so it reads as light in the scene and never as a box.
+ */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: -35% -18% -45%;
+  z-index: -1;
+  background: radial-gradient(closest-side at 50% 62%, rgba(255, 112, 36, 0.2), rgba(214, 64, 18, 0.08) 55%, transparent);
+  pointer-events: none;
 }
 .kicker {
   font: 600 var(--fs-14) / 1.3 var(--t-font-read);
@@ -23,7 +36,7 @@
 .kicker span { font-family: var(--t-font-mono); color: var(--t-ember); margin-right: var(--s-1); }
 .region {
   margin-top: var(--s-1);
-  font: 400 clamp(56px, 8.5vw, 124px) / 0.95 var(--t-font-title);
+  font: var(--t-head-weight) clamp(56px, 8.5vw, 124px) / 0.95 var(--t-font-head);
   letter-spacing: calc((1 - var(--k, 1)) * 0.08em);
 }
 .sub {

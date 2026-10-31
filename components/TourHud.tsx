@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FOCAL, SECTIONS, TOUR_EVENTS, entryOf } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
-import ExploreLink from './ExploreLink';
+import { scrollToY } from '../lib/smoothScroll';
 import styles from './TourHud.module.css';
 
 const FIRST_STORY = SECTIONS.findIndex((s) => s.kind === 'story');
@@ -13,7 +13,7 @@ export function goToSection(i: number) {
   if (!el) return;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const top = i === 0 ? 0 : Math.ceil(el.getBoundingClientRect().top + window.scrollY + el.offsetHeight * entryOf(i) - window.innerHeight * FOCAL) + 1;
-  window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
+  scrollToY(top, !reduced);
 }
 
 /**
@@ -24,16 +24,43 @@ export function goToSection(i: number) {
 export default function TourHud() {
   const [state, setState] = useState({ chapter: -1, visible: false, idx: 0, dim: false });
   const bar = useRef<HTMLSpanElement>(null);
+  const dots = useRef<(HTMLLIElement | null)[]>([]);
   const idxRef = useRef(0);
 
-  useEffect(() => subscribe(({ st, progress }) => {
-    if (bar.current) bar.current.style.transform = `scaleY(${progress.toFixed(4)})`;
+  /*
+   * The line runs from dot to dot: it reaches a fire's dot as that fire starts and the next one as it
+   * ends, by the progress inside the current section, so it always points at what is on screen
+   * (the sections have different lengths: the page's overall progress would point elsewhere).
+   */
+  useEffect(() => {
+    // the dots' places along the track, read once per size (reading them every frame forces a layout)
+    let geom: { h: number; ys: number[] } | null = null;
+    const reset = () => { geom = null; };
+    window.addEventListener('resize', reset);
+    document.fonts?.ready.then(reset);
+    const unsub = subscribe(({ st }) => {
+    const track = bar.current?.parentElement;
+    if (bar.current && track) {
+      if (!geom || !geom.h) {
+        const tr = track.getBoundingClientRect();
+        geom = { h: tr.height, ys: dots.current.map((d) => { const r = d?.getBoundingClientRect(); return r ? r.top + r.height / 2 - tr.top : 0; }) };
+      }
+      const t0 = { height: geom.h };
+      const ys = geom.ys;
+      const sec = SECTIONS[st.idx];
+      let y = 0;
+      if (sec.kind === 'story') { const i = sec.story!; y = ys[i] + ((i < ys.length - 1 ? ys[i + 1] : t0.height) - ys[i]) * st.t; }
+      else if (st.idx > FIRST_STORY) y = t0.height;
+      bar.current.style.transform = `scaleY(${(t0.height > 0 ? Math.min(1, y / t0.height) : 0).toFixed(4)})`;
+    }
     idxRef.current = st.idx;
     const visible = st.hud > 0.5;
     // quieter while a landscape or the smoke between regions fills the screen (still there, to keep one's bearings)
     const dim = st.land > 0.5 || st.veil > 0.5;
     setState((o) => (o.chapter === st.chapter && o.visible === visible && o.idx === st.idx && o.dim === dim ? o : { chapter: st.chapter, visible, idx: st.idx, dim }));
-  }), []);
+    });
+    return () => { unsub(); window.removeEventListener('resize', reset); };
+  }, []);
 
   const step = useCallback((d: number) => {
     const idx = idxRef.current;
@@ -73,7 +100,7 @@ export default function TourHud() {
             const on = state.chapter === i;
             const done = state.chapter > i;
             return (
-              <li key={ev.id}>
+              <li key={ev.id} ref={(el) => { dots.current[i] = el; }}>
                 <button
                   type="button"
                   className={on ? `${styles.dot} ${styles.dotOn}` : done ? `${styles.dot} ${styles.dotDone}` : styles.dot}
@@ -89,8 +116,6 @@ export default function TourHud() {
             );
           })}
         </ol>
-        {/* the detailed map is a page of its own: a quiet way there from anywhere in the story */}
-        <ExploreLink className={styles.explore} label="Explorar los datos" />
       </nav>
       <p className="sr-only" aria-live="polite">
         {active ? `Historia ${state.chapter + 1} de 6: ${active.region}, ${active.when}` : ''}

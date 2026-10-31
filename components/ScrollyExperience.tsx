@@ -5,6 +5,7 @@ import { EVENTS } from '../lib/events';
 import { readAddress } from '../lib/exploreState';
 import { RETURN_KEY } from '../lib/returnPoint';
 import { subscribe } from '../lib/scrollDriver';
+import { startSmoothScroll, scrollToY } from '../lib/smoothScroll';
 import TourMap from './TourMap';
 import CloudCurtain from './CloudCurtain';
 import Landscape from './Landscape';
@@ -25,13 +26,24 @@ const vh = (id: string) => ({ minHeight: SECTIONS.find((s) => s.id === id)!.vh +
 /** Scroll hint of the opening: visible only at the very top, gone as soon as the reader scrolls. */
 function Cue() {
   const ref = useRef<HTMLParagraphElement>(null);
-  useEffect(() => subscribe(({ scrollY }) => {
-    if (ref.current) ref.current.dataset.on = scrollY < 24 ? '1' : '0';
+  /*
+   * Teaches the one interaction of the page from the first frame: the words and a scrolling wheel on
+   * the cover; once the reader moves, only the arrow, smaller; gone as Argentina is revealed. A pure
+   * function of the scroll, so it comes back when the reader goes back to the top.
+   */
+  useEffect(() => subscribe(({ scrollY, vh }) => {
+    const el = ref.current;
+    if (!el) return;
+    const words = 1 - Math.min(1, Math.max(0, (scrollY - vh * 0.08) / (vh * 0.3)));
+    const all = 1 - Math.min(1, Math.max(0, (scrollY - vh * 1.6) / (vh * 0.4)));
+    el.style.setProperty('--words', words.toFixed(3));
+    el.style.opacity = all.toFixed(3);
+    el.style.visibility = all > 0.01 ? 'visible' : 'hidden';
   }), []);
   return (
-    <p ref={ref} className={styles.cue} data-on="1">
-      <span aria-hidden="true">↓</span>
-      <span className="sr-only">Deslizá para empezar</span>
+    <p ref={ref} className={styles.cue}>
+      <span className={styles.cueWords}>Deslizá para descubrir</span>
+      <span className={styles.cueWheel} aria-hidden="true"><i /></span>
     </p>
   );
 }
@@ -41,8 +53,9 @@ function Scrim() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => subscribe(({ st }) => {
     const on = (st.chapter >= 0 && st.chapter <= 5) || st.chapter === 8;
-    // it goes as the clouds start closing over the map (it is over them: it would darken them)
-    if (ref.current) ref.current.style.opacity = on ? ((1 - st.land) * (1 - Math.min(1, st.close / 0.2))).toFixed(3) : '0';
+    // it goes as the clouds start closing over the map (it is over them: it would darken them), and
+    // while a region's title card is read (Chubut's sits on the left, where the scrim is)
+    if (ref.current) ref.current.style.opacity = on ? ((1 - st.land) * (1 - st.card) * (1 - Math.min(1, st.close / 0.2))).toFixed(3) : '0';
   }), []);
   return <div ref={ref} className={styles.scrim} aria-hidden="true" />;
 }
@@ -54,6 +67,8 @@ function Scrim() {
  * (lib/tour.ts). The year by year map is a separate page (/explorar).
  */
 export default function ScrollyExperience() {
+  useEffect(() => { startSmoothScroll(); }, []);
+
   useEffect(() => {
     const { go } = readAddress();
     // the explorer used to live on this page: old explorer addresses open it where it is now
@@ -74,7 +89,7 @@ export default function ScrollyExperience() {
     if (!targetId && top === null) return;
 
     const jump = () => {
-      if (top !== null) { window.scrollTo({ top, behavior: 'auto' }); return; }
+      if (top !== null) { scrollToY(top, false); return; }
       const el = document.getElementById(targetId);
       if (!el) return;
       const i = SECTIONS.findIndex((s) => s.id === targetId);
@@ -82,7 +97,7 @@ export default function ScrollyExperience() {
       const y = targetId === 'fuentes'
         ? Math.ceil(el.getBoundingClientRect().top + window.scrollY)
         : Math.ceil(el.getBoundingClientRect().top + window.scrollY + el.offsetHeight * frac - window.innerHeight * FOCAL) + 1;
-      window.scrollTo({ top: y, behavior: 'auto' });
+      scrollToY(y, false);
     };
     const twice = () => requestAnimationFrame(() => { jump(); requestAnimationFrame(jump); });
     if (document.fonts?.ready) document.fonts.ready.then(twice); else twice();
@@ -97,11 +112,11 @@ export default function ScrollyExperience() {
       <SceneInteraction />
       <Scrim />
       <TourHud />
+      <Cue />
 
       <main className={styles.track}>
         <section id="sec-opening" className={styles.opening} style={vh('sec-opening')}>
           <CoverTitle />
-          <Cue />
         </section>
 
         <section id="sec-title" className={styles.titleSec} style={vh('sec-title')} aria-hidden="true" />

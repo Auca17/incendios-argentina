@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { loadMeta, loadProvinciaMes } from '../lib/data';
-import { fmt } from '../lib/fire';
+import { MESES_L, fmt } from '../lib/fire';
 import { YEARS, getExplore, setExplore, subscribeExplore, type Explore } from '../lib/exploreState';
 import styles from './ExploreSection.module.css';
 
@@ -69,11 +69,33 @@ export default function ExploreSection() {
 
   const pick = (year: number) => { setPlaying(false); setExplore({ year }); };
 
+  // Esc takes the map back from a province to the whole country
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && getExplore().prov) setExplore({ prov: null }); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  /*
+   * One line of context for a province's year, no more: its month with most foci, and how the year
+   * compares with its usual one (the mean of the complete years 2013 to 2025; 2012 and 2026 are partial).
+   */
+  const context = useMemo(() => {
+    if (!prov || !pm || !series) return null;
+    const months = Array.from({ length: 12 }, (_, m) => pm[prov][`${ex.year}-${m < 9 ? '0' : ''}${m + 1}`] || 0);
+    const top = months.indexOf(Math.max(...months));
+    const full = YEARS.map((y, i) => [y, series[i]] as const).filter(([y]) => y >= 2013 && y <= 2025);
+    const mean = full.reduce((a, [, v]) => a + v, 0) / full.length;
+    const r = series[yi] / Math.max(1, mean);
+    const vs = r >= 1.15 ? `Tuvo ${r.toLocaleString('es-AR', { maximumFractionDigits: 1 })} veces su promedio anual.` : r <= 0.85 ? 'Quedó por debajo de su promedio anual.' : 'Estuvo cerca de su promedio anual.';
+    return { month: months[top] > 0 ? MESES_L[top] : null, vs };
+  }, [prov, pm, series, ex.year, yi]);
+
   return (
     <div className={styles.panel}>
       <p className={styles.kicker}>Explorá</p>
-      <h2 className={styles.title}>Año por año, 2012–2026</h2>
-      <p className={styles.help}>Elegí un año o tocá ▶ para verlos pasar. Tocá una provincia en el mapa, o elegila en la lista.</p>
+      <h2 className={styles.title}>Año por año <span className={styles.titleYears}>2012–2026</span></h2>
+      <p className={styles.help}>Elegí un año o tocá ▶ para verlos pasar. Tocá una provincia para acercarte y pasá el cursor por el mapa para ver cada zona.</p>
 
       <div className={styles.player}>
         <button type="button" className={styles.step} onClick={() => pick(Math.max(YEARS[0], ex.year - 1))} aria-label="Año anterior" disabled={yi <= 0}>◀</button>
@@ -99,6 +121,11 @@ export default function ExploreSection() {
           {provinces.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
       </label>
+      {prov && (
+        <button type="button" className={styles.country} onClick={() => setExplore({ prov: null })}>
+          <span aria-hidden="true">←</span> Ver todo el país <kbd>Esc</kbd>
+        </button>
+      )}
 
       {series && (
         <figure className={styles.chart}>
@@ -126,6 +153,12 @@ export default function ExploreSection() {
             {ex.year === 2012 && ' Los datos empiezan el 20 de enero.'}
             {ex.year === 2026 && ' Los datos llegan hasta el 14 de octubre.'}
           </p>
+          {context && (
+            <p className={styles.context}>
+              {context.month && <>Ardió más en {context.month}. </>}
+              {ex.year >= 2013 && ex.year <= 2025 ? context.vs : null}
+            </p>
+          )}
         </figure>
       )}
 

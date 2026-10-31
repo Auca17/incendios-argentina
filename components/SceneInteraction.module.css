@@ -1,93 +1,45 @@
 /*
- * The spot reads as a glow in the landscape (an ember), not as a button: a small bright core with a
- * slow pulse and a short word beside it. The bar under the scene is plain type on a soft shade.
+ * The captions of the story as a scrap of paper caught by the fire: warm parchment, ink-dark type, its
+ * edges torn (an SVG displacement filter, #burnt-edge in SceneInteraction.tsx), scorched brown toward
+ * the border and lit by a thin line of embers along it. The paper and its embers carry the filter;
+ * the type stays crisp on top.
  */
-.spot {
-  position: fixed;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: var(--s-1);
-  min-height: 44px;
-  padding: 0 var(--s-2) 0 0;
-  border: 0;
-  background: none;
-  color: #fff;
-  font: 600 var(--fs-14) / 1 var(--t-font-read);
-  letter-spacing: 0.04em;
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
-  transform: translate(-22px, -50%);
-  cursor: pointer;
-  animation: spotIn 600ms var(--ease) both;
-}
-.spot i {
-  position: relative;
-  display: block;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-}
-.spot i::before,
-.spot i::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  border-radius: 50%;
-}
-.spot i::before {
-  width: 10px;
-  height: 10px;
-  background: #ffd9a0;
-  box-shadow: 0 0 10px 4px rgba(255, 150, 60, 0.85), 0 0 26px 10px rgba(255, 110, 40, 0.35);
-}
-.spot i::after {
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(255, 200, 140, 0.7);
-  animation: pulse 2.4s var(--ease) infinite;
-}
-.spot span { display: grid; gap: 4px; text-align: left; opacity: 0.95; }
-.spot small { font: 400 var(--fs-12) / 1.2 var(--t-font-read); letter-spacing: 0; color: rgba(255, 255, 255, 0.78); }
-/* after the sequence: only a small, quiet way to watch it again */
-.again i { transform: scale(0.6); }
-.again i::after { animation: none; opacity: 0; }
-.again span { font-size: var(--fs-12); opacity: 0.75; }
-.spot:hover span { text-decoration: underline; text-underline-offset: 4px; }
-.spot:focus-visible { outline: 3px solid var(--t-ember); outline-offset: 2px; border-radius: 999px; }
-
-@keyframes pulse {
-  0% { transform: scale(0.35); opacity: 0.9; }
-  100% { transform: scale(1.15); opacity: 0; }
-}
-@keyframes spotIn { from { opacity: 0; } to { opacity: 1; } }
-
 .bar {
   position: fixed;
   z-index: 6;
   left: 50%;
   bottom: var(--s-4);
-  width: min(720px, calc(100vw - 2 * var(--s-3)));
-  transform: translateX(-50%);
+  width: min(600px, calc(100vw - 2 * var(--s-3)));
+  transform: translateX(-50%) rotate(-0.6deg);
   display: grid;
-  gap: 12px;
-  padding: var(--s-3) var(--s-3) 0;
-  color: #fff;
+  gap: 8px;
+  padding: 22px 34px 24px;
+  color: #2b1d12;
   text-align: center;
   opacity: 0;
-  transition: opacity 300ms var(--ease);
+  transition: opacity 400ms var(--ease);
+  pointer-events: none;
 }
-/*
- * A film subtitle, not a panel: the words sit on the landscape. Legibility comes from a soft, local
- * shade that fades out in every direction (no edges, no box) and from the type's own shadow.
- */
-.bar::before {
+.bar::before,
+.bar::after {
   content: '';
   position: absolute;
-  inset: -24px -12% -40px;
+  inset: 0;
   z-index: -1;
-  background: radial-gradient(ellipse 62% 66% at 50% 60%, rgba(4, 6, 10, 0.74), rgba(4, 6, 10, 0.52) 60%, rgba(4, 6, 10, 0) 100%);
-  pointer-events: none;
+  filter: url(#burnt-edge);
+}
+/* the paper: lighter in the middle, browned and darkened toward the burnt border */
+.bar::before {
+  background:
+    radial-gradient(120% 140% at 50% 45%, rgba(0, 0, 0, 0) 55%, rgba(92, 46, 14, 0.55) 88%, rgba(40, 16, 4, 0.95) 100%),
+    linear-gradient(170deg, #f3e9d2 0%, #e8d9b8 60%, #dcc69c 100%);
+}
+/* the embers along the edge, and the paper's shadow on the scene */
+.bar::after {
+  inset: -2px;
+  z-index: -2;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgba(255, 120, 40, 0.85), 0 0 14px 3px rgba(255, 90, 20, 0.55), 0 0 32px 8px rgba(255, 70, 10, 0.18), 0 14px 30px rgba(0, 0, 0, 0.45);
 }
 .bar.on { opacity: 1; }
 .kicker {
@@ -95,69 +47,38 @@
   justify-content: center;
   align-items: center;
   gap: var(--s-1);
-  font: 600 var(--fs-12) / 1 var(--t-font-read);
-  letter-spacing: 0.1em;
+  font: 700 11px / 1 var(--t-font-read);
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--t-ember);
+  color: #9a2a14;
 }
-/* the pause sign, so the held scroll is not mistaken for a broken page */
-.pause { width: 8px; height: 10px; border-inline: 3px solid var(--t-ember); }
-/* how far the running stage has gone (set by the renderer: --run-p) */
-.progress { display: block; height: 2px; margin: 0 auto; width: min(320px, 70%); background: var(--t-line); border-radius: 1px; overflow: hidden; }
-.progress i { display: block; height: 100%; background: var(--t-ember); transform-origin: left; transform: scaleX(var(--run-p, 0)); }
-.goOn {
-  position: fixed;
-  z-index: 6;
-  left: 50%;
-  bottom: var(--s-4);
-  transform: translateX(-50%);
-  font: 600 var(--fs-14) / 1 var(--t-font-read);
-  color: #fff;
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 400ms var(--ease), visibility 0s linear 400ms;
-  pointer-events: none;
+.kicker::before,
+.kicker::after { content: ''; width: 22px; height: 1px; background: currentColor; opacity: 0.5; }
+.says {
+  font: 500 18px / 1.45 var(--t-font-read);
+  text-wrap: balance;
+  animation: saysIn 500ms var(--ease) both;
 }
-.goOn.on { opacity: 1; visibility: visible; transition: opacity 400ms var(--ease), visibility 0s; }
-.says { font: 500 var(--fs-20) / 1.45 var(--t-font-read); text-wrap: balance; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 2px 18px rgba(0, 0, 0, 0.75); }
-.how { font: 400 var(--fs-14) / 1.45 var(--t-font-read); color: rgba(255, 255, 255, 0.88); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 1px 12px rgba(0, 0, 0, 0.7); }
-.actions { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--s-1); }
-.primary,
-.quiet {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-1);
-  min-height: 44px;
-  padding: 0 var(--s-3);
-  border-radius: 999px;
-  font: 600 var(--fs-14) / 1 var(--t-font-read);
-  cursor: pointer;
-}
-.primary { border: 1px solid var(--t-ember); background: rgba(4, 6, 10, 0.35); color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8); }
-.primary:hover { background: var(--t-ember); color: var(--t-sea-1); }
-.quiet { border: 0; background: transparent; color: rgba(255, 255, 255, 0.9); text-decoration: underline; text-underline-offset: 4px; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9); }
-.quiet:hover { color: var(--t-ember); }
-.quiet kbd { font: 400 var(--fs-12) / 1 var(--t-font-mono); color: var(--t-muted); }
-.primary:focus-visible, .quiet:focus-visible { outline: 3px solid var(--t-ember); outline-offset: 2px; }
+@keyframes saysIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
-/* while a scene holds the story, nothing else in the page takes a click */
-:global(html[data-hold]) { overflow: hidden; }
-:global(html[data-hold] nav) { pointer-events: none; opacity: 0.35; }
+/* over a map: at the top of the map, a smaller scrap, tilted the other way */
+.mapBar {
+  width: min(500px, calc(100vw - 2 * var(--s-3)));
+  top: var(--s-3);
+  bottom: auto;
+  padding: 16px 28px 18px;
+  transform: translateX(-50%) rotate(0.5deg);
+}
+.mapBar .says { font-size: var(--fs-16); }
+/* placed where the map has fewer foci (SceneInteraction.tsx): the map's caption low, the sequence's high */
+.mapBar.low { top: auto; bottom: var(--s-4); }
+.high { top: var(--s-3); bottom: auto; }
 
 @media (max-width: 1023.98px) {
-  .spot { z-index: 8; }
   .bar { z-index: 9; bottom: var(--s-2); }
   .says { font-size: var(--fs-16); }
-  .how { font-size: var(--fs-12); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spot, .spot i::after { animation: none; }
-  .bar { transition: none; }
-}
-
-/* touch screens have no Escape key: it is not mentioned there */
-@media (pointer: coarse) {
-  .quiet kbd, .keys { display: none; }
+  .bar, .says { transition: none; animation: none; }
 }

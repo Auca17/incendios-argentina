@@ -7,13 +7,16 @@
   pointer-events: auto;
 }
 .kicker { font: 700 var(--fs-14) / 1.3 var(--t-font-mono); color: var(--t-ember); letter-spacing: 0.04em; text-transform: uppercase; }
-.title { margin: var(--s-half) 0 var(--s-1); font: 400 var(--fs-32) / 1.1 var(--t-font-title); color: #fff; }
+.title { margin: var(--s-half) 0 var(--s-1); font: var(--t-head-weight) var(--fs-32) / 1.1 var(--t-font-head); color: #fff; }
+/* the years of the series in the figures' face: blackletter digits read poorly */
+.titleYears { display: block; margin-top: 6px; font: 700 var(--fs-16) / 1 var(--t-font-figure); letter-spacing: 0.02em; color: var(--t-text-2); font-variant-numeric: tabular-nums; }
 .help { font-size: var(--fs-14); color: var(--t-text-2); }
 
 .player { display: flex; align-items: center; gap: var(--s-1); margin: var(--s-2) 0; }
 .year {
   min-width: 4ch;
-  font: 600 var(--fs-32) / 1 var(--t-font-mono);
+  font: 800 var(--fs-32) / 1 var(--t-font-figure);
+  letter-spacing: -0.01em;
   color: var(--t-ember);
   font-variant-numeric: tabular-nums;
   text-align: center;
@@ -74,10 +77,10 @@
 .bar span { font: 400 10px / 1.6 var(--t-font-mono); color: var(--t-muted); }
 .bar:hover i { background: #ff7a3a; }
 .reading { margin-top: var(--s-1); font-size: var(--fs-14); }
-.reading b { font-family: var(--t-font-mono); color: var(--t-ember); }
+.reading b { font-family: var(--t-font-figure); font-weight: 800; font-variant-numeric: tabular-nums; color: var(--t-ember); }
 
 .rank { margin-top: var(--s-2); }
-.h3 { font: 700 var(--fs-16) / 1.4 var(--t-font-read); margin-bottom: var(--s-half); }
+.h3 { font: var(--t-head-weight) var(--fs-18, 18px) / 1.35 var(--t-font-head); margin-bottom: var(--s-half); }
 .rank ol { display: grid; gap: 2px; margin: 0; padding-left: var(--s-3); font-size: var(--fs-14); }
 .rank li { display: flex; justify-content: space-between; gap: var(--s-1); }
 .rank button {
@@ -90,9 +93,17 @@
   text-underline-offset: 2px;
   cursor: pointer;
 }
-.rank b { font-family: var(--t-font-mono); font-weight: 600; }
+.rank b { font-family: var(--t-font-figure); font-weight: 700; font-variant-numeric: tabular-nums; }
 .note { margin-top: var(--s-2); font-size: var(--fs-12); color: var(--t-muted); }
 
 @media (max-width: 1023.98px) {
   .panel { width: auto; }
 }
+
+/* back from a province to the whole country (also Esc) */
+.country { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 0; border-radius: 8px; background: rgba(255, 255, 255, 0.06); color: var(--t-text); font: 600 var(--fs-14) / 1 var(--t-font-read); cursor: pointer; }
+.country:hover { background: rgba(255, 255, 255, 0.12); }
+.country:focus-visible { outline: 3px solid var(--t-ember); outline-offset: 2px; }
+.country kbd { font: 400 11px / 1 var(--t-font-mono); padding: 2px 4px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25); color: var(--t-text-2); }
+/* one quiet line of context for a province's year */
+.context { margin-top: 4px; font-size: var(--fs-14); color: var(--t-text-2); }

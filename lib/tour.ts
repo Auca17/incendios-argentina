@@ -1,5 +1,7 @@
 import { EVENTS } from './events';
 import { clamp, seg } from './fire';
+import { DEFS } from './interaction';
+import { CINE_END } from './cine';
 
 /** The guided tour visits the six fires in geographic order, north to south (not chronological). */
 const NORTH_TO_SOUTH = ['misiones', 'corrientes', 'cordoba', 'delta', 'mendoza', 'chubut'];
@@ -21,10 +23,14 @@ export const TOUR_EVENTS: any[] = NORTH_TO_SOUTH.map((id) => EVENTS.find((e) => 
  */
 export type Kind = 'opening' | 'title' | 'reveal' | 'story' | 'more' | 'epilogue';
 
-/** "Dónde más ardió": the provinces with the most foci in 2012-2026 that are not in the six stories. */
-export const MORE_PROVINCES = ['Formosa', 'Chaco', 'Santiago del Estero', 'Salta'];
-/** Share of "Dónde más ardió" given to its national opening. */
-export const MORE_OPEN = 0.24;
+/*
+ * "Dónde más ardió": the national ranking 2012-2026 (provincia-mes.json) leads; Formosa, the province
+ * with the most foci and no story, gets the one close-up. Chaco, Santiago del Estero and Salta (4th to
+ * 6th, also without a story) stay as rows of the ranking.
+ */
+export const MORE_PROVINCES = ['Formosa'];
+/** Share of "Dónde más ardió" given to its national opening (the ranking). */
+export const MORE_OPEN = 0.6;
 export type Section = { id: string; kind: Kind; vh: number; story?: number };
 
 /*
@@ -33,22 +39,33 @@ export type Section = { id: string; kind: Kind; vh: number; story?: number };
  */
 // Mendoza's map phase is ~20 % shorter than at first (230), Chubut's ~15 % (330): its cinematic
 // opening takes a fixed share of the section, so a deeper cut would shorten the opening too
-const STORY_VH: Record<string, number> = { misiones: 190, corrientes: 200, cordoba: 220, delta: 220, mendoza: 185, chubut: 280 };
+// Chubut: its old 470 less the entrance (now in its lead, LEAD_VH), with its opening stretched by
+// CINE_STRETCH; the map phase keeps its old pace
+const STORY_VH: Record<string, number> = { misiones: 190, corrientes: 200, cordoba: 220, delta: 220, mendoza: 160, chubut: 577 };
 /**
  * Before the map, the illustrated landscape of the region (components/Landscape.tsx); after it, the
  * smoke that carries the reader to the next region. Chubut has no landscape: its cinematic opening
  * (lib/cine.ts) is its establishing shot, and its scene starts right away.
  */
-export const INTRO_VH: Record<string, number> = { misiones: 150, corrientes: 140, cordoba: 160, delta: 160, mendoza: 170, chubut: 0 };
+// the three with an illustrated sequence (lib/interaction.ts) got 40 % more, so it plays at a readable
+// pace, and every landscape 25 % more on top, so a stepped mouse wheel still sees it unfold
+export const INTRO_VH: Record<string, number> = { misiones: 188, corrientes: 175, cordoba: 280, delta: 280, mendoza: 298, chubut: 0 };
 export const OUTRO_VH = 45;
+/**
+ * Chubut's title card: a stretch at the start where the cinematic opening holds on its first light
+ * (chapterT stays 0) and the card is read, as long as the other regions' cards. The opening itself
+ * keeps its length.
+ */
+export const LEAD_VH: Record<string, number> = { chubut: 75 };
+const sectionVh = (id: string) => INTRO_VH[id] + (LEAD_VH[id] ?? 0) + STORY_VH[id] + OUTRO_VH;
 
 export const SECTIONS: Section[] = [
   { id: 'sec-opening', kind: 'opening', vh: 130 },
   { id: 'sec-title', kind: 'title', vh: 95 },
   { id: 'sec-reveal', kind: 'reveal', vh: 160 },
-  ...TOUR_EVENTS.map((ev, i): Section => ({ id: 'sec-' + ev.id, kind: 'story', vh: INTRO_VH[ev.id] + STORY_VH[ev.id] + OUTRO_VH, story: i })),
-  { id: 'sec-more', kind: 'more', vh: 420 },
-  { id: 'sec-epilogue', kind: 'epilogue', vh: 250 },
+  ...TOUR_EVENTS.map((ev, i): Section => ({ id: 'sec-' + ev.id, kind: 'story', vh: sectionVh(ev.id), story: i })),
+  { id: 'sec-more', kind: 'more', vh: 260 },
+  { id: 'sec-epilogue', kind: 'epilogue', vh: 340 },
 ];
 
 /**
@@ -57,16 +74,40 @@ export const SECTIONS: Section[] = [
  */
 export function entryOf(i: number): number {
   const s = SECTIONS[i];
-  if (s?.kind === 'story') { const [a, b] = storySpan(s.story!); return a > 0 ? a * 0.34 : b * 0.04; }
-  if (s?.kind === 'more') return 0.05;
+  if (s?.kind === 'story') { const [a, b] = storySpan(s.story!); return a > 0 ? a * 0.34 : leadOf(s.story!) * 0.6; }
+  if (s?.kind === 'more') return 0.11;
   return 0;
 }
 
 /** Where a story's map scene starts and ends inside its section (0..1). */
 export function storySpan(story: number): [number, number] {
   const id = TOUR_EVENTS[story].id;
-  const H = INTRO_VH[id] + STORY_VH[id] + OUTRO_VH;
+  const H = sectionVh(id);
   return [INTRO_VH[id] / H, 1 - OUTRO_VH / H];
+}
+
+/*
+ * Chubut's progress (chapterT) is piecewise over its section: the lead carries the opening's entrance
+ * (its first light comes up under the title card), the rest of the opening gets 75 % more scroll than
+ * the map phase after it, which keeps its old pace.
+ */
+const CINE_ENTER = CINE_END * 0.14;
+const CINE_STRETCH = 1.75;
+export function chubutT(t: number, lead: number, b: number): number {
+  // the opening comes up as the smoke clears (the first 15 % of the lead), then holds just before the
+  // plane's pass while the card is read
+  if (t <= lead) return lead > 0 ? CINE_ENTER * (t < lead * 0.15 ? 0.95 * (t / (lead * 0.15)) : 0.95 + 0.05 * ((t - lead * 0.15) / (lead * 0.85))) : 0;
+  const rest = b - lead;
+  // shares of the rest: the opening's remainder, stretched, and the map phase
+  const wc = (CINE_END - CINE_ENTER) * CINE_STRETCH, wm = 1 - CINE_END;
+  const u = clamp((t - lead) / rest, 0, 1) * (wc + wm);
+  return u < wc ? CINE_ENTER + u / CINE_STRETCH : CINE_END + (u - wc);
+}
+
+/** The share of a story's section held on its title card before its scene starts (Chubut only). */
+export function leadOf(story: number): number {
+  const id = TOUR_EVENTS[story].id;
+  return (LEAD_VH[id] ?? 0) / sectionVh(id);
 }
 
 /** Focal line, as a fraction of the viewport height. */
@@ -166,11 +207,19 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
       if (a > 0) {
         st.land = 1 - seg(t, a * 0.66, a);
         st.landT = seg(t, 0, a);
-        st.card = seg(t, a * 0.14, a * 0.3) * (1 - seg(t, a * 0.58, a * 0.74));
+        // where the landscape plays a sequence (lib/interaction.ts) the card is gone before it starts
+        const seq = DEFS[TOUR_EVENTS[sec.story!].id]?.on === 'land';
+        // each fade spans about two wheel steps (20 vh or more), so it is seen as a fade, not a cut
+        st.card = seg(t, a * 0.02, a * 0.16) * (1 - (seq ? seg(t, a * 0.22, a * 0.33) : seg(t, a * 0.58, a * 0.74)));
         st.pod = seg(t, a * 0.8, a + (b - a) * 0.3);
       } else {
-        st.card = seg(st.chapterT, 0.02, 0.05) * (1 - seg(st.chapterT, 0.11, 0.14));
-        st.pod = seg(st.chapterT, 0.2, 0.36);
+        // Chubut: the opening holds on its first light while the card is read (the lead), then the card
+        // is gone before the plane; the text after the opening
+        const lead = leadOf(sec.story!);
+        st.chapterT = chubutT(t, lead, b);
+        // in over the opening's first light, read, out as the plane's pass begins
+        st.card = seg(t, 0.002, lead * 0.35) * (1 - seg(t, lead * 0.8, lead + (b - lead) * 0.03));
+        st.pod = seg(st.chapterT, 0.42, 0.55);
       }
       break;
     }
@@ -178,8 +227,9 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
       st.open = 1; st.borders = 1; st.hud = 1; st.bank = 0;
       st.chapter = 8;
       st.moreT = t;
-      st.veil = 1 - seg(t, 0, 0.035);
-      st.pod = seg(t, 0.02, 0.06);
+      // the smoke clears and the text comes in over about 30 vh (it took one wheel step)
+      st.veil = 1 - seg(t, 0, 0.07);
+      st.pod = seg(t, 0.03, 0.11);
       // a national opening (the whole country, the ranking), then the four provinces one by one
       st.more = t < MORE_OPEN ? -1 : Math.min(MORE_PROVINCES.length - 1, Math.floor(((t - MORE_OPEN) / (1 - MORE_OPEN)) * MORE_PROVINCES.length));
       break;
@@ -188,19 +238,21 @@ export function tourState(focal: number, tops: number[], heights: number[], redu
       // before the clouds closed
       st.open = 1; st.borders = 1; st.chapter = 6; st.bank = 0;
       // clouds close completely, the epilogue is read on them, it fades, then the clouds turn to smoke
-      st.close = seg(t, 0, 0.18);
+      // (340 vh: the clouds shut in the first 45 vh; the reader's own province, opened in a clearing,
+      // is read whole before the text fades and the ash and smoke come)
+      st.close = seg(t, 0, 0.132);
       st.hud = st.close > 0 ? 0 : 1;
       // the clouds close over the last province of "Dónde más ardió", as it was left: the map changes
       // only once they are shut (a little after, so the eased clouds are shut too), never in view
-      if (t < 0.26) {
+      if (t < 0.191) {
         st.chapter = 8;
         st.more = MORE_PROVINCES.length - 1;
         st.moreT = 1;
         st.pod = 1 - Math.min(1, st.close / 0.2); // gone before the clouds reach it
       }
-      st.epi = 1 - seg(t, 0.6, 0.68);
-      st.ash = seg(t, 0.3, 0.55);
-      st.smoke = seg(t, 0.68, 0.84);
+      st.epi = 1 - seg(t, 0.68, 0.74);
+      st.ash = seg(t, 0.5, 0.7);
+      st.smoke = seg(t, 0.74, 0.87);
       break;
   }
   if (reduced) {

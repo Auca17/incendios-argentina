@@ -12,7 +12,10 @@ import { seg } from './fire';
  *  - Corrientes: the Iberá, January and February 2022 (37,193 detections in eight weeks, the most
  *    around the north of the wetlands; peak in the week of 12 February).
  *  - Córdoba: the sierras, May to November 2020; the strongest cells fall in Cruz del Eje, Punilla and
- *    Río Cuarto, the three departments the provincial report names. The camera travels north to south.
+ *    Río Cuarto, the three departments the provincial report names. The camera frames the 0.25-degree
+ *    zones with the most detections each week (keyframes below, from semanas-cordoba.json): it leans
+ *    north in mid August (30.6 S); in the peak weeks, late September and early October, two zones burn
+ *    almost even, 31.1 S and 32.9 S (760 and 761 detections), and the whole range is in frame.
  *  - Delta: 2020, worst in August (the source says so, and the cells agree), concentrated on the
  *    islands in front of Rosario. "El humo sobre Rosario": smoke drifts to the city (illustration).
  */
@@ -29,8 +32,10 @@ export type StoryCfg = {
   pace: [number, number][];
   full: number;
   sites: { w0: number; w1: number; max: number; gap: number; box?: Box };
-  /** Camera travel: from this offset (lon, lat) to that one, between two u (Córdoba). */
+  /** Camera travel: from this offset (lon, lat) to that one, between two u. */
   travel?: { from: [number, number]; to: [number, number]; u: [number, number] };
+  /** Camera following the data: offsets (lon, lat) from the box's centre by continuous week (Córdoba). */
+  follow?: [number, number, number][];
   labels: Label[];
   /** Note shown with the close-up: [bold lead, rest]. */
   note: [string, string];
@@ -61,12 +66,15 @@ export const STORIES: StoryCfg[] = [
   },
   {
     id: 'cordoba',
-    box: [-65.5, -63.8, -31.75, -30.05], narrow: [-65.25, -64.05, -31.55, -30.25],
-    relief: { src: '/map/closeup-sierras.webp', box: [-65.9, -63.5, -33.8, -29.9] },
+    // the whole range in one frame, Cruz del Eje (30.7 S) to Río Cuarto (33 S): the camera only leans
+    box: [-65.6, -63.7, -33.3, -30.0], narrow: [-65.25, -64.05, -31.55, -30.25],
+    relief: { src: '/map/closeup-sierras.webp', box: [-67.2, -62.6, -34.2, -29.4] },
     zoom: [0.08, 0.2, 0.88, 0.98],
     pace: [[0, 0], [0.16, 13], [0.84, 26], [0.88, 28]], full: 0.9,
     sites: { w0: 10, w1: 29, max: 12, gap: 0.18 },
-    travel: { from: [0, 0], to: [-0.2, -1.95], u: [0.24, 0.8] },
+    // week -> offset from the box's centre (-64.65, -31.65): the frame leans toward that week's strongest
+    // zones (north in mid August), and is centred when the centre and the south burn together
+    follow: [[13, 0.05, 0], [15, 0.1, 0.35], [16.5, 0.1, 0.3], [20, 0.05, 0.05], [21, 0, -0.1], [22.5, 0, -0.1], [24, 0.05, 0.05], [26, 0.05, 0]],
     labels: [
       { lon: -64.81, lat: -30.73, text: 'Cruz del Eje', from: 0.18, to: 0.5 },
       { lon: -64.47, lat: -31.24, text: 'Punilla', from: 0.24, to: 0.62 },
@@ -78,7 +86,8 @@ export const STORIES: StoryCfg[] = [
     id: 'delta',
     box: [-61.1, -59.4, -33.8, -32.35], narrow: [-60.95, -59.75, -33.55, -32.55],
     relief: { src: '/map/closeup-delta.webp', box: [-61.5, -58.8, -34.4, -31.9] },
-    zoom: [0.18, 0.32, 0.88, 0.98],
+    // the smoke of the landscape opens straight onto the islands: no wide shot in between
+    zoom: [-0.02, 0, 0.88, 0.98],
     pace: [[0, 0], [0.26, 28], [0.76, 35], [0.86, 40]], full: 0.9,
     sites: { w0: 26, w1: 40, max: 10, gap: 0.14, box: [-61.1, -59.4, -33.8, -32.35] },
     labels: [{ lon: -60.65, lat: -32.95, text: 'Rosario', from: 0.3, to: 0.92 }],
@@ -112,6 +121,12 @@ export function storyState(c: StoryCfg, u: number, reduced = false): StoryState 
     const k = reduced ? (u < (c.travel.u[0] + c.travel.u[1]) / 2 ? 0 : 1) : smooth(seg(u, c.travel.u[0], c.travel.u[1]));
     pan = [c.travel.from[0] + (c.travel.to[0] - c.travel.from[0]) * k, c.travel.from[1] + (c.travel.to[1] - c.travel.from[1]) * k];
   }
+  const wf = pieces(u, c.pace);
+  if (c.follow) {
+    // reduced motion: no travel, two cuts (north, then south) at the middle of the journey
+    const wk = reduced ? (wf < 19 ? 15 : 22.5) : wf;
+    pan = [pieces(wk, c.follow.map(([w, x]) => [w, x] as [number, number])), pieces(wk, c.follow.map(([w, , y]) => [w, y] as [number, number]))];
+  }
   const ill = seg(u, b - 0.04, b) * (1 - seg(u, d - 0.02, d + 0.01));
-  return { zoom, wf: pieces(u, c.pace), pan, ill, u };
+  return { zoom, wf, pan, ill, u };
 }

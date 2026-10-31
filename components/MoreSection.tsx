@@ -5,6 +5,7 @@ import { MESES, MESES_L, fmt } from '../lib/fire';
 import { MORE_PROVINCES, TOUR_EVENTS } from '../lib/tour';
 import { subscribe } from '../lib/scrollDriver';
 import { openDialog } from '../lib/storyDialog';
+import ExploreLink from './ExploreLink';
 import pod from './StoryPod.module.css';
 import styles from './MoreSection.module.css';
 
@@ -18,9 +19,8 @@ const pct = (x: number) => x.toLocaleString('es-AR', { maximumFractionDigits: 1 
 /**
  * "Dónde más ardió", the change of scale after the six regions. A national opening first: the camera
  * holds the whole country while its cells light up strongest first, and the ranking of provinces by
- * foci 2012-2026 shows that the one with the most has no story (Formosa). Then the four provinces with
- * the most foci outside the stories, each with its rank, its share of the national total (the
- * denominator is stated) and its monthly signature. Every figure is computed from the project's NASA
+ * foci 2012-2026 shows that most of the top six have no story, Formosa first. Then Formosa alone,
+ * with its rank, its share of the national total (the denominator is stated) and its monthly signature. Every figure is computed from the project's NASA
  * FIRMS data (provincia-mes.json); no cause and no burnt area is claimed. Fixed over the map like the
  * regions' text, it fades in as the smoke of the last region clears.
  */
@@ -35,14 +35,29 @@ export default function MoreSection() {
     loadProvinciaMes().then((d) => { if (live) setPm(d); }, () => {});
     return () => { live = false; };
   }, []);
-  useEffect(() => subscribe(({ st }) => {
-    if (st.chapter === 8) setI((o) => (o === st.more ? o : st.more));
-    const el = ref.current;
-    if (!el) return;
-    const on = st.chapter === 8 && st.veil < 0.999;
-    el.style.opacity = on ? (Math.min(1, st.pod) * (1 - st.veil)).toFixed(3) : '0';
-    if (el.dataset.on !== (on ? '1' : '0')) { el.dataset.on = on ? '1' : '0'; el.inert = !on; }
-  }), []);
+  useEffect(() => {
+    // the text never pops in or out: left by a fast scroll back into the last region, it fades on its own
+    let shown = 0;
+    let last = 0;
+    return subscribe(({ st, reduced }) => {
+      if (st.chapter === 8) setI((o) => (o === st.more ? o : st.more));
+      const el = ref.current;
+      if (!el) return;
+      const on = st.chapter === 8 && st.veil < 0.999;
+      const now = performance.now();
+      const fade = Math.exp(-Math.min(0.1, Math.max(0, (now - last) / 1000)) / 0.09);
+      last = now;
+      // any jump bigger than a step (the chapter changed, or a long frame) is eased, in and out
+      const target = on ? Math.min(1, st.pod) * (1 - st.veil) : 0;
+      shown = reduced || Math.abs(target - shown) < 0.08 ? target : target + (shown - target) * fade;
+      el.style.opacity = shown.toFixed(3);
+      // visible while it fades out; reachable only in its own chapter
+      const vis = shown > 0 ? '1' : '0';
+      if (el.dataset.on !== vis) el.dataset.on = vis;
+      if (el.inert !== !on) el.inert = !on;
+      return shown !== target;
+    });
+  }, []);
 
   const data = useMemo(() => {
     if (!pm) return null;
@@ -81,7 +96,8 @@ export default function MoreSection() {
           <>
             <p className={styles.lead}>
               Entre 2012 y 2026 el satélite registró <b>{fmt(data.national)} focos</b> en el país.
-              {!STORY_PROVS.has(data.top[0][0]) && <> La provincia con más no tiene una historia en este recorrido: es <b>{data.top[0][0]}</b>.</>}
+              {' '}{data.top.filter(([n]) => !STORY_PROVS.has(n)).length} de las {data.top.length} provincias con más focos no tienen una historia en este recorrido
+              {!STORY_PROVS.has(data.top[0][0]) && <>; la primera es <b>{data.top[0][0]}</b></>}.
             </p>
             <ol className={styles.rank} aria-label="Provincias con más focos, 2012 a 2026">
               {data.top.map(([name, n], k) => (
@@ -108,7 +124,7 @@ export default function MoreSection() {
     body = (
       <article className={styles.pod} aria-labelledby="more-h" aria-live="polite">
         <p className={pod.label}>
-          <span className={pod.count}>{i + 1}/{MORE_PROVINCES.length}</span> Dónde más ardió
+          {MORE_PROVINCES.length > 1 && <span className={pod.count}>{i + 1}/{MORE_PROVINCES.length}</span>} Dónde más ardió
         </p>
         <h2 className={pod.title} id="more-h">{r.name}</h2>
         <div className={styles.figure}>
@@ -137,6 +153,11 @@ export default function MoreSection() {
           </svg>
         </figure>
         {info}
+        {/* the moment a reader wants their own province: the way to the explorer, once, here */}
+        <ExploreLink className={styles.invite}>
+          <span className={styles.inviteQ}>¿Y tu provincia?</span>
+          <span className={styles.inviteA}>Explorala año por año en el mapa <span aria-hidden="true">→</span></span>
+        </ExploreLink>
       </article>
     );
   }

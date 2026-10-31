@@ -26,11 +26,16 @@ export default function StoryPod({ ev, index, total }: Props) {
   const btn = useRef<HTMLButtonElement>(null);
   const id = useId();
 
-  useEffect(() => subscribe(({ st }) => {
+  useEffect(() => {
+    // the text never pops in or out: left by a fast scroll into another region, it fades on its own
+    let shown = 0;
+    let last = 0;
+    return subscribe(({ st, reduced }) => {
     const el = ref.current;
     if (!el) return;
     const on = st.chapter === index && st.pod > 0.001 && st.veil < 0.999;
-    el.style.setProperty('--p', on ? st.pod.toFixed(3) : '0');
+    // while it fades out, its blocks stay as they were
+    if (on || shown === 0) el.style.setProperty('--p', on ? st.pod.toFixed(3) : '0');
     // phones show the cause, then the figure in its place (never more than two blocks at once); the
     // swap follows the scene's own progress, so each block holds for a good stretch of scroll
     const s0 = SWAP[ev.id] ?? 0.42;
@@ -39,15 +44,23 @@ export default function StoryPod({ ev, index, total }: Props) {
     // (phones) the figure and its button cannot be reached while they are not shown yet
     const sw = swap < 0.01 ? '0' : '1';
     if (el.dataset.swap !== sw) el.dataset.swap = sw;
-    el.style.opacity = on ? (1 - st.veil).toFixed(3) : '0';
-    if (el.dataset.on !== (on ? '1' : '0')) {
-      el.dataset.on = on ? '1' : '0';
-      el.inert = !on;
-    }
-  }), [index, ev.id]);
+    const now = performance.now();
+    const fade = Math.exp(-Math.min(0.1, Math.max(0, (now - last) / 1000)) / 0.09);
+    last = now;
+    // any jump bigger than a step (the region changed, or a long frame) is eased, in and out
+    const target = on ? 1 - st.veil : 0;
+    shown = reduced || Math.abs(target - shown) < 0.08 ? target : target + (shown - target) * fade;
+    el.style.opacity = shown.toFixed(3);
+    // visible while it fades out; reachable only while it is the region's
+    const vis = shown > 0 ? '1' : '0';
+    if (el.dataset.on !== vis) el.dataset.on = vis;
+    if (el.inert !== !on) el.inert = !on;
+    return shown !== target;
+    });
+  }, [index, ev.id]);
 
   return (
-    <article ref={ref} className={styles.pod} aria-labelledby={id + 'h'} data-on="0">
+    <article ref={ref} className={styles.pod} aria-labelledby={id + 'h'} data-on="0" data-pod={index}>
       <p className={`${styles.label} ${styles.b0}`}>
         <span className={styles.count}>{index + 1}/{total}</span> {ev.title.includes(ev.region) ? ev.when : `${ev.region} · ${ev.when}`}
       </p>

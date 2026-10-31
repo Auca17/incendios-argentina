@@ -24,7 +24,7 @@ let FONT = '';
 const font = () => (FONT ||= (typeof document !== 'undefined' && getComputedStyle(document.body).fontFamily) || 'sans-serif');
 
 /** A place name on the map: small, spaced, white on a dark halo, with a dot for a city. */
-function label(g: CanvasRenderingContext2D, x: number, y: number, text: string, a: number, city: boolean) {
+export function label(g: CanvasRenderingContext2D, x: number, y: number, text: string, a: number, city: boolean, east = false) {
   if (a <= 0) return;
   g.save();
   g.globalAlpha = a;
@@ -32,7 +32,8 @@ function label(g: CanvasRenderingContext2D, x: number, y: number, text: string, 
   g.textBaseline = 'middle';
   (g as any).letterSpacing = '0.06em';
   // a city's name goes to the west of its dot (the Delta's fires are east of Rosario)
-  const tx = city ? x - 9 - g.measureText(text).width : x - g.measureText(text).width / 2, ty = y;
+  // `east`: the name starts at x, to the east of what it names (it never covers the marks)
+  const tx = city ? x - 9 - g.measureText(text).width : east ? x : x - g.measureText(text).width / 2, ty = y;
   g.lineJoin = 'round';
   g.strokeStyle = 'rgba(8, 6, 4, 0.85)';
   g.lineWidth = 4;

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { EVIDENCE, TOUR_EVENTS } from '../lib/tour';
 import { takeReturnPoint } from '../lib/returnPoint';
 import { subscribe } from '../lib/scrollDriver';
+import { scrollToY } from '../lib/smoothScroll';
 import styles from './SourcesSection.module.css';
 
 type Card = { source: string; what: string[]; url: string };
@@ -101,7 +102,7 @@ export default function SourcesSection() {
           className={styles.back}
           onClick={() => {
             const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            window.scrollTo({ top: back ?? 0, behavior: reduced ? 'auto' : 'smooth' });
+            scrollToY(back ?? 0, !reduced);
             history.replaceState(null, '', location.pathname + location.search);
             setBack(null);
           }}

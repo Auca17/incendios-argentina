@@ -1,11 +1,11 @@
 import type { Foci } from './data';
-import { clamp, fociWeek } from './fire';
+import { clamp, fociWeek, seg } from './fire';
 import { AIR_STORY, EPISODE_WEEKS, HOTSPOT, airScene } from './airScene';
 import { CHALLAO_NARROW, CHALLAO_WIDE, GROUND_STORY, groundScene } from './groundScene';
 import { drawFx, fireSites, type Proj, type Sites } from './fx';
 import { drawGround } from './fxGround';
 import { STORIES, storyState } from './storyScenes';
-import { drawStory } from './fxStories';
+import { drawStory, label } from './fxStories';
 import { CINE_END, afterCine } from './cine';
 
 /*
@@ -44,6 +44,8 @@ export type Scene = {
   notes: { flames: [string, string]; ill: [string, string]; cine?: [string, string] };
 };
 
+const CHUBUT_LABELS: [number, number, string][] = [[-71.2, -42.23, 'Epuyén'], [-71.33, -42.67, 'Los Alerces (norte)']];
+
 const FLAMES_NOTE: [string, string] = ['Brillo:', ' donde el satélite acumuló más focos. No mide superficie quemada.'];
 
 const chubut: Scene = {
@@ -53,10 +55,16 @@ const chubut: Scene = {
   frame: (u, reduced) => {
     const a = airScene(afterCine(u), reduced);
     return {
-      // the hydrant plane no longer flies over the map: it is part of the cinematic opening, where the
-      // reader calls it (lib/interaction.ts); the map keeps the fire's weeks and its flames
+      // the hydrant plane does not fly over the map: it is part of the cinematic opening
+      // (lib/interaction.ts); the map keeps the fire's weeks and its flames
       zoom: a.zoom, pan: a.pan, ill: 0, flames: a.zoom > 0.5 && a.phase !== 'balance', balance: a.phase === 'balance', cine: u < CINE_END - 0.02,
-      draw: (g, d, sites) => drawFx(g, { ...d, zoom: a.zoom, wf: a.wf, plane: 0, routeIn: 0, routeDim: a.routeDim, ill: 0, sites }),
+      draw: (g, d, sites) => {
+        drawFx(g, { ...d, zoom: a.zoom, wf: a.wf, plane: 0, routeIn: 0, routeDim: a.routeDim, ill: 0, sites });
+        // the two groups of detections, named east of them: their weighted centres in the data are
+        // 42.23 S 71.47 W (Epuyén, the town is at 42.23 S 71.37 W) and 42.67 S 71.62 W (the north of
+        // Los Alerces National Park, by Lago Rivadavia)
+        for (const [lon, lat, text] of CHUBUT_LABELS) { const [x, y] = d.proj(lon, lat); label(g, x, y, text, a.zoom * (a.phase === 'start' ? 0 : 1), false, true); }
+      },
     };
   },
   week: (E, u) => (afterCine(u) >= 0.9 ? E.weeks : clamp(Math.floor(airScene(afterCine(u)).wf) + 1, 1, E.weeks)),
@@ -73,12 +81,18 @@ const mendoza: Scene = {
   box: (w) => (w < 1024 ? CHALLAO_NARROW : CHALLAO_WIDE),
   relief: { src: '/map/closeup-challao.webp', box: [-70.6, -67.4, -34.2, -31.9] },
   frame: (u, reduced) => {
-    // the brigade left the map (a side-view crew on a map from above did not sit in it): it works in
-    // the landscape of Mendoza, where the reader calls it (lib/interaction.ts). The map keeps the fire.
+    // the brigade is not on the map (a side-view crew on a map from above did not sit in it): it works
+    // in the landscape of Mendoza (lib/interaction.ts). The map keeps the fire.
     const s = { ...groundScene(u, reduced), truck: 0, walk: [0, 0, 0], jets: 0, douse: 0, ill: 0 };
     return {
       zoom: s.zoom, pan: [0, 0], ill: s.ill, flames: s.zoom > 0.5 && s.ill < 0.5, balance: false,
-      draw: (g, d, sites) => drawGround(g, { ...d, st: s, sites }),
+      draw: (g, d, sites) => {
+        drawGround(g, { ...d, st: s, sites });
+        // which marks are the fire of the story: its strongest cell in the week of 29 October 2023
+        // (-68.975, -32.875, 82 detections, lib/groundScene.ts); the others are the rest of the year
+        const [x, y] = d.proj(-68.975, -32.875);
+        label(g, x + 14, y, 'El Challao', s.zoom * seg(u, 0.46, 0.52), false, true);
+      },
     };
   },
   week: (E, u) => (u >= 0.9 ? E.weeks : clamp(Math.floor(groundScene(u).wf) + 1, 1, E.weeks)),
