@@ -7,7 +7,7 @@ El video tiene dos partes que se graban por separado:
 - **Imagen:** una pasada por toda la página (portada, los seis incendios, "Dónde más ardió", el epílogo y `/explorar`), en una ventana de incógnito a 1440 × 900. Si dura más de un minuto, se acelera hasta que entre.
 - **Voz:** el texto de abajo, leído aparte y montado sobre la imagen. No depende de lo que se vea en cada momento.
 
-El video final dura como máximo 1 minuto (bases, punto 11). El texto tiene 131 palabras: al ritmo de la primera lectura (101 palabras en unos 42 segundos) son unos 54 segundos.
+El video final dura como máximo 1 minuto (bases, punto 11). El texto tiene 140 palabras: al ritmo de la última lectura (131 palabras en unos 49 segundos) son unos 52 segundos.
 
 ## Texto
 
@@ -17,7 +17,7 @@ Selva, sierras, humedales, bosque.
 
 Un satélite de la NASA lo mira todos los días. Entre 2012 y 2026 registró más de dos millones y medio de focos de calor.
 
-Cada foco es un punto caliente que el satélite detecta desde el espacio. Puede ser un incendio o una quema en el campo, y un solo incendio puede dejar miles.
+Cada foco es un punto caliente que el satélite detecta desde el espacio. Puede ser un incendio o una quema en el campo, y un solo incendio puede dejar miles. No mide hectáreas quemadas: esas las cuentan las fuentes.
 
 Pero un punto en un mapa no dice qué se perdió, ni quién estuvo ahí para apagarlo.
 
