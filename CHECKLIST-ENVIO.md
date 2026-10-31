@@ -17,7 +17,7 @@ Fecha límite: 31/10/2026 a las 23:59. Estado al 31/10/2026.
 
 ## Documentos
 
-- [x] `DESCRIPCION.md` no pasa de 200 palabras: 190 sin el título, 199 con el título. Nombra las herramientas de IA, la etapa y la finalidad (Anexo A, punto 3).
+- [x] `DESCRIPCION.md` no pasa de 200 palabras: 188 sin el título, 197 con el título. Nombra las herramientas de IA, la etapa y la finalidad (Anexo A, punto 3).
 - [x] `FOTOS.md` al día: cinco imágenes con licencia abierta, verificadas el 31/10/2026 en Wikimedia Commons.
 - [x] `IA-declaracion.md` cubre todas las sesiones hasta el 31/10/2026. Falta que la persona autora la relea antes de pegarla en el formulario.
 - [x] `VIDEO.md`: texto de la voz, independiente de la grabación de la página.
