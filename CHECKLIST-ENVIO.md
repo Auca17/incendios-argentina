@@ -20,9 +20,9 @@ Fecha límite: 31/10/2026 a las 23:59. Estado al 31/10/2026.
 - [x] `DESCRIPCION.md` no pasa de 200 palabras: 187 sin el título, 196 con el título.
 - [x] `FOTOS.md` al día: cinco imágenes con licencia abierta, verificadas el 31/10/2026 en Wikimedia Commons.
 - [x] `IA-declaracion.md` cubre todas las sesiones hasta el 31/10/2026. Falta que la persona autora la relea antes de pegarla en el formulario.
-- [x] `VIDEO.md` coincide con el sitio publicado.
+- [x] `VIDEO.md`: texto de la voz, independiente de la grabación de la página.
 - [x] Ningún documento nombra al autor ni incluye su correo.
-- [ ] Grabar el video (como máximo 1 minuto) siguiendo `VIDEO.md`, con la URL elegida, y subirlo como "no listado".
+- [ ] Grabar la pasada por la página y la voz por separado, montarlas (como máximo 1 minuto) y subir el video como "no listado".
 
 ## Formulario
 
