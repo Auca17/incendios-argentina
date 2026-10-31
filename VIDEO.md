@@ -11,17 +11,22 @@ El video final dura como máximo 1 minuto (bases, punto 11). El texto tiene 113 
 
 ## Texto
 
-Entre 2012 y 2026, un satélite de la NASA detectó más de dos millones y medio de focos de calor en Argentina.
+Cada año, en algún lugar de Argentina, algo se prende fuego.
 
-Lo que el fuego se llevó cuenta seis incendios, de norte a sur. En cada uno, el mapa suma los focos semana a semana, y una ilustración muestra cómo empezó y cómo se combatió.
+Las sierras de Córdoba. Las islas frente a Rosario. Los esteros del Iberá. Un bosque en la cordillera.
 
-En Corrientes, el fuego alcanzó casi el once por ciento de la provincia, según el INTA. Otra fuente estima menos: el sitio muestra las dos.
+Un satélite de la NASA lo mira todos los días. Desde 2012 registró más de dos millones y medio de focos de calor.
 
-Al final, las provincias donde más ardió, la tuya, y todos los datos para explorar año por año.
+Pero un punto en un mapa no dice qué se perdió, ni quién estuvo ahí para apagarlo.
 
-Un foco de calor no es una hectárea quemada. Cada cifra tiene su fuente.
+Lo que el fuego se llevó junta las dos cosas: los datos del satélite y la historia de seis incendios, con sus fuentes.
+
+Para que la próxima vez que veas humo en las noticias, sepas lo que hay detrás.
+
+Recorrelo. Y buscá tu provincia.
 
 ## Por qué el texto dice lo que dice
 
-- "Más de dos millones y medio": 2.620.568 focos (`npm run check:data`).
-- Corrientes: 934.238 ha de "cobertura vegetal afectada" (INTA Corrientes), no superficie quemada. Por eso dice "el fuego alcanzó". La otra fuente es el Servicio Nacional de Manejo del Fuego, con unas 632 mil ha.
+- "Más de dos millones y medio": 2.620.568 focos del sensor VIIRS (Suomi NPP) de NASA FIRMS (`npm run check:data`).
+- Los cuatro lugares son cuatro de los seis incendios del sitio: Córdoba (2020), Delta del Paraná frente a Rosario (2020), Corrientes e Iberá (2022) y Epuyén, Chubut (2026).
+- "Quién estuvo ahí para apagarlo": cada incendio cita quién lo combatió (brigadas, bomberos, medios aéreos) según sus fuentes.
