@@ -110,7 +110,7 @@ Bajo la dirección de la persona autora, el código lo escribió Claude Code (An
 
 - No hay imágenes, ilustraciones ni gráficos generados con IA generativa de imágenes.
 - La IA no agregó cifras, causas ni fuentes por su cuenta.
-- El recorte de `BiodiversityCard` y de las tipografías Chakra Petch y JetBrains Mono (sesión del 16 de octubre) no forma parte de la versión final.
+- `BiodiversityCard` y la tipografía Chakra Petch (sesión del 16 de octubre) no forman parte de la versión final. JetBrains Mono se mantiene para las cifras.
 
 ## Alcance
 
