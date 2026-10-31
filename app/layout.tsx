@@ -1,32 +1,35 @@
 import type { Metadata, Viewport } from 'next';
-import { New_Rocker, Plus_Jakarta_Sans, JetBrains_Mono, Fraunces } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 
-const newRocker = New_Rocker({
-  subsets: ['latin'],
-  weight: ['400'],
+// The fonts live in the repository (app/fonts, the Google Fonts latin subset, SIL Open Font License)
+// instead of being fetched from Google at build time: that fetch failed now and then on the CI runner
+// and broke the deploy. All but New Rocker are variable fonts: one file covers every weight.
+const newRocker = localFont({
+  src: './fonts/rocker.woff2',
+  weight: '400',
   variable: '--font-rocker',
   display: 'swap',
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
+const plusJakartaSans = localFont({
+  src: './fonts/jakarta.woff2',
+  weight: '400 700',
   variable: '--font-jakarta',
   display: 'swap',
 });
 
 // headings: regions, story titles, dialogs and sections
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  weight: ['400', '600'],
+const fraunces = localFont({
+  src: './fonts/fraunces.woff2',
+  weight: '400 600',
   variable: '--font-fraunces',
   display: 'swap',
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '600'],
+const jetbrainsMono = localFont({
+  src: './fonts/jetbrains.woff2',
+  weight: '400 600',
   variable: '--font-jetbrains',
   display: 'swap',
 });
