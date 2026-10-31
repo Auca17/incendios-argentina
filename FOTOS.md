@@ -1,6 +1,6 @@
 # Registro de fotos
 
-El sitio no incluye fotos. Las 18 fotos documentales de la versión presentada se retiraron porque no se pudo verificar su licencia. Este archivo registra cuáles eran, tal como figuraban en el tag `entrega-v1-2026-10-15` (`PHOTO_DATA` en `app.js`), y fija las condiciones para incorporar fotos en el futuro. Los archivos de imagen no están en el repositorio y `img/` está ignorada en `.gitignore`.
+El sitio incluye cinco fotos, todas con licencia abierta verificada en su página de origen (ver "Fotos incorporadas", más abajo). Las 18 fotos documentales de la versión presentada el 15/10/2026 se retiraron porque no se pudo verificar su licencia. Este archivo registra cuáles eran, tal como figuraban en el tag `entrega-v1-2026-10-15` (`PHOTO_DATA` en `app.js`), y fija las condiciones para incorporar fotos en el futuro. Los archivos de imagen no están en el repositorio y `img/` está ignorada en `.gitignore`.
 
 ## Fotos retiradas
 
@@ -44,7 +44,9 @@ Cada foto nueva se agrega a la tabla de abajo antes de publicarla.
 
 ## Fotos incorporadas
 
-Se incorporaron cinco fotografías documentales y una satelital con licencia verificada para acompañar los relatos en los pods de lectura (al abrir «Ver más»). Misiones, Córdoba y Mendoza no tienen fotos aprobadas y no muestran ningún espacio reservado.
+El sitio muestra cinco imágenes con licencia verificada: cuatro fotografías documentales y una satelital. Aparecen junto al mapa en los capítulos de Corrientes, Delta y Chubut y en su diálogo "Más información". Misiones, Córdoba y Mendoza no tienen fotos aprobadas y no muestran ningún espacio reservado.
+
+Última verificación: 31/10/2026. Las cinco páginas de Wikimedia Commons responden y la licencia y el autor de cada una coinciden con la tabla (consulta a la API de Commons).
 
 | Archivo | Incendio | Descripción / Pie | Autor | Licencia | Origen | Verificación | Crédito en sitio |
 |---|---|---|---|---|---|---|---|

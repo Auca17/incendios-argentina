@@ -1,17 +1,12 @@
 # Lista de pasos antes de actualizar la entrega
 
-Orden sugerido. No actualizar el formulario ni los enlaces hasta completar todo.
-
-## Coordinación
-
-- [ ] Consultar a los organizadores cómo se actualiza la URL presentada y esperar la respuesta.
-- [ ] Mientras tanto, no tocar `main`, GitHub Pages ni el tag `entrega-v1-2026-10-15`.
+Fecha límite: 31/10/2026 a las 23:59. Estado al 31/10/2026.
 
 ## Publicación
 
-- [ ] Conectar Vercel a la rama `next` y definir el alias de producción. Elegir un nombre de proyecto neutro (el alias sale de ese nombre; no debe usar un título descartado ni datos personales).
-- [ ] Comprobar que el alias no contiene nombre ni usuario.
-- [ ] Abrir el alias en una ventana de incógnito a 1440 × 900 y a 390 × 844, y recorrer inicio, los seis incendios, Explorar y "Cómo se hizo".
+- [x] `main` se publica sola en GitHub Pages con GitHub Actions (uno o dos minutos después de cada push).
+- [ ] Elegir la URL que va al formulario y al video. La de GitHub Pages incluye el usuario de GitHub; usarla solo si ese usuario es el seudónimo. Si no, usar un alias de Vercel con un nombre neutro.
+- [ ] Abrir esa URL en una ventana de incógnito a 1440 × 900 y a 390 × 844, y recorrer la portada, los seis incendios, "Dónde más ardió", el epílogo, `/explorar` y las fuentes.
 
 ## Verificaciones
 
@@ -22,17 +17,20 @@ Orden sugerido. No actualizar el formulario ni los enlaces hasta completar todo.
 
 ## Documentos
 
-- [x] Revisar y decidir los 5 puntos de `VERIFICACION.md` (resueltos y documentados en código y texto).
-- [x] Revisar y firmar `IA-declaracion.md` (seudónimo y fecha).
-- [x] Confirmar que `DESCRIPCION.md` no pasa de 200 palabras (181 palabras exactas con títulos).
-- [x] Confirmar que no hay fotos en el sitio y que `FOTOS.md` está al día.
-- [x] Revisar que ningún documento nombre al autor ni incluya su correo (cero coincidencias).
-- [ ] Grabar el video siguiendo `VIDEO.md`, con la URL de producción.
+- [x] `DESCRIPCION.md` no pasa de 200 palabras: 187 sin el título, 196 con el título.
+- [x] `FOTOS.md` al día: cinco imágenes con licencia abierta, verificadas el 31/10/2026 en Wikimedia Commons.
+- [x] `IA-declaracion.md` cubre todas las sesiones hasta el 31/10/2026. Falta que la persona autora la relea antes de pegarla en el formulario.
+- [x] `VIDEO.md` coincide con el sitio publicado.
+- [x] Ningún documento nombra al autor ni incluye su correo.
+- [ ] Grabar el video (como máximo 1 minuto) siguiendo `VIDEO.md`, con la URL elegida, y subirlo como "no listado".
 
-## Aviso a los organizadores
+## Formulario
 
+- [ ] Categoría: Historia visual.
+- [ ] Título: "Lo que el fuego se llevó: 15 años, 6 historias".
+- [ ] Descripción metodológica: el texto de `DESCRIPCION.md`, sin el título.
+- [ ] Fuente de los datos: NASA FIRMS (VIIRS S-NPP), Natural Earth, y los informes y notas citados en la sección Fuentes del sitio, con sus enlaces.
+- [ ] Uso de IA: el resumen de `IA-declaracion.md` (herramientas, etapas y finalidad).
+- [ ] Enlace al video y enlace al sitio.
+- [ ] Seudónimo, y aceptar las bases y la declaración de propiedad intelectual.
 - [ ] Informar que el nombre de usuario y el correo figuran en el historial del repositorio (decisión tomada antes).
-
-## Recién entonces
-
-- [ ] Actualizar el formulario o los enlaces con la URL de producción.

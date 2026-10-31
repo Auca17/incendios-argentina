@@ -73,8 +73,6 @@ Bajo la dirección de la persona autora, se trabajó con el asistente Antigravit
 
 ## Sesión del 17 de octubre de 2026 (rama `feat/nubes-v2`, versión "nubes")
 
-Pendiente de revisión y firma de la persona autora.
-
 Bajo la dirección de la persona autora y en coordinación técnica entre Claude Code y Antigravity (Google DeepMind, Gemini), se desarrolló la versión con metáfora de nubes y humo:
 
 - **Retiros y limpieza:** Salieron las 21 fotos originales sin licencia verificada, con su galería y visor (ver `FOTOS.md`). Se retiró la ruta `/explorar` y componentes obsoletos sin uso, unificando la exploración anual dentro del recorrido guiado continuo con hash y navegación limpia.
@@ -82,11 +80,42 @@ Bajo la dirección de la persona autora y en coordinación técnica entre Claude
 - **Código nuevo:** Motor de nubes y humo en canvas WebGL/2D derivado puramente de la posición del scroll (`lib/tour.ts`), pod de lectura con cajón desplegable, gráfico de focos mensuales, HUD accesible, epílogo con cortina completa de nubes y prueba de determinismo del scroll (`scripts/test-scroll.mjs`).
 - **Fotos documentales y satelitales verificadas (Fase 4):** Se auditaron minuciosamente licencias abiertas y fuentes primarias (NASA Earth Observatory, Estación Espacial Internacional, Copernicus Sentinel-2 y Wikimedia Commons). Se incorporaron 4 fotos procesadas a WebP (~1200 px) con atribución estricta y textos descriptivos accesibles (Corrientes, Delta e ISS, y Chubut). Historias sin licencia confirmada (Córdoba, Misiones, Mendoza) quedaron sin fotos ni huecos en el diseño. No hay imágenes generadas por IA.
 
+Entre el 17 y el 20 de octubre, Antigravity (Gemini) escribió el código y Claude Code lo revisó. El 20 de octubre la persona autora dejó de usar Gemini, porque algunos de sus informes contenían afirmaciones que no se pudieron comprobar, y Claude Code volvió a escribir el código.
+
+## Sesiones del 20 al 31 de octubre de 2026 (versión final, rama `main`)
+
+Bajo la dirección de la persona autora, el código lo escribió Claude Code (Anthropic, modelo Claude Opus 5.5). La persona autora revisó cada etapa en el navegador antes de pasar a la siguiente.
+
+**Qué hizo el asistente**
+
+- **Recorrido:** el mapa de cada incendio, que suma los focos reales de FIRMS semana a semana; la sección "Dónde más ardió", con cifras calculadas por el proyecto a partir de FIRMS; el diálogo "Más información", con hechos, fuentes y fotos de cada incendio; el epílogo con la provincia del lector, y la vuelta de `/explorar` como página propia (en la sesión del 17 de octubre se había retirado).
+- **Ilustraciones, todas escritas en código:** los paisajes y las escenas de cada incendio (inicio, fuego y combate) en canvas 2D. La apertura de Chubut (un bosque andino en llamas, con el lago y un avión hidrante) es un shader WebGL: fórmulas de ruido y formas geométricas que dibuja el navegador. No se usó ninguna imagen de partida ni IA generativa de imágenes.
+- **Relieve de los mapas de cerca:** un script (`scripts/gen-closeups.mjs`) los genera a partir de datos abiertos de elevación (Terrain Tiles en AWS Open Data: SRTM, GMTED2010 y ETOPO1). La fuente está citada en el sitio.
+- **Fotos:** el 22 de octubre se reemplazaron dos imágenes (la de la Estación Espacial Internacional y la de Sentinel-2) por tres fotos de Wikimedia Commons con licencia abierta. El sitio queda con cinco imágenes, registradas en `FOTOS.md`. El 31 de octubre se volvieron a comprobar las cinco páginas de origen y sus licencias.
+- **Texto:** propuso una pasada editorial para reducir repeticiones, que la persona autora revisó. Las cifras, las causas y las fuentes no cambiaron (`npm run test:events`).
+- **Técnica:** desplazamiento suave con Lenis (una biblioteca de código abierto), ajustes de rendimiento (por ejemplo, el fuego de Chubut se dibuja a 30 cuadros por segundo) y la publicación automática en GitHub Pages con GitHub Actions.
+- **Documentos:** redactó los borradores de `DESCRIPCION.md`, `FOTOS.md`, `VIDEO.md`, `CHECKLIST-ENVIO.md` y de este archivo, que la persona autora revisó.
+
+**Qué decidió la persona autora**
+
+- Dejar de usar Gemini y volver a Claude Code.
+- La estructura del recorrido, el título, las tipografías y la paleta.
+- No agregar mecánicas de interacción nuevas, salvo las mínimas que tuvieran sentido.
+- Usar Lenis y descartar GSAP.
+- Mostrar degradés de fuego solo detrás de los títulos y entre regiones, nunca sobre el mapa de datos.
+- Quitar el rótulo "Ilustración" de los subtítulos de las escenas, porque las notas de cada escena ya aclaran que son ilustraciones.
+- Qué fotos incorporar y cuáles retirar.
+
+**Qué no se hizo**
+
+- No hay imágenes, ilustraciones ni gráficos generados con IA generativa de imágenes.
+- La IA no agregó cifras, causas ni fuentes por su cuenta.
+- El recorte de `BiodiversityCard` y de las tipografías Chakra Petch y JetBrains Mono (sesión del 16 de octubre) no forma parte de la versión final.
 
 ## Alcance
 
-Este resumen cubre las sesiones de trabajo del 14 de octubre de 2026 (versión estática), la migración a Next.js del 15 de octubre de 2026 (tag `entrega-v1-2026-10-15`) y la actualización de biodiversidad y diseño editorial del 16 de octubre de 2026 (tag `entrega-v1-2026-10-16`). Las páginas de referencia (649 Héroes y Milla 201) se miraron solo como inspiración de diseño; ver `INSPIRACION.md`.
+Este resumen cubre las sesiones de trabajo del 14 de octubre de 2026 (versión estática), la migración a Next.js del 15 de octubre de 2026 (tag `entrega-v1-2026-10-15`), la actualización de biodiversidad y diseño editorial del 16 de octubre de 2026 (tag `entrega-v1-2026-10-16`), la versión "nubes" del 17 de octubre y las sesiones del 20 al 31 de octubre de 2026, que dieron la versión publicada. Las páginas de referencia (649 Héroes y Milla 201) se miraron solo como inspiración de diseño; ver `INSPIRACION.md`.
 
 Firma: Auca17
 
-Fecha: 16 de octubre de 2026
+Fecha: 31 de octubre de 2026
